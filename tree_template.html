@@ -345,10 +345,11 @@ svg{position:absolute;top:0;left:0;overflow:visible}
     <input id="ff-death" type="text" data-ph="ph_death" placeholder="оставьте пустым если жив(а)">
 
     <label data-i="fix_birth_he">Дата рождения (еврейский календарь)</label>
-    <input id="ff-birth-he" type="text" placeholder="например: יג ניסן תשל״א">
+    <input id="ff-birth-he" type="text" data-ph="ph_birth_he" placeholder="например: יג ניסן תשל״א">
+
 
     <label data-i="fix_death_he">Дата смерти (еврейский календарь)</label>
-    <input id="ff-death-he" type="text" placeholder="например: יב שבט תשפ״א">
+    <input id="ff-death-he" type="text" data-ph="ph_death_he" placeholder="например: יב שבט תשפ״א">
 
     <label data-i="lbl_phone">Телефон(ы)</label>
     <textarea id="ff-phone" data-ph="ph_phone" placeholder="+972-50-000-0000&#10;можно указать несколько через запятую или с новой строки" style="min-height:50px"></textarea>
@@ -367,13 +368,13 @@ svg{position:absolute;top:0;left:0;overflow:visible}
     </select>
 
     <label data-i="fix_rel">Степень родства</label>
-    <input id="ff-rel" type="text" placeholder="например: Зять">
+    <input id="ff-rel" type="text" data-ph="ph_rel" placeholder="например: Зять">
 
     <label data-i="fix_family">Семейная связь (что изменить)</label>
-    <textarea id="ff-family" placeholder="например: добавить мужа / убрать связь / изменить родителя"></textarea>
+    <textarea id="ff-family" data-ph="ph_family" placeholder="например: добавить мужа / убрать связь / изменить родителя"></textarea>
 
     <label data-i="fix_other">Другое (любые иные уточнения)</label>
-    <textarea id="ff-other" placeholder="всё что не вошло в поля выше"></textarea>
+    <textarea id="ff-other" data-ph="ph_other" placeholder="всё что не вошло в поля выше"></textarea>
 
     <label data-i="lbl_comment">Комментарий (необязательно)</label>
     <input id="f-fix-comment" type="text" data-ph="ph_comment" placeholder="Источник, пояснение...">
@@ -1456,6 +1457,11 @@ const UI = {
     btn_add_relative:'➕ Добавить',
     tree_title:`🌳 ${TREE_CONFIG.familyNameRu}`,
     page_title:'🌳 Семейное дерево',
+	ph_birth_he:'например: יג ניסן תשל״א',
+    ph_death_he:'например: יב שבט תשפ״א',
+    ph_rel:'например: Зять',
+    ph_family:'например: добавить мужа / убрать связь / изменить родителя',
+    ph_other:'всё что не вошло в поля выше',
     birth:'Рождение', death:'Смерть',
     birth_place:'Место рождения', death_place:'Место смерти',
     no_dates:'Даты неизвестны', missing:'⚠ Нет данных:',
@@ -1533,7 +1539,12 @@ const UI = {
     btn_add_relative:'➕ Add',
     tree_title:`🌳 ${TREE_CONFIG.familyNameEn}`,
     page_title:'🌳 Family Tree',
-    birth:'Birth', death:'Death',
+	ph_birth_he:'e.g.: יג ניסן תשל״א',
+    ph_death_he:'e.g.: יב שבט תשפ״א',
+    ph_rel:'e.g.: Son-in-law',
+    ph_family:'e.g.: add husband / remove link / change parent',
+    ph_other:'anything not covered by the fields above',
+	birth:'Birth', death:'Death',
     birth_place:'Place of birth', death_place:'Place of death',
     no_dates:'Dates unknown', missing:'⚠ Missing data:',
     parents:'Parents', spouse:'Spouse', spouses:'Spouses',
@@ -1609,6 +1620,11 @@ const UI = {
     btn_add_relative:'➕ הוספה',
     tree_title:`🌳 ${TREE_CONFIG.familyNameHe}`,
     page_title:'🌳 עץ משפחה',
+	ph_birth_he:'לדוגמה: יג ניסן תשל״א',
+    ph_death_he:'לדוגמה: יב שבט תשפ״א',
+    ph_rel:'לדוגמה: חתן',
+    ph_family:'לדוגמה: הוספת בעל / הסרת קשר / שינוי הורה',
+    ph_other:'כל מה שלא נכלל בשדות למעלה',
     birth:'לידה', death:'פטירה',
     birth_place:'מקום לידה', death_place:'מקום פטירה',
     no_dates:'תאריכים לא ידועים', missing:'⚠ חסרים נתונים:',
@@ -1906,7 +1922,7 @@ function openModal(prefillId, mode){
     setVal('ff-phone',     n.phone);
     setVal('ff-email',     n.email);
     setVal('ff-social',    n.social);
-    setVal('ff-rel',       n.rel);
+    setVal('ff-rel',       trel(n.rel));
 
     // Switch to fix tab
     document.querySelectorAll('.mtype').forEach(b => b.classList.remove('active'));
