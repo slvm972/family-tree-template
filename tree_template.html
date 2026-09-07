@@ -3291,6 +3291,13 @@ document.getElementById('btn-login').addEventListener('click', e => {
 });
 
 document.getElementById('btn-contacts').addEventListener('click', () => {
+  if(!_sessionPassword){
+    document.getElementById('btn-login').click();
+    showToast(currentLang==='he' ? '🔒 התחבר כדי להוריד אנשי קשר'
+             : currentLang==='en' ? '🔒 Login to download contacts'
+             : '🔒 Войдите чтобы скачать контакты', true);
+    return;
+  }
   const { vcf, count } = generateVCF();
 
   if(count === 0){

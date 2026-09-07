@@ -231,9 +231,14 @@ export default {
     }
 
     // ── GET /calendar.ics ────────────────────────────
-    // Public: returns ICS calendar with all birthdays
-    // No auth required — shareable subscription link
+    // Requires auth (guest or admin): returns ICS calendar with
+    // birthdays. Was public — fixed to prevent unauthenticated
+    // leakage of full names + exact birth dates (mirrors the fix
+    // already applied in the mostovoy-tree production Worker).
     if(path === '/calendar.ics' && method === 'GET') {
+      const auth = await getRole(request, env);
+      if(!auth) return err('Требуется авторизация', 401);
+
       const data = await env.TREE_KV.get('tree_data');
       if(!data) return new Response('No tree data', { status: 404, headers: CORS });
 
@@ -327,8 +332,14 @@ export default {
     }
 
     // ── GET /contacts.vcf ─────────────────────────────
-    // Public: returns VCF with all living persons who have contact data
+    // Requires auth (guest or admin): returns VCF with all living
+    // persons who have contact data. Was public — fixed to prevent
+    // unauthenticated leakage of phone/email/social data (mirrors
+    // the fix already applied in the mostovoy-tree production Worker).
     if(path === '/contacts.vcf' && method === 'GET') {
+      const auth = await getRole(request, env);
+      if(!auth) return err('Требуется авторизация', 401);
+
       const data = await env.TREE_KV.get('tree_data');
       if(!data) return new Response('No tree data', { status: 404, headers: CORS });
 
@@ -604,122 +615,93 @@ export default {
     }
 
     // ── PATCH /api/family/:id ────────────────────────────
-    // Admin only: add child to family, or add second parent
-    // Body: { addChild?: "P260", removeChild?: "P260", parent1?: "P...", parent2?: "P..." }
-    const famPatchMatch = path.match(/^\/api\/family\/([^/]+)$/);
-    if(famPatchMatch && method === 'PATCH') {
+    // Admin only: add a child to existing family, or update parents
+    // Body: { addChild?, removeChild?, parent1?, parent2? }
+    const patchFamMatch = path.match(/^\/api\/family\/([^/]+)$/);
+    if(patchFamMatch && method === 'PATCH') {
       const auth = await getRole(request, env);
       if(auth !== 'admin') return err('Только для администратора', 403);
 
-      const famId   = famPatchMatch[1];
+      const famId   = patchFamMatch[1];
       const rawData = await env.TREE_KV.get('tree_data');
       if(!rawData) return err('Данные дерева не найдены', 404);
 
       const IDX = JSON.parse(rawData);
       if(!IDX.families[famId]) return err('Семья не найдена: ' + famId, 404);
 
-      const body = await request.json().catch(() => null);
-      if(!body) return err('Неверный формат данных');
+      const body = await request.json().catch(() => ({}));
+      const fam  = IDX.families[famId];
+      const changes = [];
 
-      const fam = IDX.families[famId];
-      const parents = [fam.husband, fam.wife].filter(Boolean);
-
-      // Add a child to this family
-      if(body.addChild) {
+      // Add child
+      if(body.addChild){
         const cid = body.addChild;
         if(!IDX.nodes[cid]) return err('Персона не найдена: ' + cid, 404);
-        if(!fam.children.includes(cid)) fam.children.push(cid);
-
-        IDX.child_of[cid] = famId;
-        if(!IDX.relatives[cid]) IDX.relatives[cid] = { parents:[], siblings:[], spouses:[], children:[] };
-
-        for(const pid of parents){
-          if(!IDX.relatives[cid].parents.includes(pid)) IDX.relatives[cid].parents.push(pid);
-          if(!IDX.relatives[pid]) IDX.relatives[pid] = { parents:[], siblings:[], spouses:[], children:[] };
-          if(!IDX.relatives[pid].children.includes(cid)) IDX.relatives[pid].children.push(cid);
-        }
-        // Update sibling links for existing children
-        for(const sib of fam.children){
-          if(sib === cid) continue;
-          if(!IDX.relatives[sib]) continue;
-          if(!IDX.relatives[sib].siblings.includes(cid)) IDX.relatives[sib].siblings.push(cid);
-          if(!IDX.relatives[cid].siblings.includes(sib)) IDX.relatives[cid].siblings.push(sib);
+        if(!fam.children.includes(cid)){
+          fam.children.push(cid);
+          IDX.child_of[cid] = famId;
+          if(IDX.relatives[cid]){
+            if(fam.husband && !IDX.relatives[cid].parents.includes(fam.husband))
+              IDX.relatives[cid].parents.push(fam.husband);
+            if(fam.wife && !IDX.relatives[cid].parents.includes(fam.wife))
+              IDX.relatives[cid].parents.push(fam.wife);
+          }
+          if(fam.husband && IDX.relatives[fam.husband] && !IDX.relatives[fam.husband].children.includes(cid))
+            IDX.relatives[fam.husband].children.push(cid);
+          if(fam.wife && IDX.relatives[fam.wife] && !IDX.relatives[fam.wife].children.includes(cid))
+            IDX.relatives[fam.wife].children.push(cid);
+          // Update siblings
+          for(const sib of fam.children.filter(id => id !== cid)){
+            if(IDX.relatives[cid]  && !IDX.relatives[cid].siblings.includes(sib))
+              IDX.relatives[cid].siblings.push(sib);
+            if(IDX.relatives[sib]  && !IDX.relatives[sib].siblings.includes(cid))
+              IDX.relatives[sib].siblings.push(cid);
+          }
+          changes.push('addChild:' + cid);
         }
       }
 
-      // Remove a child from this family
-      if(body.removeChild) {
+      // Remove child
+      if(body.removeChild){
         const cid = body.removeChild;
         fam.children = fam.children.filter(c => c !== cid);
         if(IDX.child_of[cid] === famId) delete IDX.child_of[cid];
         if(IDX.relatives[cid]){
-          IDX.relatives[cid].parents  = IDX.relatives[cid].parents.filter(p => !parents.includes(p));
-          IDX.relatives[cid].siblings = IDX.relatives[cid].siblings.filter(s => !fam.children.includes(s));
+          IDX.relatives[cid].parents  = IDX.relatives[cid].parents.filter(p => p!==fam.husband && p!==fam.wife);
+          IDX.relatives[cid].siblings = [];
         }
-        for(const pid of parents){
-          if(IDX.relatives[pid]) IDX.relatives[pid].children = IDX.relatives[pid].children.filter(c => c !== cid);
-        }
+        if(fam.husband && IDX.relatives[fam.husband])
+          IDX.relatives[fam.husband].children = IDX.relatives[fam.husband].children.filter(c=>c!==cid);
+        if(fam.wife && IDX.relatives[fam.wife])
+          IDX.relatives[fam.wife].children = IDX.relatives[fam.wife].children.filter(c=>c!==cid);
+        changes.push('removeChild:' + cid);
       }
 
-      // Add second parent (e.g. previously unknown parent discovered)
-      if(body.addParent) {
-        const pid = body.addParent;
-        if(!IDX.nodes[pid]) return err('Персона не найдена: ' + pid, 404);
-        const sex = IDX.nodes[pid].sex;
-        if(!fam.husband && sex !== 'F') fam.husband = pid;
-        else if(!fam.wife && sex !== 'M') fam.wife = pid;
-        else fam.husband = pid; // fallback
-
-        if(!IDX.parent_in[pid]) IDX.parent_in[pid] = [];
-        if(!IDX.parent_in[pid].includes(famId)) IDX.parent_in[pid].push(famId);
-        if(!IDX.relatives[pid]) IDX.relatives[pid] = { parents:[], siblings:[], spouses:[], children:[] };
-        const otherP = pid === fam.husband ? fam.wife : fam.husband;
-        if(otherP && !IDX.relatives[pid].spouses.includes(otherP)) IDX.relatives[pid].spouses.push(otherP);
-        if(otherP && !IDX.relatives[otherP].spouses.includes(pid)) IDX.relatives[otherP].spouses.push(pid);
-        for(const cid of fam.children){
-          if(!IDX.relatives[pid].children.includes(cid)) IDX.relatives[pid].children.push(cid);
-          if(IDX.relatives[cid] && !IDX.relatives[cid].parents.includes(pid)) IDX.relatives[cid].parents.push(pid);
+      // Update parent1/parent2
+      if(body.parent1 !== undefined){
+        if(body.parent1 && !IDX.nodes[body.parent1]) return err('Персона не найдена: ' + body.parent1, 404);
+        fam.husband = body.parent1 || null;
+        if(fam.husband){
+          IDX.parent_in[fam.husband] = [...new Set([...(IDX.parent_in[fam.husband]||[]), famId])];
         }
+        changes.push('parent1:' + body.parent1);
+      }
+      if(body.parent2 !== undefined){
+        if(body.parent2 && !IDX.nodes[body.parent2]) return err('Персона не найдена: ' + body.parent2, 404);
+        fam.wife = body.parent2 || null;
+        if(fam.wife){
+          IDX.parent_in[fam.wife] = [...new Set([...(IDX.parent_in[fam.wife]||[]), famId])];
+        }
+        changes.push('parent2:' + body.parent2);
       }
 
-      // Fill a specific parent slot directly (frontend sends this when it
-      // already knows which slot — husband/parent1 or wife/parent2 — is
-      // empty, e.g. linkNewPersonToFamily() adding a parent to an existing
-      // single-parent family). Reuses the same relatives-sync logic as
-      // addParent above, just with an explicit target slot instead of
-      // inferring it from sex.
-      if(body.parent1 !== undefined || body.parent2 !== undefined){
-        const setSlot = (slotKey, pid) => {
-          if(pid === null){ fam[slotKey] = null; return; }
-          if(!IDX.nodes[pid]) throw new Error('Персона не найдена: ' + pid);
-          fam[slotKey] = pid;
-
-          if(!IDX.parent_in[pid]) IDX.parent_in[pid] = [];
-          if(!IDX.parent_in[pid].includes(famId)) IDX.parent_in[pid].push(famId);
-          if(!IDX.relatives[pid]) IDX.relatives[pid] = { parents:[], siblings:[], spouses:[], children:[] };
-
-          const otherP = slotKey === 'husband' ? fam.wife : fam.husband;
-          if(otherP){
-            if(!IDX.relatives[pid].spouses.includes(otherP)) IDX.relatives[pid].spouses.push(otherP);
-            if(!IDX.relatives[otherP]) IDX.relatives[otherP] = { parents:[], siblings:[], spouses:[], children:[] };
-            if(!IDX.relatives[otherP].spouses.includes(pid)) IDX.relatives[otherP].spouses.push(pid);
-          }
-          for(const cid of fam.children){
-            if(!IDX.relatives[pid].children.includes(cid)) IDX.relatives[pid].children.push(cid);
-            if(IDX.relatives[cid] && !IDX.relatives[cid].parents.includes(pid)) IDX.relatives[cid].parents.push(pid);
-          }
-        };
-        try {
-          if(body.parent1 !== undefined) setSlot('husband', body.parent1);
-          if(body.parent2 !== undefined) setSlot('wife',    body.parent2);
-        } catch(e){ return err(e.message, 404); }
-      }
+      if(changes.length === 0) return err('Нечего обновлять');
 
       const ts = Date.now();
       await env.TREE_KV.put('backup_' + ts, rawData);
       await env.TREE_KV.put('tree_data', JSON.stringify(IDX));
 
-      return json({ ok: true, familyId: famId, family: IDX.families[famId] });
+      return json({ ok: true, familyId: famId, changes, family: IDX.families[famId] });
     }
 
     // ── DELETE /api/family/:id ───────────────────────────
