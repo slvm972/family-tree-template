@@ -302,7 +302,9 @@ svg{position:absolute;top:0;left:0;overflow:visible}
   <div class="mfields" id="mf-photo">
     <label data-i="lbl_person">Персона</label>
     <input id="f-photo-person" type="text" list="names-list" data-ph="ph_search" placeholder="Начните вводить имя...">
-    <label data-i="lbl_photo_url">URL фотографии</label>
+    <label data-i="lbl_photo_file">Файл фотографии</label>
+    <input id="photoFileInput" type="file" accept="image/*">
+    <label data-i="lbl_photo_url">URL фотографии (необязательно, если выбран файл)</label>
     <input id="f-photo-url" type="url" data-ph="ph_url" placeholder="https://drive.google.com/...">
     <label data-i="lbl_caption">Подпись (год, место)</label>
     <input id="f-photo-cap" type="text" data-ph="ph_caption" placeholder="Например: 1965, Одесса">
@@ -1491,7 +1493,8 @@ const UI = {
     lbl_email:'Email',               ph_email:'example@mail.com',
     lbl_social:'Соц. сети',           ph_social:'https://facebook.com/...',
     lbl_person:'Персона',
-    lbl_photo_url:'URL фотографии',  ph_url:'https://drive.google.com/...',
+    lbl_photo_file:'Файл фотографии',
+    lbl_photo_url:'URL фотографии (необязательно, если выбран файл)',  ph_url:'https://drive.google.com/...',
     lbl_caption:'Подпись (год, место)', ph_caption:'Например: 1965, Одесса',
     lbl_bio_text:'Текст биографии', ph_bio:'Краткое жизнеописание, воспоминания...',
     lbl_bio_url:'Ссылка на документ (необязательно)', ph_gdoc:'https://docs.google.com/...',
@@ -1515,7 +1518,7 @@ const UI = {
     lbl_birth:'Дата рождения',lbl_death:'Дата смерти (если есть)',
     lbl_rel_person:'Связь с кем',lbl_rel_type:'Тип связи',
     rel_wife:'Жена',rel_husband:'Муж',rel_child:'Ребёнок',rel_parent:'Родитель',rel_brother:'Брат',rel_sister:'Сестра',
-    lbl_person:'Персона',lbl_photo_url:'URL фотографии',lbl_caption:'Подпись (год, место)',
+    lbl_person:'Персона',lbl_photo_url:'URL фотографии (необязательно, если выбран файл)',lbl_caption:'Подпись (год, место)',
     lbl_bio_text:'Текст биографии',lbl_bio_url:'Ссылка на подробный документ (необязательно)',
     lbl_note:'Уточнение (что именно)',
     btn_cancel:'Отмена',btn_generate:'✉ Сформировать и отправить по email',btn_copy:'📋 Копировать',btn_copied:'✓ Скопировано',btn_email:'✉️ Отправить по email',
@@ -1572,7 +1575,8 @@ const UI = {
     lbl_email:'Email',            ph_email:'example@mail.com',
     lbl_social:'Social media',     ph_social:'https://facebook.com/...',
     lbl_person:'Person',
-    lbl_photo_url:'Photo URL',    ph_url:'https://drive.google.com/...',
+    lbl_photo_file:'Photo file',
+    lbl_photo_url:'Photo URL (optional if a file is selected)',    ph_url:'https://drive.google.com/...',
     lbl_caption:'Caption (year, place)', ph_caption:'E.g.: 1965, Odessa',
     lbl_bio_text:'Biography text', ph_bio:'Brief life story, memories...',
     lbl_bio_url:'Link to full document (optional)', ph_gdoc:'https://docs.google.com/...',
@@ -1596,7 +1600,7 @@ const UI = {
     lbl_birth:'Date of birth',lbl_death:'Date of death (if applicable)',
     lbl_rel_person:'Related to',lbl_rel_type:'Relationship type',
     rel_wife:'Wife',rel_husband:'Husband',rel_child:'Child',rel_parent:'Parent',rel_brother:'Brother',rel_sister:'Sister',
-    lbl_person:'Person',lbl_photo_url:'Photo URL',lbl_caption:'Caption (year, place)',
+    lbl_person:'Person',lbl_photo_url:'Photo URL (optional if a file is selected)',lbl_caption:'Caption (year, place)',
     lbl_bio_text:'Biography text',lbl_bio_url:'Link to full document (optional)',
     lbl_note:'Clarification (what exactly)',
     btn_cancel:'Cancel',btn_generate:'✉ Generate & send by email',btn_copy:'📋 Copy',btn_copied:'✓ Copied',btn_email:'✉️ Send by email',
@@ -1653,7 +1657,8 @@ const UI = {
     lbl_email:'אימייל',        ph_email:'example@mail.com',
     lbl_social:'רשתות חברתיות', ph_social:'https://facebook.com/...',
     lbl_person:'אדם',
-    lbl_photo_url:'קישור לתמונה', ph_url:'https://drive.google.com/...',
+    lbl_photo_file:'קובץ תמונה',
+    lbl_photo_url:'קישור לתמונה (רשות אם נבחר קובץ)', ph_url:'https://drive.google.com/...',
     lbl_caption:'כיתוב (שנה, מקום)', ph_caption:'לדוגמה: 1965, אודסה',
     lbl_bio_text:'טקסט ביוגרפי', ph_bio:'תיאור חיים קצר, זיכרונות...',
     lbl_bio_url:'קישור למסמך מפורט (אופציונלי)', ph_gdoc:'https://docs.google.com/...',
@@ -1677,7 +1682,7 @@ const UI = {
     lbl_birth:'תאריך לידה',lbl_death:'תאריך פטירה (אם רלוונטי)',
     lbl_rel_person:'קשור/ה ל',lbl_rel_type:'סוג קשר',
     rel_wife:'אישה',rel_husband:'בעל',rel_child:'ילד/ה',rel_parent:'הורה',rel_brother:'אח',rel_sister:'אחות',
-    lbl_person:'אדם',lbl_photo_url:'קישור לתמונה',lbl_caption:'כיתוב (שנה, מקום)',
+    lbl_person:'אדם',lbl_photo_url:'קישור לתמונה (רשות אם נבחר קובץ)',lbl_caption:'כיתוב (שנה, מקום)',
     lbl_bio_text:'טקסט ביוגרפי',lbl_bio_url:'קישור למסמך מלא (רשות)',
     lbl_note:'הבהרה (מה בדיוק)',
     btn_cancel:'ביטול',btn_generate:'✉ צור ושלח במייל',btn_copy:'📋 העתק',btn_copied:'✓ הועתק',btn_email:'✉️ שלח במייל',
@@ -1843,7 +1848,7 @@ function openModal(prefillId, mode){
 
   // ── Reset all form fields to blank ──────────────────
   ['f-name','f-birth','f-death','f-phone','f-email','f-social',
-   'f-photo-url','f-photo-cap',
+   'f-photo-url','f-photo-cap','photoFileInput',
    'f-bio-text','f-bio-url',
    'f-date-note',
    'ff-name','ff-birth','ff-death','ff-birth-he','ff-death-he',
@@ -2066,7 +2071,9 @@ document.getElementById('modal-generate').addEventListener('click', async () => 
     const person = document.getElementById('f-photo-person').value.trim();
     const url    = document.getElementById('f-photo-url').value.trim();
     const cap    = document.getElementById('f-photo-cap').value.trim();
-    if(!person || !url){ alert('Укажите персону и URL фото'); return; }
+    const photoFileEl = document.getElementById('photoFileInput');
+    const photoFile   = (photoFileEl && photoFileEl.files && photoFileEl.files[0]) ? photoFileEl.files[0] : null;
+    if(!person){ alert('Укажите персону'); return; }
 
     const photoIdMatch = person.match(/\[(P\d+)\]\s*$/);
     const photoTargetId = photoIdMatch ? photoIdMatch[1] : null;
@@ -2078,7 +2085,38 @@ document.getElementById('modal-generate').addEventListener('click', async () => 
       btn.textContent = '⏳ Сохраняю...';
       btn.disabled = true;
       try {
-        const patchBody = { photo: url };
+        let finalUrl = url || null;
+
+        // If a local file was selected, upload it first (Worker puts it
+        // into R2) and use the resulting URL. The URL field remains a
+        // fallback for pasting an external link (e.g. Google Drive).
+        if(photoFile){
+          const uploadForm = new FormData();
+          uploadForm.append('photo', photoFile);
+          uploadForm.append('person', photoTargetId);
+          const uploadRes = await fetch(WORKER_URL + '/api/upload-photo', {
+            method: 'POST',
+            headers: { 'X-Password': _sessionPassword },
+            body: uploadForm
+          });
+          const uploadData = await uploadRes.json().catch(() => null);
+          if(!uploadRes.ok || !uploadData || (!uploadData.url && !uploadData.key)){
+            showToast('⚠ ' + (uploadData && uploadData.error || 'Не удалось загрузить фото'), true);
+            btn.textContent = origTxt;
+            btn.disabled = false;
+            return;
+          }
+          finalUrl = uploadData.url || ('/api/photo/' + uploadData.key);
+        }
+
+        if(!finalUrl){
+          showToast('⚠ Укажите URL фото или выберите файл', true);
+          btn.textContent = origTxt;
+          btn.disabled = false;
+          return;
+        }
+
+        const patchBody = { photo: finalUrl };
         const r = await fetch(WORKER_URL + '/api/person/' + photoTargetId, {
           method: 'PATCH',
           headers: {'Content-Type':'application/json','X-Password':_sessionPassword},
@@ -2104,6 +2142,7 @@ document.getElementById('modal-generate').addEventListener('click', async () => 
       return;
     }
 
+    if(!url){ alert('Укажите URL фото (гостевой email-путь не поддерживает загрузку файла)'); return; }
     text  = t('prompt_header');
     text += 'Тип: Добавить фото\n';
     text += 'Персона: ' + person + '\n';

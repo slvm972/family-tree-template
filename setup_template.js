@@ -65,6 +65,23 @@ function runCapture(cmd) {
     kvId = await ask('   Вставьте ID хранилища вручную (или Enter чтобы пропустить): ');
   }
 
+  // ── Step 3b: create R2 bucket for photo storage automatically ────
+  console.log('\n4b) Создаю хранилище для фотографий...');
+  let photosBucketName;
+  try {
+    // R2 bucket names must be globally unique within the account and
+    // follow DNS-label rules (lowercase, digits, hyphens) — unlike the
+    // KV namespace id above, which wrangler generates for us, the R2
+    // bucket name has to be chosen up front and passed into the create
+    // command, so we derive one instead of parsing it out of the output.
+    photosBucketName = 'family-tree-photos-' + Date.now().toString(36);
+    runCapture(`npx wrangler r2 bucket create ${photosBucketName}`);
+    console.log('✅ Хранилище фото создано: ' + photosBucketName);
+  } catch(e) {
+    console.log('⚠️  Не получилось создать автоматически. Причина:', e.message);
+    photosBucketName = await ask('   Введите имя бакета вручную (или Enter чтобы пропустить фото-функцию): ');
+  }
+
   // ── Step 4: update wrangler.toml ──────────────────────
   console.log('\n5) Обновляю настройки...');
   const tomlPath = path.join(process.cwd(), 'wrangler.toml');
@@ -72,6 +89,7 @@ function runCapture(cmd) {
   toml = toml.replace('PLACEHOLDER_GUEST_HASH', gHash);
   toml = toml.replace('PLACEHOLDER_ADMIN_HASH', aHash);
   if(kvId) toml = toml.replace('PLACEHOLDER_KV_ID', kvId);
+  if(photosBucketName) toml = toml.replace('PLACEHOLDER_PHOTOS_BUCKET_NAME', photosBucketName);
   fs.writeFileSync(tomlPath, toml);
   console.log('✅ Настройки сохранены');
 
@@ -125,6 +143,10 @@ function runCapture(cmd) {
   console.log('   2. Откройте полученную ссылку — дерево готово к работе!');
   console.log('   3. Пароль администратора: тот что вы ввели выше (шаг 2)');
   console.log('   4. Пароль для родственников: тот что вы ввели выше (шаг 1)\n');
+  if(!photosBucketName) {
+    console.log('   ⚠️  Загрузка фото не настроена (шаг с R2 был пропущен) —');
+    console.log('       функция "Фото" в форме продолжит работать через URL-поле.\n');
+  }
 
   rl.close();
 })();
