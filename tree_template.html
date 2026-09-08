@@ -3913,7 +3913,8 @@ async function loadTree() {
         initTree(data, savedPwd);
         return;
       }
-      // Пароль устарел — очищаем
+      // Пароль устарел — очищаем и проваливаемся в гостевую ветку ниже
+      // (не дублируем fallback-логику здесь)
       sessionStorage.removeItem('tree_pwd');
     } catch(e) {
       console.warn('API недоступен, используем встроенные данные', e);
@@ -3921,12 +3922,38 @@ async function loadTree() {
       initTree(FALLBACK_DATA, savedPwd);
       return;
     }
-    hideLoader();
   }
-  // Нет сохранённого пароля — используем FALLBACK_DATA для публичного просмотра
-  // (форма входа показывается только при попытке редактировать)
-  hideLoader();
-  initTree(FALLBACK_DATA, '');
+
+  // Гостевая ветка (нет сохранённого пароля, либо он устарел выше).
+  // Пробуем публичный санитизированный снапшот с сервера — если он
+  // доступен, гость видит актуальное дерево, а не встроенный
+  // FALLBACK_DATA. Пустой nodes в успешном ответе — не ошибка (новое
+  // дерево клиента), поэтому не откатываемся на FALLBACK_DATA в этом
+  // случае.
+  showLoader('Загрузка дерева…');
+  try {
+    const res = await fetch(WORKER_URL + '/api/tree/public');
+    if (res.ok) {
+      const data = await res.json();
+      initTree(data, '');
+      return;
+    }
+    // Запрос не удался — различаем заморозку (TREE_ACTIVE=false, 402)
+    // от прочих ошибок сервера, чтобы не молчать про заморозку.
+    const body = await res.json().catch(() => null);
+    if (res.status === 402 && body?.frozen === true) {
+      hideLoader();
+      showToast(body.error, true);
+      initTree(FALLBACK_DATA, '');
+      return;
+    }
+    hideLoader();
+    initTree(FALLBACK_DATA, '');
+  } catch(e) {
+    console.warn('Публичный API недоступен, используем встроенные данные', e);
+    hideLoader();
+    initTree(FALLBACK_DATA, '');
+  }
 }
 
 loadTree();
