@@ -1,0 +1,2660 @@
+<!DOCTYPE html>
+<!-- family tree template -->
+<html lang="ru"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<title data-i="page_title">🌳 Семейное дерево</title>
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',sans-serif;background:#EAE3D2;overflow:hidden;height:100vh}
+#tb{position:fixed;top:0;left:0;right:0;height:44px;background:#1C1208;
+    display:flex;align-items:center;gap:10px;padding:0 14px;z-index:100}
+#tb h1{font-size:.8rem;color:#EDD890;font-weight:normal}
+.btn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);
+     color:#EDD890;padding:4px 11px;border-radius:3px;cursor:pointer;
+     font-size:.72rem;font-family:inherit}
+.btn:hover{background:rgba(255,255,255,.2)}
+.btn:disabled{opacity:.35;cursor:default}
+.btn:disabled:hover{background:rgba(255,255,255,.1)}
+#vp{position:fixed;top:44px;left:0;right:0;bottom:32px;overflow:hidden;
+    background:radial-gradient(ellipse at 50% 50%,rgba(255,255,255,.12),transparent 70%),#EAE3D2}
+/* bottom info bar */
+#bbar{position:fixed;bottom:0;left:0;right:0;height:32px;background:#1C1208;
+      display:flex;align-items:center;padding:0 14px;gap:12px;z-index:100}
+#info{font-size:.63rem;color:rgba(237,216,144,.5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
+/* lang switcher */
+.lang-btns{display:flex;gap:3px}
+.lbtn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);
+      color:rgba(237,216,144,.6);padding:2px 8px;border-radius:3px;cursor:pointer;
+      font-size:.68rem;font-family:inherit;transition:.15s}
+.lbtn:hover{background:rgba(255,255,255,.18);color:#EDD890}
+.lbtn.active{background:rgba(192,152,40,.5);border-color:#C09828;color:#EDD890}
+#world{position:absolute;transform-origin:0 0}
+
+/* ── animation ── */
+svg { transition: opacity 0.22s ease-out; }
+svg.fading { opacity: 0 !important; }
+
+/* ── BOTTOM INFO PANEL ── */
+#panel {
+  position: fixed; left: 0; right: 0;
+  bottom: -220px; height: 220px;
+  background: #FAF7F0;
+  border-top: 1px solid rgba(184,144,48,.28);
+  box-shadow: 0 -3px 20px rgba(40,24,10,.13);
+  z-index: 200; overflow: hidden;
+  transition: bottom 0.36s cubic-bezier(.4,0,.2,1);
+  font-family: 'Segoe UI', sans-serif;
+}
+#panel.open { bottom: 32px; }
+#panel::-webkit-scrollbar { height: 3px; }
+#panel::-webkit-scrollbar-thumb { background: rgba(184,144,48,.3); border-radius: 2px; }
+
+/* panel inner layout: horizontal flex */
+#panel-inner {
+  display: flex; flex-direction: row; gap: 0;
+  height: 100%; overflow: hidden;
+}
+/* left column: name + dates */
+#panel-col1 {
+  min-width: 220px; max-width: 260px;
+  padding: 12px 14px 12px 16px;
+  border-right: 1px solid rgba(184,144,48,.18);
+  overflow-y: auto; flex-shrink: 0;
+}
+/* right column: relatives */
+#panel-col2 {
+  flex: 1; padding: 12px 14px;
+  overflow-y: auto;
+  display: flex; flex-wrap: wrap; gap: 0 20px; align-content: flex-start;
+}
+#panel-col2 .p-sec { flex: 0 0 auto; min-width: 160px; }
+
+#panel-close {
+  position: absolute; top: 8px; right: 11px;
+  background: none; border: none; font-size: 1.1rem;
+  cursor: pointer; color: #7A5828; opacity: .55; line-height: 1; z-index: 1;
+}
+#panel-close:hover { opacity: 1; }
+
+#panel h2 {
+  font-size: .95rem; font-weight: 600; color: #28180A;
+  line-height: 1.35; padding-right: 20px; margin-bottom: 3px;
+}
+/* viewport shrinks when panel open */
+#vp.panel-open { bottom: 252px; }
+.p-rel {
+  font-size: .6rem; text-transform: uppercase; letter-spacing: .09em;
+  color: #B89030; font-weight: 700; margin-bottom: 10px; display: block;
+}
+.p-block { font-size: .74rem; line-height: 1.85; color: #28180A; }
+.p-lbl   { color: #7A5828; font-size: .65rem; display: block; }
+.p-hw    { color: rgba(40,24,10,.38); font-size: .6rem; font-style: italic; direction: rtl; }
+.p-sec   { border-top: 1px solid rgba(184,144,48,.2); margin-top: 10px; padding-top: 8px; }
+.p-sec h3 {
+  font-size: .58rem; text-transform: uppercase; letter-spacing: .1em;
+  color: #7A5828; font-weight: 700; margin-bottom: 5px;
+}
+.p-lnk {
+  display: block; font-size: .74rem; padding: 3px 7px; border-radius: 3px;
+  cursor: pointer; color: #28180A; transition: background .12s;
+}
+.p-lnk:hover { background: rgba(184,144,48,.12); }
+.p-warn { font-size: .66rem; color: #A03818; margin-top: 6px; line-height: 1.55; }
+.p-nav-btn {
+  display: block; width: 100%; margin-top: 12px;
+  background: #1E4870; color: white; border: none;
+  padding: 7px; border-radius: 4px; font-size: .74rem;
+  cursor: pointer; font-family: inherit; transition: background .15s;
+}
+.p-nav-btn:hover { background: #2A5E90; }
+
+/* RTL support for Hebrew — text direction only, preserve flex layout */
+body.rtl #tb { direction: ltr; } /* keep toolbar LTR order, items stay in place */
+body.rtl #tb h1 { direction: rtl; } /* only title text flips */
+body.rtl #panel { direction: rtl; }
+body.rtl #panel-col1 { border-right: none; border-left: 1px solid rgba(184,144,48,.18); }
+body.rtl #panel-close { right: auto; left: 11px; }
+body.rtl #modal { direction: rtl; }
+body.rtl #help-bubble { direction: rtl; text-align: right; }
+body.rtl #bbar { direction: ltr; } /* keep lang buttons on right */
+body.rtl #info { direction: rtl; text-align: right; }
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+#cards > g {
+  animation: cardIn 0.32s ease-out both;
+}
+
+/* stagger siblings so they appear sequentially */
+#cards > g:nth-child(1)  { animation-delay: 0.00s; }
+#cards > g:nth-child(2)  { animation-delay: 0.03s; }
+#cards > g:nth-child(3)  { animation-delay: 0.06s; }
+#cards > g:nth-child(4)  { animation-delay: 0.09s; }
+#cards > g:nth-child(5)  { animation-delay: 0.12s; }
+#cards > g:nth-child(6)  { animation-delay: 0.15s; }
+#cards > g:nth-child(7)  { animation-delay: 0.18s; }
+#cards > g:nth-child(8)  { animation-delay: 0.21s; }
+#cards > g:nth-child(n+9){ animation-delay: 0.24s; }
+svg{position:absolute;top:0;left:0;overflow:visible}
+
+/* ── DIAGNOSTIC PANEL ── */
+#diag-overlay{display:none;position:fixed;inset:0;background:rgba(10,6,2,.7);z-index:700;align-items:flex-start;justify-content:center;padding-top:50px}
+#diag-overlay.open{display:flex}
+#diag-box{background:#1C1208;border:1px solid rgba(237,216,144,.25);border-radius:6px;
+  width:560px;max-width:96vw;max-height:80vh;overflow-y:auto;padding:18px 20px;
+  box-shadow:0 8px 40px rgba(0,0,0,.6);color:#EDD890;font-family:monospace;font-size:.72rem}
+#diag-box h3{font-family:Segoe UI,sans-serif;font-size:.88rem;margin-bottom:12px;color:#EDD890}
+.dt{padding:2px 0;border-bottom:1px solid rgba(255,255,255,.05);display:flex;gap:8px}
+.dt-ok{color:#5DB85D}.dt-fail{color:#E05050}.dt-warn{color:#E0A050}
+.dt-label{flex:1;color:rgba(237,216,144,.75)}
+.dt-val{color:rgba(255,255,255,.5);font-size:.67rem;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#diag-close{float:right;background:none;border:none;color:#EDD890;cursor:pointer;font-size:1rem;opacity:.6}
+#diag-close:hover{opacity:1}
+#diag-run{margin-top:10px;background:rgba(237,216,144,.15);border:1px solid rgba(237,216,144,.3);
+  color:#EDD890;padding:4px 14px;border-radius:3px;cursor:pointer;font-size:.75rem}
+#diag-run:hover{background:rgba(237,216,144,.25)}
+#print-overlay{display:none;position:fixed;inset:0;background:rgba(20,12,4,.7);z-index:600;
+               align-items:center;justify-content:center;flex-direction:column;gap:12px}
+#print-overlay.open{display:flex}
+#print-box{background:#fff;border-radius:6px;padding:18px 22px;max-width:480px;width:94vw;
+           box-shadow:0 8px 40px rgba(0,0,0,.5)}
+#print-box h3{font-size:.95rem;font-weight:600;color:#1C1208;margin-bottom:12px}
+#print-box p{font-size:.78rem;color:#555;line-height:1.55;margin-bottom:10px}
+.print-opts{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.print-opt{padding:7px 14px;border:1px solid #C09828;border-radius:4px;cursor:pointer;
+           font-size:.78rem;background:#fff;color:#5A3C10;transition:.15s}
+.print-opt:hover{background:#FFF8E8}
+.print-opt.active{background:#C09828;color:#fff}
+.print-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+.pbtn{padding:7px 16px;border-radius:4px;border:none;font-family:inherit;font-size:.8rem;cursor:pointer}
+.pbtn-primary{background:#C09828;color:#fff}.pbtn-primary:hover{background:#A07820}
+.pbtn-cancel{background:#eee;color:#555}.pbtn-cancel:hover{background:#ddd}
+
+/* print-frame not used in new-window approach */
+#print-frame { display: none; }
+#modal-overlay{display:none;position:fixed;inset:0;background:rgba(20,12,4,.55);z-index:500;align-items:center;justify-content:center}
+#modal-overlay.open{display:flex}
+#modal{background:#FAF7F0;border-radius:8px;width:420px;max-width:94vw;max-height:88vh;overflow-y:auto;
+       box-shadow:0 8px 40px rgba(20,12,4,.4);padding:22px 22px 18px}
+#modal h3{font-size:.95rem;font-weight:600;color:#28180A;margin-bottom:14px}
+#modal label{display:block;font-size:.75rem;color:#7A5828;margin:10px 0 3px;font-weight:600;text-transform:uppercase;letter-spacing:.03em}
+#modal input,#modal select,#modal textarea{width:100%;padding:7px 10px;border:1px solid rgba(184,144,48,.35);
+  border-radius:4px;font-family:inherit;font-size:.82rem;background:#FFFDF7;color:#28180A;outline:none}
+#modal input:focus,#modal select:focus,#modal textarea:focus{border-color:#C09828}
+#modal textarea{resize:vertical;min-height:72px}
+.modal-types{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px}
+.mtype{padding:6px 12px;border:1px solid rgba(184,144,48,.35);border-radius:20px;
+        font-size:.78rem;cursor:pointer;background:#FFFDF7;color:#5A3C10;transition:.15s}
+.mtype:hover{background:rgba(192,152,40,.12)}
+.mtype.active{background:#C09828;color:#fff;border-color:#C09828}
+.mfields{display:none}
+.mfields.active{display:block}
+#prompt-out{background:#F0EBD8;font-family:monospace;font-size:.75rem;color:#2A1A08;
+            border:1px solid rgba(184,144,48,.3);border-radius:4px;padding:10px;
+            white-space:pre-wrap;margin-top:10px;min-height:60px}
+.modal-btns{display:flex;gap:8px;margin-top:14px;justify-content:flex-end}
+.mbtn{padding:7px 16px;border-radius:4px;border:none;font-family:inherit;font-size:.8rem;cursor:pointer}
+.mbtn-primary{background:#C09828;color:#fff}
+.mbtn-primary:hover{background:#A07820}
+.mbtn-secondary{background:rgba(184,144,48,.15);color:#7A5828;border:1px solid rgba(184,144,48,.3)}
+.mbtn-secondary:hover{background:rgba(184,144,48,.25)}
+.mbtn-email{background:#2E7D32;color:#fff}
+.mbtn-email:hover{background:#1B5E20}
+.mbtn-close{margin-right:auto;background:none;border:none;color:#aaa;font-size:1.1rem;cursor:pointer;line-height:1;padding:0 4px}
+.mbtn-close:hover{color:#555}
+/* help tooltip */
+#help-bubble{display:none;position:fixed;top:52px;right:14px;width:280px;background:#1C1208;
+             color:#EDD890;font-size:.75rem;padding:12px 14px;border-radius:6px;z-index:600;
+             box-shadow:0 4px 20px rgba(0,0,0,.4);line-height:1.5}
+#help-bubble.open{display:block}
+#help-bubble b{display:block;margin-bottom:4px;font-size:.8rem}
+#help-bubble ol{padding-left:16px;margin-top:4px}
+#help-bubble li{margin-bottom:3px}
+</style>
+</head>
+<body>
+<div id="tb">
+  <h1 data-i="tree_title">🌳 Ваша семья</h1>
+  <button class="btn" id="btn-back" data-i="back" disabled="">◀ Назад</button>
+  <span id="bookmarks-container"></span>
+  <input id="tree-search" type="text" list="names-list" data-ph="ph_search"
+         placeholder="🔍 Поиск по имени..."
+         style="margin-left:8px;padding:5px 10px;border-radius:4px;border:1px solid rgba(237,216,144,.3);
+                background:rgba(255,255,255,.06);color:#EDD890;font-family:inherit;font-size:.78rem;
+                width:160px;outline:none">
+  <button class="btn" id="btn-search-go" style="padding:5px 10px" title="Перейти">→</button>
+  <button class="btn" id="btn-edit" style="display:none;margin-left:auto;background:rgba(237,216,144,.15);border-color:rgba(237,216,144,.4)" data-i="btn_edit">✏️ Дополнить</button>
+  <button class="btn" id="btn-print" style="background:rgba(237,216,144,.15);border-color:rgba(237,216,144,.4)" title="Печать A1">🖨</button>
+  <button class="btn" id="btn-contacts" style="background:rgba(237,216,144,.15);border-color:rgba(237,216,144,.4)" title="Скачать контакты">📇</button>
+  <button class="btn" id="btn-calendar" style="background:rgba(237,216,144,.15);border-color:rgba(237,216,144,.4)" title="Скачать календарь дней рождения">📅</button>
+  <button class="btn" id="btn-calendar" style="background:rgba(237,216,144,.15);border-color:rgba(237,216,144,.4)" title="Скачать календарь дней рождения">🗓</button>
+  <button class="btn" id="btn-login" style="background:rgba(237,216,144,.15);border-color:rgba(237,216,144,.4)" title="Войти">🔑</button>
+  <button class="btn" id="btn-admin-panel" style="display:none;background:rgba(237,216,144,.15);border-color:rgba(237,216,144,.4)" title="Управление">🛠 Управление</button>
+  <button class="btn" id="btn-diag" style="padding:4px 8px;opacity:.5;font-size:.65rem" title="Диагностика">⚙</button>
+  <button class="btn" id="btn-help" style="padding:4px 8px;opacity:.7">?</button>
+</div>
+<!-- ── BOTTOM BAR ── -->
+<div id="bbar">
+  <div id="info"></div>
+  <div class="lang-btns">
+    <button class="lbtn active" data-lang="ru">РУС</button>
+    <button class="lbtn" data-lang="en">ENG</button>
+    <button class="lbtn" data-lang="he">עב</button>
+  </div>
+</div>
+<!-- ── BOTTOM INFO PANEL ── -->
+<div id="panel" class="open">
+  <button id="panel-close">×</button>
+  <div id="panel-inner">
+    <div id="panel-col1"></div>
+    <div id="panel-col2"></div>
+  </div>
+</div>
+
+<!-- ── EDIT MODAL ── -->
+<div id="modal-overlay">
+<div id="modal">
+  <button class="mbtn-close" id="modal-close">×</button>
+  <h3 data-i="modal_title">✏️ Дополнить дерево</h3>
+
+  <label data-i="lbl_add_type">Тип дополнения</label>
+  <div class="modal-types">
+    <div class="mtype active" data-type="person" data-i="mtype_person">👤 Новый человек</div>
+    <div class="mtype" data-type="photo" data-i="mtype_photo">📷 Фото</div>
+    <div class="mtype" data-type="bio" data-i="mtype_bio">📝 Биография</div>
+    <div class="mtype" data-type="date" data-i="mtype_date">📅 Дата / место</div>
+    <div class="mtype" data-type="fix" data-i="mtype_fix">🔧 Исправить</div>
+  </div>
+
+  <!-- Поля: Новый человек -->
+  <div class="mfields active" id="mf-person">
+    <label data-i="lbl_name">Имя (полное)</label>
+    <input id="f-name" type="text" data-ph="ph_name" placeholder="Например: Анна Иванова">
+    <label data-i="lbl_sex">Пол</label>
+    <select id="f-sex"><option value="" data-i="sex_choose">— выбрать —</option><option value="F" data-i="sex_f">Женский</option><option value="M" data-i="sex_m">Мужской</option></select>
+    <label data-i="lbl_birth">Дата рождения</label>
+    <input id="f-birth" type="text" data-ph="ph_birth" placeholder="Например: 15 марта 1975">
+    <label data-i="lbl_death">Дата смерти (если есть)</label>
+    <input id="f-death" type="text" data-ph="ph_death" placeholder="оставьте пустым если жив(а)">
+    <label data-i="lbl_rel_person">Связь с кем</label>
+    <input id="f-rel-person" type="text" list="names-list" data-ph="ph_search" placeholder="Начните вводить имя...">
+    <label data-i="lbl_rel_type">Тип связи</label>
+    <select id="f-rel-type">
+      <option value="" data-i="rel_choose">— выбрать —</option>
+      <option value="жена" data-i="rel_wife">Жена</option>
+      <option value="муж" data-i="rel_husband">Муж</option>
+      <option value="ребёнок" data-i="rel_child">Ребёнок</option>
+      <option value="родитель" data-i="rel_parent">Родитель</option>
+      <option value="брат" data-i="rel_brother">Брат</option>
+      <option value="сестра" data-i="rel_sister">Сестра</option>
+    </select>
+    <label data-i="lbl_phone">Телефон</label>
+    <input id="f-phone" type="tel" data-ph="ph_phone" placeholder="+972-50-000-0000">
+    <label data-i="lbl_email">Email</label>
+    <input id="f-email" type="email" data-ph="ph_email" placeholder="example@mail.com">
+    <label data-i="lbl_social">Страница в соц. сетях</label>
+    <input id="f-social" type="url" data-ph="ph_social" placeholder="https://facebook.com/...">
+  </div>
+
+  <!-- Поля: Фото -->
+  <div class="mfields" id="mf-photo">
+    <label data-i="lbl_person">Персона</label>
+    <input id="f-photo-person" type="text" list="names-list" data-ph="ph_search" placeholder="Начните вводить имя...">
+    <label data-i="lbl_photo_file">Файл фотографии</label>
+    <input id="photoFileInput" type="file" accept="image/*">
+    <label data-i="lbl_photo_url">URL фотографии (необязательно, если выбран файл)</label>
+    <input id="f-photo-url" type="url" data-ph="ph_url" placeholder="https://drive.google.com/...">
+    <label data-i="lbl_caption">Подпись (год, место)</label>
+    <input id="f-photo-cap" type="text" data-ph="ph_caption" placeholder="Например: 1965, Одесса">
+  </div>
+
+  <!-- Поля: Биография -->
+  <div class="mfields" id="mf-bio">
+    <label data-i="lbl_person">Персона</label>
+    <input id="f-bio-person" type="text" list="names-list" data-ph="ph_search" placeholder="Начните вводить имя...">
+    <label data-i="lbl_bio_text">Текст биографии</label>
+    <textarea id="f-bio-text" data-ph="ph_bio" placeholder="Краткое жизнеописание, воспоминания..."></textarea>
+    <label data-i="lbl_bio_url">Ссылка на подробный документ (необязательно)</label>
+    <input id="f-bio-url" type="url" data-ph="ph_gdoc" placeholder="https://docs.google.com/...">
+  </div>
+
+  <!-- Поля: Дата / место -->
+  <div class="mfields" id="mf-date">
+    <label data-i="lbl_person">Персона</label>
+    <input id="f-date-person" type="text" list="names-list" data-ph="ph_search" placeholder="Начните вводить имя...">
+    <label data-i="lbl_note">Уточнение (что именно)</label>
+    <textarea id="f-date-note" data-ph="ph_note" placeholder="Например: дата рождения — 3 апреля 1932, место рождения — Харьков"></textarea>
+  </div>
+
+  <!-- Поля: Исправить -->
+  <div class="mfields" id="mf-fix">
+    <label data-i="lbl_fix_person">Персона (кого исправить)</label>
+    <input id="f-fix-person" type="text" list="names-list" data-ph="ph_search" placeholder="Начните вводить имя...">
+    <!-- Current data card — populated by openModal when called from panel -->
+    <div id="fix-current-data" style="display:none;background:#F5F0E8;border:1px solid rgba(184,144,48,.3);
+      border-radius:4px;padding:10px 12px;margin:8px 0;font-size:.75rem;color:#5A3C10;line-height:1.8;
+      white-space:pre-wrap;font-family:inherit"></div>
+
+    <label data-i="fix_name">Имя</label>
+    <input id="ff-name" type="text" data-ph="ph_name" placeholder="Например: Анна Иванова">
+
+    <label data-i="fix_birth">Дата рождения</label>
+    <input id="ff-birth" type="text" data-ph="ph_birth" placeholder="Например: 15 марта 1975">
+
+    <label data-i="fix_death">Дата смерти</label>
+    <input id="ff-death" type="text" data-ph="ph_death" placeholder="оставьте пустым если жив(а)">
+
+    <label data-i="fix_birth_he">Дата рождения (еврейский календарь)</label>
+    <input id="ff-birth-he" type="text" data-ph="ph_birth_he" placeholder="например: יג ניסן תשל״א">
+
+
+    <label data-i="fix_death_he">Дата смерти (еврейский календарь)</label>
+    <input id="ff-death-he" type="text" data-ph="ph_death_he" placeholder="например: יב שבט תשפ״א">
+
+    <label data-i="lbl_phone">Телефон(ы)</label>
+    <textarea id="ff-phone" data-ph="ph_phone" placeholder="+972-50-000-0000&#10;можно указать несколько через запятую или с новой строки" style="min-height:50px"></textarea>
+
+    <label data-i="lbl_email">Email(ы)</label>
+    <textarea id="ff-email" data-ph="ph_email" placeholder="example@mail.com&#10;можно указать несколько через запятую" style="min-height:50px"></textarea>
+
+    <label data-i="lbl_social">Страницы в соц. сетях</label>
+    <textarea id="ff-social" data-ph="ph_social" placeholder="https://facebook.com/...&#10;можно указать несколько ссылок, каждую с новой строки" style="min-height:50px"></textarea>
+
+    <label data-i="lbl_sex">Пол</label>
+    <select id="ff-sex">
+      <option value="" data-i="sex_choose">— оставить как есть —</option>
+      <option value="F" data-i="sex_f">Женский</option>
+      <option value="M" data-i="sex_m">Мужской</option>
+    </select>
+
+    <label data-i="fix_rel">Степень родства</label>
+    <input id="ff-rel" type="text" data-ph="ph_rel" placeholder="например: Зять">
+
+    <label data-i="fix_family">Семейная связь (что изменить)</label>
+    <textarea id="ff-family" data-ph="ph_family" placeholder="например: добавить мужа / убрать связь / изменить родителя"></textarea>
+
+    <label data-i="fix_other">Другое (любые иные уточнения)</label>
+    <textarea id="ff-other" data-ph="ph_other" placeholder="всё что не вошло в поля выше"></textarea>
+
+    <label data-i="lbl_comment">Комментарий (необязательно)</label>
+    <input id="f-fix-comment" type="text" data-ph="ph_comment" placeholder="Источник, пояснение...">
+  </div>
+
+
+  <datalist id="names-list"></datalist>
+
+  <div class="modal-btns">
+    <button class="mbtn mbtn-secondary" id="modal-cancel" data-i="btn_cancel">Отмена</button>
+    <button class="mbtn mbtn-primary" id="modal-generate" data-i="btn_generate">✉ Сформировать и отправить по email</button>
+  </div>
+
+  <div id="prompt-out" style="display:none"></div>
+  <div id="copy-row" style="display:none;margin-top:8px;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+    <button class="mbtn mbtn-primary" id="btn-copy" data-i="btn_copy">📋 Копировать</button>
+    <button class="mbtn mbtn-email" id="btn-email" data-i="btn_email">✉️ Отправить по email</button>
+  </div>
+</div>
+</div>
+
+<!-- ── HELP BUBBLE ── -->
+<div id="help-bubble">
+  <b>Как дополнить дерево?</b>
+  <ol>
+    <li>Нажмите «✏️ Дополнить» и заполните форму</li>
+    <li>Скопируйте сформированный запрос</li>
+    <li>Откройте <b>claude.ai</b></li>
+    <li>Загрузите этот HTML-файл</li>
+    <li>Вставьте скопированный текст и отправьте</li>
+    <li>Скачайте обновлённый файл</li>
+  </ol>
+</div>
+
+<!-- ── DIAGNOSTIC PANEL ── -->
+<div id="diag-overlay">
+  <div id="diag-box">
+    <button id="diag-close">×</button>
+    <h3>⚙ Диагностика системы</h3>
+    <div id="diag-results"></div>
+    <button id="diag-run">↺ Повторить тест</button>
+  </div>
+</div>
+
+<!-- ── ADMIN MANAGEMENT PANEL (R4.3) ── -->
+<div id="admin-panel-overlay" style="display:none;position:fixed;inset:0;background:rgba(20,12,4,.6);z-index:900;align-items:center;justify-content:center">
+  <div style="background:#FAF7F0;border-radius:8px;padding:20px 24px;width:520px;max-height:80vh;overflow-y:auto;box-shadow:0 12px 48px rgba(0,0,0,.4)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h3 style="margin:0;color:#5A3C10">🛠 Управление деревом</h3>
+      <button id="admin-panel-close" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:#7A5828">×</button>
+    </div>
+
+    <div style="display:flex;gap:6px;margin-bottom:16px;border-bottom:1px solid rgba(184,144,48,.3)">
+      <button class="ap-tab active" data-ap-tab="upload" style="padding:6px 14px;background:none;border:none;cursor:pointer;font-family:inherit;font-size:.8rem;color:#5A3C10;border-bottom:2px solid #C09828">⬆ Загрузить</button>
+      <button class="ap-tab" data-ap-tab="backups" style="padding:6px 14px;background:none;border:none;cursor:pointer;font-family:inherit;font-size:.8rem;color:#7A5828;border-bottom:2px solid transparent">💾 Копии</button>
+      <button class="ap-tab" data-ap-tab="proposals" style="padding:6px 14px;background:none;border:none;cursor:pointer;font-family:inherit;font-size:.8rem;color:#7A5828;border-bottom:2px solid transparent">📋 Предложения</button>
+    </div>
+
+    <!-- Tab: Upload -->
+    <div class="ap-panel" data-ap-panel="upload">
+      <p style="font-size:.78rem;color:#7A5828;margin-bottom:10px">
+        Загрузите обновлённый HTML-файл дерева — данные будут извлечены и сохранены на сервере.
+        Предыдущая версия автоматически сохранится как резервная копия.
+      </p>
+      <div id="ap-upload-drop" style="border:2px dashed rgba(184,144,48,.4);border-radius:6px;padding:20px;text-align:center;cursor:pointer">
+        <div style="font-size:1.6rem">📂</div>
+        <div style="font-weight:600;margin-top:6px;font-size:.82rem;color:#5A3C10">Выберите HTML-файл дерева</div>
+        <p style="font-size:.7rem;color:#999;margin-top:4px">или перетащите файл сюда</p>
+      </div>
+      <input type="file" id="ap-upload-input" accept=".html" style="display:none">
+      <div id="ap-upload-status" style="margin-top:10px;font-size:.78rem"></div>
+    </div>
+
+    <!-- Tab: Backups -->
+    <div class="ap-panel" data-ap-panel="backups" style="display:none">
+      <div id="ap-backups-list" style="font-size:.78rem"></div>
+    </div>
+
+    <!-- Tab: Proposals -->
+    <div class="ap-panel" data-ap-panel="proposals" style="display:none">
+      <div id="ap-proposals-list" style="font-size:.78rem"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── PRINT PREVIEW ── -->
+<div id="print-overlay">
+  <div id="print-box">
+    <h3>🖨 Печать генеалогического дерева</h3>
+    <p>Будет сформирован и скачан HTML-файл. Откройте его в браузере и нажмите <strong>Ctrl+P</strong> (или ⌘P на Mac) — выберите принтер или «Сохранить как PDF».</p>
+    <div class="print-opts">
+      <div class="print-opt active" data-fmt="A1L">A1 альбом</div>
+      <div class="print-opt" data-fmt="A0L">A0 альбом</div>
+      <div class="print-opt" data-fmt="A2L">A2 альбом</div>
+    </div>
+    <p id="print-stats" style="font-size:.72rem;color:#888"></p>
+    <div class="print-btns">
+      <button class="pbtn pbtn-cancel" id="print-cancel">Отмена</button>
+      <button class="pbtn pbtn-primary" id="print-go">⬇ Скачать для печати</button>
+    </div>
+  </div>
+</div>
+<!-- hidden SVG frame used during printing -->
+<svg id="print-frame" xmlns="http://www.w3.org/2000/svg"></svg>
+
+<div id="vp" style="cursor: grab;"><div id="world"><svg id="svg"></svg></div></div>
+
+<script>
+// ════════════════════════════════════════════════════════
+//  TREE_CONFIG — single source of truth for family branding.
+//  This is the ONLY place a new customer needs to edit when
+//  setting up their own tree from this template.
+// ════════════════════════════════════════════════════════
+const TREE_CONFIG = {
+  familyNameRu: 'Ваша семья',
+  familyNameEn: 'Your Family',
+  familyNameHe: 'המשפחה שלכם',
+  ownerEmail:   'CHANGE_ME@example.com',
+  workerUrl:    'https://REPLACE_AFTER_DEPLOY.workers.dev',
+  fileSlug:     'family',   // used in filenames: {slug}-birthdays.ics, {slug}-contacts.vcf
+  calendarUidDomain: 'family-tree',
+  // Quick-access toolbar shortcuts. Each entry: { id: personId, label: {ru,en,he} }
+  // For a brand new tree, leave this array empty — the buttons simply won't
+  // render. As the tree grows, the owner can add key figures here.
+  bookmarks: [],
+};
+
+let IDX = null;
+const FALLBACK_DATA = {"nodes":{},"families":{},"child_of":{},"parent_in":{},"relatives":{},"grandparents":{}};
+</script>
+<script src="tree-layout.js"></script>
+<script>
+
+// ════════════════════════════════════════════════════════
+//  NAVIGATION — history + navigateTo + click on cards
+// ════════════════════════════════════════════════════════
+
+const history  = [];   // stack of visited focalIds
+const MAX_HIST = 20;
+let   currentFocal = null;
+
+// ── navigateTo: animated fade + viewport pan ──────────────
+function navigateTo(focalId){
+  if(!IDX.nodes[focalId]) return;
+  if(focalId === currentFocal) return;
+
+  if(currentFocal){
+    history.push(currentFocal);
+    if(history.length > MAX_HIST) history.shift();
+  }
+  currentFocal = focalId;
+  updateBackBtn();
+
+  const svg = document.getElementById('svg');
+
+  // Phase 1: fade out current tree
+  svg.classList.add('fading');
+
+  setTimeout(() => {
+    // Phase 2: render new layout (while invisible) — get pan target back
+    const pan = render(focalId);
+
+    // Phase 3: animate viewport to new focal position
+    const world = document.getElementById('world');
+    if(pan){
+      // start from current position (no transition), then animate to target
+      world.style.transition = 'none';
+      world.style.transform  = world.style.transform; // keep current (forces repaint)
+      requestAnimationFrame(() => {
+        world.style.transition = 'transform 0.5s cubic-bezier(0.4,0,0.2,1)';
+        world.style.transform  = `translate(${pan.tx}px,${pan.ty}px) scale(${pan.sc})`;
+        setTimeout(() => { world.style.transition = 'none'; }, 520);
+      });
+    }
+
+    // Phase 4: fade in
+    svg.classList.remove('fading');
+
+  }, 220);
+}
+
+// ── back: pop history and navigate ───────────────────────
+function goBack(){
+  if(!history.length) return;
+  const prev = history.pop();   // pop BEFORE navigateTo pushes it back
+  const tmp  = currentFocal;
+  currentFocal = null;          // allow navigateTo to proceed
+  navigateTo(prev);
+  // fix: navigateTo just pushed tmp again — remove it
+  if(history[history.length-1] === tmp) history.pop();
+  updateBackBtn();
+}
+
+function updateBackBtn(){
+  const btn = document.getElementById('btn-back');
+  btn.disabled = history.length === 0;
+  btn.textContent = history.length
+    ? t('back_n').replace('{n}', history.length)
+    : t('back');
+}
+
+// ── make navigateTo available before render is called ─────
+// (navigateTo is defined above and used in click handlers
+//  that are attached inline during card creation in render)
+
+// ════════════════════════════════════════════════════════
+//  SIDE PANEL — showPanel / closePanel
+// ════════════════════════════════════════════════════════
+
+function fmtDate(s){
+  const died = t('died') || 'ум.';
+  if(!s || s==='ум.' || s==='d.' || s==='נפ.') return s ? died : '';
+  let m = s.match(/^(\d+)\s+([A-Z]+)\s+(\d{4})$/);
+  if(m) return m[1]+' '+tm(m[2])+' '+m[3];
+  m = s.match(/^([A-Z]+)\s+(\d{4})$/);
+  if(m) return tm(m[0].split(' ')[0])+' '+m[2];
+  return s;
+}
+
+function pyear(s){ const m=s&&s.match(/\d{4}/); return m?+m[0]:0; }
+
+function pLink(id){
+  const n = IDX.nodes[id]; if(!n) return '';
+  const yr = pyear(n.birth);
+  return `<div class="p-lnk" onclick="panelNavigate('${id}')">
+    ${pname(id)}${yr?` <span style="color:#7A5828;font-size:.64rem">(${yr})</span>`:''}
+  </div>`;
+}
+
+// navigate from panel link: update panel + navigate tree
+function panelNavigate(id){
+  showPanel(id);
+  navigateTo(id);
+}
+
+function showPanel(id){
+  const n = IDX.nodes[id]; if(!n) return;
+
+  const parents=[], spouses=[], children=[];
+  for(const [,f] of Object.entries(IDX.families)){
+    if((f.children||[]).includes(id)){
+      if(f.husband && IDX.nodes[f.husband]) parents.push(f.husband);
+      if(f.wife    && IDX.nodes[f.wife])    parents.push(f.wife);
+    }
+    if(f.husband===id || f.wife===id){
+      const sp = f.husband===id ? f.wife : f.husband;
+      if(sp && IDX.nodes[sp] && !spouses.includes(sp)) spouses.push(sp);
+      (f.children||[]).forEach(c=>{
+        if(IDX.nodes[c]&&!children.includes(c)) children.push(c);
+      });
+    }
+  }
+
+  const b = fmtDate(n.birth), d = fmtDate(n.death);
+  const isFocal = id === currentFocal;
+
+  // ── Column 1: name, rel, dates ──
+  const relForId = IDX.relatives[id];
+  const canDelete = !!(_sessionPassword && window._userRole === 'admin' && WORKER_URL
+                     && relForId && (!relForId.children || relForId.children.length === 0));
+  const canEdit = !!_sessionPassword; // any login (guest or admin) can propose/apply edits
+  let col1 = `<h2 style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
+    <span>${pname(id)}</span>
+    ${canEdit ? `<button onclick="openModal('${id}')" style="font-size:.65rem;padding:2px 8px;background:rgba(184,144,48,.15);
+      border:1px solid rgba(184,144,48,.3);border-radius:3px;cursor:pointer;color:#7A5828;
+      white-space:nowrap;flex-shrink:0">${t('btn_fix')}</button>` : ''}
+    ${canEdit ? `<button onclick="openAddRelativeModal('${id}')" style="font-size:.65rem;padding:2px 8px;background:rgba(184,144,48,.15);
+      border:1px solid rgba(184,144,48,.3);border-radius:3px;cursor:pointer;color:#7A5828;
+      white-space:nowrap;flex-shrink:0">${t('btn_add_relative')}</button>` : ''}
+    ${canDelete ? `<button onclick="confirmDeletePerson('${id}')" style="font-size:.65rem;padding:2px 8px;background:rgba(192,48,48,.1);
+      border:1px solid rgba(192,48,48,.3);border-radius:3px;cursor:pointer;color:#A02020;
+      white-space:nowrap;flex-shrink:0">🗑 ${currentLang==='he'?'מחק':currentLang==='en'?'Delete':'Удалить'}</button>` : ''}
+  </h2>`;
+  if(n.rel) col1 += `<span class="p-rel">${trel(n.rel)}</span>`;
+  col1 += `<div class="p-block">`;
+  if(b) col1 += `<div><span class="p-lbl">${t('birth')}</span> <strong>${b}</strong>${n.birth_he?` <span class="p-hw" dir="rtl">${n.birth_he}</span>`:''}</div>`;
+  if(d) col1 += `<div style="margin-top:3px"><span class="p-lbl">${t('death')}</span> <strong>${d}</strong>${n.death_he?` <span class="p-hw" dir="rtl">${n.death_he}</span>`:''}</div>`;
+  if(n.bp) col1 += `<div><span class="p-lbl">${t('birth_place')}</span>${n.bp}</div>`;
+  if(n.dp) col1 += `<div><span class="p-lbl">${t('death_place')}</span>${n.dp}</div>`;
+  if(!b&&!d&&!n.bp&&!n.dp) col1 += `<em style="color:#7A5828;font-size:.72rem">${t('no_dates')}</em>`;
+  col1 += `</div>`;
+  if(n.missing&&n.missing.length) col1 += `<p class="p-warn">${t('missing')} ${n.missing.join(', ')}</p>`;
+  // Contacts: only shown to authenticated users (guest or admin)
+  const isAuth = !!(_sessionPassword);
+  const hasContacts = n.phone || n.email || n.social;
+  if(hasContacts){
+    if(isAuth){
+      if(n.phone) col1 += `<div style="margin-top:6px"><span class="p-lbl">📞</span> <a href="tel:${n.phone}" style="color:#5A3C10;text-decoration:none">${n.phone}</a></div>`;
+      if(n.email) col1 += `<div style="margin-top:2px"><span class="p-lbl">✉</span> <a href="mailto:${n.email}" style="color:#5A3C10;text-decoration:none">${n.email}</a></div>`;
+      if(n.social) col1 += `<div style="margin-top:2px"><span class="p-lbl">🔗</span> <a href="${n.social}" target="_blank" rel="noopener" style="color:#5A3C10;text-decoration:none">${t('lbl_social')}</a></div>`;
+    } else {
+      col1 += `<div style="margin-top:8px;font-size:.72rem;color:#7A5828;cursor:pointer"
+        onclick="document.getElementById('btn-login').click()">
+        🔒 ${currentLang==='he'?'כניסה לצפייה בפרטי קשר':currentLang==='en'?'Login to view contacts':'Войдите чтобы увидеть контакты'}
+      </div>`;
+    }
+  }
+  if(!isFocal) col1 += `<button class="p-nav-btn" onclick="navigateTo('${id}')">${t('show_tree')}</button>`;
+
+  // ── Column 2: relatives ──
+  let col2 = '';
+  if(parents.length)  col2 += `<div class="p-sec"><h3>${t('parents')}</h3>${parents.map(pLink).join('')}</div>`;
+  if(spouses.length)  col2 += `<div class="p-sec"><h3>${spouses.length>1?t('spouses'):t('spouse')}</h3>${spouses.map(pLink).join('')}</div>`;
+  if(children.length) col2 += `<div class="p-sec"><h3>${t('children')} (${children.length})</h3>${children.map(pLink).join('')}</div>`;
+
+  document.getElementById('panel-col1').innerHTML = col1;
+  document.getElementById('panel-col2').innerHTML = col2;
+  document.getElementById('panel').classList.add('open');
+  document.getElementById('vp').classList.add('panel-open');
+}
+
+function closePanel(){
+  document.getElementById('panel').classList.remove('open');
+  document.getElementById('vp').classList.remove('panel-open');
+}
+
+document.getElementById('panel-close').addEventListener('click', closePanel);
+
+// ── hook showPanel into card clicks ───────────────────────
+// Patch: when a non-focal card is clicked, also show its panel
+// We override the click logic in render by wrapping navigateTo
+const _navigateTo = navigateTo;
+window.navigateTo = function(id){
+  _navigateTo(id);
+  // panel will update on next render cycle via focal card click
+};
+
+// focal card click → show panel about focal
+// We hook this in the render function after cards are built
+// by attaching a click listener to the focal card group
+const _render2 = render;
+window.render = function(focalId){
+  const pan = _render2(focalId);
+  // attach panel opener to focal card (cursor:default card)
+  const focalG = document.querySelector('#cards > g[data-nodeid="'+focalId+'"]');
+  if(focalG){
+    focalG.addEventListener('click', () => showPanel(focalId));
+    let ftx = 0, fty = 0;
+    focalG.addEventListener('touchstart', e => { ftx=e.touches[0].clientX; fty=e.touches[0].clientY; }, {passive:true});
+    focalG.addEventListener('touchend', e => {
+      if(Math.abs(e.changedTouches[0].clientX-ftx)<8 && Math.abs(e.changedTouches[0].clientY-fty)<8){
+        e.preventDefault(); showPanel(focalId);
+      }
+    }, {passive:false});
+  }
+  // show panel for the new focal automatically
+  showPanel(focalId);
+  return pan;
+};
+
+// ── buttons ───────────────────────────────────────────────
+document.getElementById('btn-back').addEventListener('click', goBack);
+// R2.3c: Render toolbar bookmarks dynamically from TREE_CONFIG.
+// Only shows buttons for persons that actually exist in the current tree —
+// so a fresh customer tree with an empty bookmarks list (or bookmarks
+// pointing at not-yet-created persons) simply shows no extra buttons.
+function renderBookmarks(){
+  const container = document.getElementById('bookmarks-container');
+  if(!container) return;
+  container.innerHTML = '';
+  for(const bm of (TREE_CONFIG.bookmarks || [])){
+    if(!IDX || !IDX.nodes || !IDX.nodes[bm.id]) continue; // skip missing persons
+    const btn = document.createElement('button');
+    btn.className = 'btn';
+    btn.textContent = bm.label[currentLang] || bm.label.ru;
+    btn.addEventListener('click', () => navigateTo(bm.id));
+    container.appendChild(btn);
+  }
+}
+
+// ── Tree search box: navigate to person by name ──────────
+function goToSearchResult(){
+  const val = document.getElementById('tree-search').value.trim();
+  // Extract [Pxx] id from the end of the string, e.g. "Иван Иванов (1970) [P3]"
+  const m = val.match(/\[(P\d+)\]\s*$/);
+  if(m && IDX.nodes[m[1]]){
+    navigateTo(m[1]);
+    document.getElementById('tree-search').value = '';
+    showPanel(m[1]);
+  } else if(val) {
+    // Fallback: try matching by name substring (case-insensitive) across current language
+    const lower = val.toLowerCase();
+    const found = Object.keys(IDX.nodes).find(id =>
+      pname(id).toLowerCase().includes(lower) || IDX.nodes[id].name.toLowerCase().includes(lower)
+    );
+    if(found){
+      navigateTo(found);
+      document.getElementById('tree-search').value = '';
+      showPanel(found);
+    } else {
+      showToast(currentLang==='he' ? '⚠ לא נמצא אדם בשם זה'
+              : currentLang==='en' ? '⚠ No person found with that name'
+              : '⚠ Персона с таким именем не найдена', true);
+    }
+  }
+}
+document.getElementById('btn-search-go').addEventListener('click', goToSearchResult);
+document.getElementById('tree-search').addEventListener('keydown', e => {
+  if(e.key === 'Enter') goToSearchResult();
+});
+
+// keyboard: Backspace / Alt+← = go back
+document.addEventListener('keydown', e => {
+  if((e.key === 'Backspace' || (e.key === 'ArrowLeft' && e.altKey)) && !e.target.matches('input')){
+    e.preventDefault();
+    goBack();
+  }
+});
+
+// ════════════════════════════════════════════════════════
+//  PAN & ZOOM — wheel + drag on main viewport
+// ════════════════════════════════════════════════════════
+(function initPanZoom(){
+  const vp    = document.getElementById('vp');
+  const world = document.getElementById('world');
+
+  // Read current transform from world (set by navigateTo)
+  function getXYS(){
+    const t = world.style.transform || '';
+    const m = t.match(/translate\(([-\d.]+)px,\s*([-\d.]+)px\)\s*scale\(([-\d.]+)\)/);
+    return m ? { x: +m[1], y: +m[2], s: +m[3] } : { x: 0, y: 0, s: 1 };
+  }
+  function setXYS(x, y, s, animated){
+    world.style.transition = animated ? 'transform 0.15s ease-out' : 'none';
+    world.style.transform  = `translate(${x}px,${y}px) scale(${s})`;
+  }
+
+  // Wheel → zoom around cursor
+  vp.addEventListener('wheel', e => {
+    e.preventDefault();
+    const rect  = vp.getBoundingClientRect();
+    const mx    = e.clientX - rect.left;
+    const my    = e.clientY - rect.top;
+    const delta = e.deltaY < 0 ? 1.1 : 0.91;
+    const {x, y, s} = getXYS();
+    const ns = Math.max(0.08, Math.min(4, s * delta));
+    const nx = mx - (mx - x) * (ns / s);
+    const ny = my - (my - y) * (ns / s);
+    setXYS(nx, ny, ns, false);
+  }, { passive: false });
+
+  // Mouse drag → pan
+  let dragging = false, startX = 0, startY = 0, origX = 0, origY = 0;
+  vp.addEventListener('mousedown', e => {
+    if(e.button !== 0) return;
+    // don't start drag on card clicks
+    if(e.target.closest('g[data-nodeid], .p-lnk, button')) return;
+    dragging = true;
+    startX = e.clientX; startY = e.clientY;
+    const {x, y} = getXYS(); origX = x; origY = y;
+    vp.style.cursor = 'grabbing';
+    e.preventDefault();
+  });
+  window.addEventListener('mousemove', e => {
+    if(!dragging) return;
+    const dx = e.clientX - startX, dy = e.clientY - startY;
+    const {s} = getXYS();
+    setXYS(origX + dx, origY + dy, s, false);
+  });
+  window.addEventListener('mouseup', () => {
+    dragging = false;
+    vp.style.cursor = '';
+  });
+
+  // Touch → pinch zoom + one-finger pan
+  let lastTouchDist = 0, touchDragging = false, tStartX = 0, tStartY = 0, tOrigX = 0, tOrigY = 0;
+  vp.addEventListener('touchstart', e => {
+    // Don't intercept touches that start on a card (SVG g with data-nodeid)
+    const onCard = e.target.closest('g[data-nodeid]');
+    if(e.touches.length === 1){
+      touchDragging = !onCard;  // don't pan if touching a card
+      tStartX = e.touches[0].clientX; tStartY = e.touches[0].clientY;
+      const {x, y} = getXYS(); tOrigX = x; tOrigY = y;
+    }
+    if(e.touches.length === 2){
+      touchDragging = false;
+      lastTouchDist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY);
+    }
+    // Only preventDefault for pan/pinch, not for card taps
+    if(!onCard || e.touches.length === 2) e.preventDefault();
+  }, { passive: false });
+  vp.addEventListener('touchmove', e => {
+    if(e.touches.length === 1 && touchDragging){
+      const dx = e.touches[0].clientX - tStartX;
+      const dy = e.touches[0].clientY - tStartY;
+      const {s} = getXYS();
+      setXYS(tOrigX + dx, tOrigY + dy, s, false);
+    }
+    if(e.touches.length === 2){
+      const d = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY);
+      const {x, y, s} = getXYS();
+      const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+      const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      const vr = vp.getBoundingClientRect();
+      const mx = cx - vr.left, my = cy - vr.top;
+      const ns = Math.max(0.08, Math.min(4, s * d / lastTouchDist));
+      setXYS(mx - (mx - x) * (ns / s), my - (my - y) * (ns / s), ns, false);
+      lastTouchDist = d;
+    }
+    e.preventDefault();
+  }, { passive: false });
+  vp.addEventListener('touchend', () => { touchDragging = false; });
+
+  // Double-click → reset to current focal (re-center)
+  vp.addEventListener('dblclick', e => {
+    if(e.target.closest('g[data-nodeid], .p-lnk, button')) return;
+    if(currentFocal) navigateTo(currentFocal);
+  });
+
+  // Cursor hint
+  vp.style.cursor = 'grab';
+})();
+
+// ════════════════════════════════════════════════════════
+//  LANGUAGE — detect browser lang, switcher buttons
+// ════════════════════════════════════════════════════════
+//  UI STRINGS — dictionary + t() helpers
+// ════════════════════════════════════════════════════════
+let currentLang = 'ru';  // set by detectLang on load
+</script>
+<script src="tree-i18n.js"></script>
+<script>
+
+function t(key){
+  if(key === 'tree_title'){
+    const name = currentLang==='he' ? TREE_CONFIG.familyNameHe
+               : currentLang==='en' ? TREE_CONFIG.familyNameEn
+               : TREE_CONFIG.familyNameRu;
+    return '🌳 ' + name;
+  }
+  return (UI[currentLang]||UI.ru)[key] || UI.ru[key] || key;
+}
+function tm(mo){ return ((UI[currentLang]||UI.ru).months||UI.ru.months)[mo] || mo; }
+function tr(role){ return ((UI[currentLang]||UI.ru).roles||UI.ru.roles)[role] || role; }
+// Translate n.rel field (stored in Russian)
+function trel(s){
+  if(!s) return '';
+  const M = (UI[currentLang]||UI.ru).rel_labels||{};
+  // try exact match first
+  if(M[s]) return M[s];
+  // try prefix match for compound labels like "Прадедушка (Берман)"
+  for(const [k,v] of Object.entries(M)){
+    if(s.startsWith(k)) return v + s.slice(k.length);
+  }
+  return currentLang==='ru' ? s : s; // fallback: show as-is
+}
+
+// ════════════════════════════════════════════════════════
+//  NAMES DICTIONARY — RU→EN→HE for all 178 persons
+// ════════════════════════════════════════════════════════
+</script>
+<script src="tree-names.js"></script>
+<script>
+
+// Get person's display name in current language
+// Falls back to Russian name from IDX if not in dict
+function pname(id) {
+  const n = IDX.nodes[id]; if(!n) return id;
+  if(currentLang === 'ru') return n.name;
+  const d = NAMES[id];
+  if(!d) return n.name;  // fallback to Russian
+  return d[currentLang] || n.name;
+}
+
+
+// Apply language to all static UI elements and re-render
+window.applyLang = function(lang){
+  currentLang = lang;
+  const M = UI[lang] || UI.ru;
+
+  // 1. All [data-i] elements — toolbar, modal labels, buttons, options
+  document.querySelectorAll('[data-i]').forEach(el => {
+    const v = M[el.dataset.i];
+    if(v !== undefined && v !== '') el.textContent = v;
+  });
+
+  // 2. Back button (has {n} placeholder)
+  updateBackBtn();
+
+  // 3. mtype buttons by data-type (correct keys, all 5)
+  document.querySelectorAll('.mtype').forEach(b => {
+    const key = 'mtype_' + b.dataset.type;
+    if(M[key]) b.textContent = M[key];
+  });
+
+  // 4. Placeholders with data-ph
+  document.querySelectorAll('[data-ph]').forEach(el => {
+    if(M[el.dataset.ph]) el.placeholder = M[el.dataset.ph];
+  });
+
+  // 5. All select options with data-i (covers sex, rel-type, ff-sex)
+  document.querySelectorAll('select option[data-i]').forEach(opt => {
+    const v = M[opt.dataset.i]; if(v) opt.textContent = v;
+  });
+
+  // 8. Help bubble
+  const hb = document.getElementById('help-bubble');
+  if(hb){
+    const steps = M.help_steps || UI.ru.help_steps;
+    hb.innerHTML = '<b>'+(M.help_title||'')+'</b><ol>'+steps.map(s=>'<li>'+s+'</li>').join('')+'</ol>';
+  }
+
+  // 9. Rebuild names autocomplete in current language
+  if(IDX && typeof buildDatalist === 'function') buildDatalist();
+
+  // 10. Re-render tree and panel with new language
+  if(currentFocal){
+    const tmp = currentFocal; currentFocal = null;
+    navigateTo(tmp);
+    showPanel(tmp);
+  }
+};
+
+// ════════════════════════════════════════════════════════
+//  LANGUAGE — detect browser lang, switcher buttons
+// ════════════════════════════════════════════════════════
+
+(function detectLang(){
+  const nav = (navigator.language || navigator.userLanguage || 'ru').toLowerCase();
+  if(nav.startsWith('he') || nav.startsWith('iw')) currentLang = 'he';
+  else if(!nav.startsWith('ru') && !nav.startsWith('uk')) currentLang = 'en';
+  document.querySelectorAll('.lbtn').forEach(b => {
+    b.classList.toggle('active', b.dataset.lang === currentLang);
+  });
+  document.body.classList.toggle('rtl', currentLang === 'he');
+})();
+
+document.querySelectorAll('.lbtn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    currentLang = btn.dataset.lang;
+    document.querySelectorAll('.lbtn').forEach(b => b.classList.toggle('active', b.dataset.lang === currentLang));
+    document.body.classList.toggle('rtl', currentLang === 'he');
+    renderBookmarks();
+    if(window.applyLang) window.applyLang(currentLang);
+    else navigateTo(currentFocal);
+    // Note: online name enrichment removed — it called api.anthropic.com
+    // directly from the browser with no key (always failed silently, CORS
+    // blocked anyway). Static NAMES dict is maintained manually instead.
+  });
+});
+
+
+// ── init ──────────────────────────────────────────────────
+// updateBackBtn and navigateTo called after all declarations — see bottom of script
+
+// ════════════════════════════════════════════════════════
+//  MODAL — «Дополнить»
+// ════════════════════════════════════════════════════════
+
+// Populate datalist with all names from IDX
+function buildDatalist(){
+  if(!IDX || !IDX.nodes) return;  // IDX not yet loaded from API
+  const dl = document.getElementById('names-list');
+  if(!dl) return;
+  dl.innerHTML = '';
+  for(const [id, n] of Object.entries(IDX.nodes)){
+    const opt = document.createElement('option');
+    const by  = n.birth ? (n.birth.match(/\d{4}/)||[''])[0] : '';
+    opt.value = pname(id) + (by ? ' (' + by + ')' : '') + ' [' + id + ']';
+    dl.appendChild(opt);
+  }
+}
+// buildDatalist() called after IDX loads in initTree()
+
+// Open / close modal
+function openModal(prefillId, mode){
+  mode = mode || 'fix';
+  document.getElementById('modal-overlay').classList.add('open');
+  document.getElementById('prompt-out').style.display = 'none';
+  document.getElementById('copy-row').style.display = 'none';
+  document.getElementById('prompt-out').textContent = '';
+
+  // ── Reset all form fields to blank ──────────────────
+  ['f-name','f-birth','f-death','f-phone','f-email','f-social',
+   'f-photo-url','f-photo-cap','photoFileInput',
+   'f-bio-text','f-bio-url',
+   'f-date-note',
+   'ff-name','ff-birth','ff-death','ff-birth-he','ff-death-he',
+   'ff-phone','ff-email','ff-social','ff-rel','ff-family','ff-other',
+   'f-fix-comment'].forEach(fid => {
+    const el = document.getElementById(fid);
+    if(el) el.value = '';
+  });
+  // Reset person fields
+  ['f-rel-person','f-photo-person','f-bio-person','f-date-person','f-fix-person'].forEach(fid => {
+    const el = document.getElementById(fid);
+    if(el) el.value = '';
+  });
+  // Reset selects to empty default
+  const fSex     = document.getElementById('f-sex');
+  const fRelType = document.getElementById('f-rel-type');
+  const ffSex    = document.getElementById('ff-sex');
+  if(fSex)   fSex.selectedIndex = 0;
+  if(fRelType) fRelType.selectedIndex = 0;
+  if(ffSex)  ffSex.selectedIndex = 0;
+  // Hide current data card
+  const card0 = document.getElementById('fix-current-data');
+  if(card0) { card0.style.display = 'none'; card0.textContent = ''; }
+
+  // Re-apply current language
+  if(window.applyLang) window.applyLang(currentLang);
+
+  // ── Prefill ONLY if called from panel (explicit person) ──
+  if(prefillId && IDX.nodes[prefillId]){
+    const n  = IDX.nodes[prefillId];
+    const yr = n.birth ? (n.birth.match(/\d{4}/)||[''])[0] : '';
+    const label = pname(prefillId) + (yr ? ' (' + yr + ')' : '') + ' [' + prefillId + ']';
+
+    if(mode === 'add'){
+      // Prefill "Related to" field on the New Person tab; leave relation
+      // type empty so the user picks it (жена/муж/ребёнок/родитель/брат/сестра)
+      const frp = document.getElementById('f-rel-person');
+      if(frp) frp.value = label;
+
+      document.querySelectorAll('.mtype').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.mfields').forEach(f => f.classList.remove('active'));
+      const personBtn = document.querySelector('.mtype[data-type="person"]');
+      if(personBtn) personBtn.classList.add('active');
+      document.getElementById('mf-person').classList.add('active');
+      currentType = 'person';
+
+    } else {
+    // Fill fix-person field
+    const fp = document.getElementById('f-fix-person');
+    if(fp) fp.value = label;
+
+    // Show current data as a reference card (read-only summary)
+    const lines = [];
+    if(n.name)     lines.push(t('lbl_name')     + ': ' + pname(prefillId));
+    if(n.birth)    lines.push(t('birth')         + ': ' + n.birth);
+    if(n.birth_he) lines.push(t('fix_birth_he')  + ': ' + n.birth_he);
+    if(n.death)    lines.push(t('death')         + ': ' + n.death);
+    if(n.death_he) lines.push(t('fix_death_he')  + ': ' + n.death_he);
+    if(n.phone)    lines.push(t('lbl_phone')     + ': ' + n.phone);
+    if(n.email)    lines.push(t('lbl_email')     + ': ' + n.email);
+    if(n.social)   lines.push(t('lbl_social')    + ': ' + n.social);
+    if(n.rel)      lines.push(t('fix_rel')       + ': ' + trel(n.rel));
+
+    if(card0 && lines.length){
+      card0.textContent = lines.join('\n');
+      card0.style.display = 'block';
+    }
+
+    // Prefill the editable fields with CURRENT values so user only changes what's wrong
+    const setVal = (id, val) => { const el = document.getElementById(id); if(el) el.value = val || ''; };
+    setVal('ff-name',      n.name);
+    setVal('ff-birth',     n.birth);
+    setVal('ff-death',     n.death);
+    setVal('ff-birth-he',  n.birth_he);
+    setVal('ff-death-he',  n.death_he);
+    setVal('ff-phone',     n.phone);
+    setVal('ff-email',     n.email);
+    setVal('ff-social',    n.social);
+    setVal('ff-rel',       trel(n.rel));
+
+    // Switch to fix tab
+    document.querySelectorAll('.mtype').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.mfields').forEach(f => f.classList.remove('active'));
+    const fixBtn = document.querySelector('.mtype[data-type="fix"]');
+    if(fixBtn) fixBtn.classList.add('active');
+    document.getElementById('mf-fix').classList.add('active');
+    currentType = 'fix';
+    }
+  }
+  // P6.1e: update button label AFTER currentType is finalized (may be 'fix' from above)
+  if(typeof updateGenerateButtonLabel === 'function') updateGenerateButtonLabel();
+}
+function openAddRelativeModal(id){ openModal(id, 'add'); }
+function closeModal(){
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+
+document.getElementById('btn-edit').addEventListener('click', () => openModal());
+document.getElementById('modal-close').addEventListener('click', closeModal);
+document.getElementById('modal-cancel').addEventListener('click', closeModal);
+document.getElementById('modal-overlay').addEventListener('click', e => {
+  if(e.target === document.getElementById('modal-overlay')) closeModal();
+});
+
+// Type switching
+let currentType = 'person';
+document.querySelectorAll('.mtype').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mtype').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.mfields').forEach(f => f.classList.remove('active'));
+    btn.classList.add('active');
+    currentType = btn.dataset.type;
+    document.getElementById('mf-' + currentType).classList.add('active');
+    document.getElementById('prompt-out').style.display = 'none';
+    document.getElementById('copy-row').style.display = 'none';
+    updateGenerateButtonLabel();
+  });
+});
+
+// P6.1c: Show correct button label depending on auth + form type
+function updateGenerateButtonLabel(){
+  const btn = document.getElementById('modal-generate');
+  if(!btn) return;
+  const isAdmin = !!(_sessionPassword && window._userRole === 'admin' && WORKER_URL);
+  const directTypes = ['person','fix','photo','bio']; // types with direct API save (date excluded — free-text notes go via email for human review)
+  if(isAdmin && directTypes.includes(currentType)){
+    btn.innerHTML = currentLang==='he' ? '💾 שמור ישירות'
+                  : currentLang==='en' ? '💾 Save directly'
+                  : '💾 Сохранить напрямую';
+  } else {
+    btn.innerHTML = currentLang==='he' ? '✉ צור ושלח במייל'
+                  : currentLang==='en' ? '✉ Generate & send by email'
+                  : '✉ Сформировать и отправить по email';
+  }
+}
+
+// Generate prompt
+document.getElementById('modal-generate').addEventListener('click', async () => {
+  let text = '';
+
+  if(currentType === 'person'){
+    const isAdminDirect = !!(_sessionPassword && window._userRole === 'admin' && WORKER_URL);
+    const name  = document.getElementById('f-name').value.trim();
+    const sex   = document.getElementById('f-sex').value === 'F' ? 'Женский' : 'Мужской';
+    const birth = document.getElementById('f-birth').value.trim();
+    const death = document.getElementById('f-death').value.trim();
+    const relP  = document.getElementById('f-rel-person').value.trim();
+    const relT  = document.getElementById('f-rel-type').value;
+    if(!name){ alert('Введите имя'); return; }
+
+    if(isAdminDirect){
+      const phoneV  = document.getElementById('f-phone').value.trim();
+      const emailV  = document.getElementById('f-email').value.trim();
+      const socialV = document.getElementById('f-social').value.trim();
+      const body = {
+        name,
+        sex: document.getElementById('f-sex').value || '',
+        birth, death,
+        rel: relP ? (relT + ' ' + relP) : '',
+        ...(phoneV  ? {phone:phoneV}   : {}),
+        ...(emailV  ? {email:emailV}   : {}),
+        ...(socialV ? {social:socialV} : {}),
+      };
+      const btn = document.getElementById('modal-generate');
+      const origTxt = btn.textContent;
+      btn.textContent = '⏳ Сохраняю...';
+      btn.disabled = true;
+      try {
+        const r = await fetch(WORKER_URL + '/api/person', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json','X-Password':_sessionPassword},
+          body: JSON.stringify(body)
+        });
+        const data = await r.json();
+        if(data.ok){
+          // ── P5: structurally link new person via family API ──
+          const newId = data.personId;
+          const relIdMatch = relP.match(/\[(P\d+)\]\s*$/);
+          const relTargetId = relIdMatch ? relIdMatch[1] : null;
+
+          if(relTargetId && relT){
+            try {
+              await linkNewPersonToFamily(newId, relTargetId, relT, sex);
+            } catch(linkErr){
+              console.warn('[P5] Family link failed (person still created):', linkErr.message);
+              showToast('✓ Персона создана, но связь не удалось установить автоматически', true);
+            }
+          }
+
+          if(typeof loadTree === 'function') await loadTree();
+          document.getElementById('modal-overlay').classList.remove('open');
+          showToast('✓ Добавлено: ' + name, false);
+        } else {
+          showToast('⚠ ' + (data.error||'Ошибка сервера'), true);
+        }
+      } catch(e){
+        showToast('⚠ Ошибка соединения: ' + e.message, true);
+      } finally {
+        btn.textContent = origTxt;
+        btn.disabled = false;
+      }
+      return;
+    }
+
+    text  = t('prompt_header');
+    text += 'Тип: Новый человек\n';
+    text += 'Имя: ' + name + '\n';
+    text += 'Пол: ' + sex + '\n';
+    if(birth) text += 'Дата рождения: ' + birth + '\n';
+    if(death) text += 'Дата смерти: ' + death + '\n';
+    if(relP)  text += 'Связь: ' + relT + ' ' + relP + '\n';
+    const phone = document.getElementById('f-phone').value.trim();
+    const email = document.getElementById('f-email').value.trim();
+    const social = document.getElementById('f-social').value.trim();
+    if(phone) text += 'Телефон: ' + phone + '\n';
+    if(email) text += 'Email: ' + email + '\n';
+    if(social) text += 'Соц. сети: ' + social + '\n';
+
+  } else if(currentType === 'photo'){
+    const person = document.getElementById('f-photo-person').value.trim();
+    const url    = document.getElementById('f-photo-url').value.trim();
+    const cap    = document.getElementById('f-photo-cap').value.trim();
+    const photoFileEl = document.getElementById('photoFileInput');
+    const photoFile   = (photoFileEl && photoFileEl.files && photoFileEl.files[0]) ? photoFileEl.files[0] : null;
+    if(!person){ alert('Укажите персону'); return; }
+
+    const photoIdMatch = person.match(/\[(P\d+)\]\s*$/);
+    const photoTargetId = photoIdMatch ? photoIdMatch[1] : null;
+    const isAdminPhoto = !!(_sessionPassword && window._userRole === 'admin' && photoTargetId && WORKER_URL);
+
+    if(isAdminPhoto){
+      const btn = document.getElementById('modal-generate');
+      const origTxt = btn.textContent;
+      btn.textContent = '⏳ Сохраняю...';
+      btn.disabled = true;
+      try {
+        let finalUrl = url || null;
+
+        // If a local file was selected, upload it first (Worker puts it
+        // into R2) and use the resulting URL. The URL field remains a
+        // fallback for pasting an external link (e.g. Google Drive).
+        if(photoFile){
+          const uploadForm = new FormData();
+          uploadForm.append('photo', photoFile);
+          uploadForm.append('person', photoTargetId);
+          const uploadRes = await fetch(WORKER_URL + '/api/upload-photo', {
+            method: 'POST',
+            headers: { 'X-Password': _sessionPassword },
+            body: uploadForm
+          });
+          const uploadData = await uploadRes.json().catch(() => null);
+          if(!uploadRes.ok || !uploadData || (!uploadData.url && !uploadData.key)){
+            showToast('⚠ ' + (uploadData && uploadData.error || 'Не удалось загрузить фото'), true);
+            btn.textContent = origTxt;
+            btn.disabled = false;
+            return;
+          }
+          finalUrl = uploadData.url || ('/api/photo/' + uploadData.key);
+        }
+
+        if(!finalUrl){
+          showToast('⚠ Укажите URL фото или выберите файл', true);
+          btn.textContent = origTxt;
+          btn.disabled = false;
+          return;
+        }
+
+        const patchBody = { photo: finalUrl };
+        const r = await fetch(WORKER_URL + '/api/person/' + photoTargetId, {
+          method: 'PATCH',
+          headers: {'Content-Type':'application/json','X-Password':_sessionPassword},
+          body: JSON.stringify(patchBody)
+        });
+        const d = await r.json();
+        if(d.ok){
+          if(IDX && IDX.nodes[photoTargetId]) Object.assign(IDX.nodes[photoTargetId], patchBody);
+          if(window.FALLBACK_DATA && window.FALLBACK_DATA.nodes[photoTargetId]) Object.assign(window.FALLBACK_DATA.nodes[photoTargetId], patchBody);
+          document.getElementById('modal-overlay').classList.remove('open');
+          if(typeof navigateTo === 'function') navigateTo(currentFocal);
+          if(typeof showPanel === 'function') showPanel(photoTargetId);
+          showToast('✓ Фото сохранено', false);
+        } else {
+          showToast('⚠ ' + (d.error||'Ошибка сервера'), true);
+        }
+      } catch(e){
+        showToast('⚠ Ошибка соединения: ' + e.message, true);
+      } finally {
+        btn.textContent = origTxt;
+        btn.disabled = false;
+      }
+      return;
+    }
+
+    if(!url){ alert('Укажите URL фото (гостевой email-путь не поддерживает загрузку файла)'); return; }
+    text  = t('prompt_header');
+    text += 'Тип: Добавить фото\n';
+    text += 'Персона: ' + person + '\n';
+    text += 'URL фото: ' + url + '\n';
+    if(cap) text += 'Подпись: ' + cap + '\n';
+
+  } else if(currentType === 'bio'){
+    const person = document.getElementById('f-bio-person').value.trim();
+    const bio    = document.getElementById('f-bio-text').value.trim();
+    const burl   = document.getElementById('f-bio-url').value.trim();
+    if(!person){ alert('Укажите персону'); return; }
+
+    const bioIdMatch = person.match(/\[(P\d+)\]\s*$/);
+    const bioTargetId = bioIdMatch ? bioIdMatch[1] : null;
+    const isAdminBio = !!(_sessionPassword && window._userRole === 'admin' && bioTargetId && WORKER_URL);
+
+    if(isAdminBio){
+      // Worker only has one 'bio' field — merge text + source URL if both given
+      const bioValue = burl ? (bio ? bio + '\n\nИсточник: ' + burl : 'Источник: ' + burl) : bio;
+      if(!bioValue){ alert('Укажите текст биографии или ссылку'); return; }
+
+      const btn = document.getElementById('modal-generate');
+      const origTxt = btn.textContent;
+      btn.textContent = '⏳ Сохраняю...';
+      btn.disabled = true;
+      try {
+        const patchBody = { bio: bioValue };
+        const r = await fetch(WORKER_URL + '/api/person/' + bioTargetId, {
+          method: 'PATCH',
+          headers: {'Content-Type':'application/json','X-Password':_sessionPassword},
+          body: JSON.stringify(patchBody)
+        });
+        const d = await r.json();
+        if(d.ok){
+          if(IDX && IDX.nodes[bioTargetId]) Object.assign(IDX.nodes[bioTargetId], patchBody);
+          if(window.FALLBACK_DATA && window.FALLBACK_DATA.nodes[bioTargetId]) Object.assign(window.FALLBACK_DATA.nodes[bioTargetId], patchBody);
+          document.getElementById('modal-overlay').classList.remove('open');
+          if(typeof navigateTo === 'function') navigateTo(currentFocal);
+          if(typeof showPanel === 'function') showPanel(bioTargetId);
+          showToast('✓ Биография сохранена', false);
+        } else {
+          showToast('⚠ ' + (d.error||'Ошибка сервера'), true);
+        }
+      } catch(e){
+        showToast('⚠ Ошибка соединения: ' + e.message, true);
+      } finally {
+        btn.textContent = origTxt;
+        btn.disabled = false;
+      }
+      return;
+    }
+
+    text  = t('prompt_header');
+    text += 'Тип: Биография\n';
+    text += 'Персона: ' + person + '\n';
+    if(bio)  text += 'Текст: ' + bio + '\n';
+    if(burl) text += 'Ссылка: ' + burl + '\n';
+
+  } else if(currentType === 'date'){
+    const person = document.getElementById('f-date-person').value.trim();
+    const note   = document.getElementById('f-date-note').value.trim();
+    if(!person || !note){ alert('Укажите персону и уточнение'); return; }
+    text  = t('prompt_header');
+    text += 'Тип: Уточнение дат / места\n';
+    text += 'Персона: ' + person + '\n';
+    text += 'Уточнение: ' + note + '\n';
+
+  } else if(currentType === 'fix'){
+    const person  = document.getElementById('f-fix-person').value.trim();
+    if(!person){ alert(t('alert_person')); return; }
+
+    // Find the person ID from the label, if present, to compare against original data
+    const idMatch = person.match(/\[(P\d+)\]\s*$/);
+    const origId  = idMatch ? idMatch[1] : null;
+    const orig    = origId && IDX.nodes[origId] ? IDX.nodes[origId] : {};
+
+    const getV = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+
+    const fields = [
+      { key: 'name',     label: t('fix_name'),       val: getV('ff-name'),     orig: orig.name || '' },
+      { key: 'birth',    label: t('fix_birth'),       val: getV('ff-birth'),    orig: orig.birth || '' },
+      { key: 'death',    label: t('fix_death'),       val: getV('ff-death'),    orig: orig.death || '' },
+      { key: 'birth_he', label: t('fix_birth_he'),    val: getV('ff-birth-he'), orig: orig.birth_he || '' },
+      { key: 'death_he', label: t('fix_death_he'),    val: getV('ff-death-he'), orig: orig.death_he || '' },
+      { key: 'phone',    label: t('lbl_phone'),       val: getV('ff-phone'),    orig: orig.phone || '' },
+      { key: 'email',    label: t('lbl_email'),       val: getV('ff-email'),    orig: orig.email || '' },
+      { key: 'social',   label: t('lbl_social'),      val: getV('ff-social'),   orig: orig.social || '' },
+      { key: 'rel',      label: t('fix_rel'),         val: getV('ff-rel'),      orig: orig.rel || '' },
+    ];
+
+    const ffSex = document.getElementById('ff-sex');
+    const sexVal = ffSex ? ffSex.value : '';
+    if(sexVal) fields.push({ key:'sex', label: t('lbl_sex'), val: sexVal==='F'?t('sex_f'):t('sex_m'), orig: orig.sex==='F'?t('sex_f'):orig.sex==='M'?t('sex_m'):'' });
+
+    const familyNote = getV('ff-family');
+    const otherNote  = getV('ff-other');
+    const comment    = getV('f-fix-comment');
+
+    // Only include fields that changed (value differs from original) or were filled when no original existed
+    const changed = fields.filter(f => f.val && f.val !== f.orig);
+
+    if(!changed.length && !familyNote && !otherNote){
+      alert(t('alert_fix_empty') || 'Укажите хотя бы одно изменение');
+      return;
+    }
+
+    // ── ADMIN PATH: direct PATCH to API ──────────────────
+    // If admin logged in AND specific person ID known AND
+    // no structural changes (family/other) → save directly, skip email
+    if(_sessionPassword && window._userRole === 'admin' && origId && !familyNote && !otherNote && WORKER_URL){
+      const patch = {};
+      for(const f of changed) patch[f.key] = f.val;
+
+      const btn = document.getElementById('modal-generate');
+      const origText = btn.textContent;
+      btn.textContent = '⏳ ' + (currentLang==='he' ? 'שומר...' : currentLang==='en' ? 'Saving...' : 'Сохраняю...');
+      btn.disabled = true;
+
+      try {
+        const r = await fetch(WORKER_URL + '/api/person/' + origId, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', 'X-Password': _sessionPassword },
+          body: JSON.stringify(patch)
+        });
+        const data = await r.json();
+        if(data.ok){
+          // Update local IDX immediately (optimistic update) — this is what
+          // rendering, panels, and forms actually read from after API load
+          if(IDX && IDX.nodes[origId])
+            Object.assign(IDX.nodes[origId], patch);
+          // Also keep FALLBACK_DATA in sync for offline fallback scenarios
+          if(window.FALLBACK_DATA && window.FALLBACK_DATA.nodes[origId])
+            Object.assign(window.FALLBACK_DATA.nodes[origId], patch);
+          // Close modal and refresh display
+          document.getElementById('modal-overlay').classList.remove('open');
+          if(typeof navigateTo === 'function') navigateTo(currentFocal);
+          if(typeof showPanel === 'function') showPanel(origId);
+          showToast(currentLang==='he' ? '✓ נשמר בשרת'
+                  : currentLang==='en' ? '✓ Saved to server'
+                  : '✓ Сохранено на сервере', false);
+        } else {
+          showToast('⚠ ' + (data.error || 'Ошибка сервера'), true);
+        }
+      } catch(e) {
+        showToast('⚠ Ошибка соединения: ' + e.message, true);
+      } finally {
+        btn.textContent = origText;
+        btn.disabled = false;
+      }
+      return; // Skip email flow for admin direct save
+    }
+
+    // ── GUEST PATH: generate email text ──────────────────
+    text  = t('prompt_fix_header');
+    text += 'Тип: Исправление данных\n';
+    text += 'Персона: ' + person + '\n';
+    for(const f of changed){
+      text += f.label + ': ' + f.val + (f.orig ? ' (было: ' + f.orig + ')' : '') + '\n';
+    }
+    if(familyNote) text += t('fix_family') + ': ' + familyNote + '\n';
+    if(otherNote)  text += t('fix_other')  + ': ' + otherNote  + '\n';
+    if(comment)    text += t('lbl_comment') + ': ' + comment + '\n';
+  }
+
+  text += t('prompt_footer');
+
+  // Submit to Worker if configured (async, non-blocking)
+  submitProposal(text, currentType);
+
+  // I2: Auto-translate new person name to EN+HE via Claude API
+  if(currentType === 'person'){
+    const newName = document.getElementById('f-name').value.trim();
+    if(newName) translateNewPerson(newName);
+  }
+  const out = document.getElementById('prompt-out');
+  out.textContent = text;
+  out.style.display = 'block';
+  document.getElementById('copy-row').style.display = 'flex';
+});
+
+// Copy to clipboard
+document.getElementById('btn-copy').addEventListener('click', () => {
+  const text = document.getElementById('prompt-out').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('btn-copy');
+    btn.textContent = t('btn_copied');
+    setTimeout(() => { btn.textContent = t('btn_copy'); }, 2000);
+  });
+});
+
+// Send by email
+document.getElementById('btn-email').addEventListener('click', () => {
+  const bodyText = document.getElementById('prompt-out').textContent;
+  if(!bodyText) return;
+
+  const toAddr = TREE_CONFIG.ownerEmail;
+
+  // Subject by language
+  const subjects = {
+    ru: 'Предложение изменений в семейном дереве',
+    en: 'Family tree update request',
+    he: 'בקשה לעדכון עץ המשפחה'
+  };
+  const intros = {
+    ru: `Шалом!\n\nЯ хочу добавить или изменить данные в семейном дереве.\nНиже — сформированный запрос. Пожалуйста, передай его в систему обновления.\n\n--- ЗАПРОС ---\n`,
+    en: `Shalom!\n\nI would like to add or update information in the family tree.\nPlease find the request below.\n\n--- REQUEST ---\n`,
+    he: `שלום!\n\nאני רוצה להוסיף או לעדכן מידע בעץ המשפחה.\n\nאיך זה עובד:\n1. מלאתי את הטופס בקובץ HTML של עץ המשפחה\n2. הטופס יצר בקשה מובנית (ראה למטה)\n3. שלח את המייל הזה לסלבה (מירוסלב)\n4. הוא יעדכן את עץ המשפחה ויישלח גרסה חדשה\n\n--- הבקשה ---\n`
+  };
+  const outros = {
+    ru: `\n--- КОНЕЦ ЗАПРОСА ---\n\nСпасибо!`,
+    en: `\n--- END OF REQUEST ---\n\nThank you!`,
+    he: `\n--- סוף הבקשה ---\n\nתודה רבה!`
+  };
+
+  const lang = (typeof currentLang !== 'undefined' ? currentLang : 'ru') || 'ru';
+  const subject = subjects[lang] || subjects['ru'];
+  const fullBody = (intros[lang] || intros['ru']) + bodyText + (outros[lang] || outros['ru']);
+
+  const mailtoLink = 'mailto:' + toAddr
+    + '?subject=' + encodeURIComponent(subject)
+    + '&body=' + encodeURIComponent(fullBody);
+
+  window.location.href = mailtoLink;
+});
+
+// Help bubble toggle
+let helpOpen = false;
+document.getElementById('btn-help').addEventListener('click', (e) => {
+  e.stopPropagation();
+  helpOpen = !helpOpen;
+  document.getElementById('help-bubble').classList.toggle('open', helpOpen);
+});
+document.addEventListener('click', () => {
+  if(helpOpen){
+    helpOpen = false;
+    document.getElementById('help-bubble').classList.remove('open');
+  }
+});
+</script>
+<script src="tree-print.js"></script>
+<script>
+
+// ════════════════════════════════════════════════════════
+//  DIAGNOSTIC SYSTEM
+// ════════════════════════════════════════════════════════
+function runDiagnostics(){
+  const results = [];
+  function ok(label, val)   { results.push({s:'ok',   label, val: val !== undefined ? String(val) : ''}); }
+  function fail(label, val) { results.push({s:'fail', label, val: val !== undefined ? String(val) : ''}); }
+  function warn(label, val) { results.push({s:'warn', label, val: val !== undefined ? String(val) : ''}); }
+
+  // ── 1. DATA INTEGRITY ───────────────────────────────
+  const nodeCount = Object.keys(IDX.nodes).length;
+  nodeCount > 0 ? ok('Персоны загружены', nodeCount + ' чел.') : fail('IDX.nodes пустой');
+
+  const famCount = Object.keys(IDX.families).length;
+  famCount > 0 ? ok('Семьи загружены', famCount + ' семей') : fail('IDX.families пустой');
+
+  // Broken family references
+  let brokenRefs = 0;
+  for(const [fid,f] of Object.entries(IDX.families)){
+    if(f.husband && !IDX.nodes[f.husband]) brokenRefs++;
+    if(f.wife    && !IDX.nodes[f.wife])    brokenRefs++;
+    for(const cid of f.children) if(!IDX.nodes[cid]) brokenRefs++;
+  }
+  brokenRefs === 0 ? ok('Ссылки семей корректны') : fail('Битых ссылок в семьях', brokenRefs);
+
+  // Orphan nodes
+  const orphans = Object.keys(IDX.nodes).filter(id =>
+    !IDX.child_of[id] && (!IDX.parent_in[id] || !IDX.parent_in[id].length)
+  ).length;
+  orphans === 0 ? ok('Нет изолированных персон')
+                : warn('Изолированные персоны (без связей)', orphans);
+
+  // Death before birth
+  let deadBeforeBorn = 0;
+  for(const n of Object.values(IDX.nodes)){
+    const b = n.birth ? (n.birth.match(/\d{4}/)||[])[0] : null;
+    const d = n.death ? (n.death.match(/\d{4}/)||[])[0] : null;
+    if(b && d && +d < +b) deadBeforeBorn++;
+  }
+  deadBeforeBorn === 0 ? ok('Хронология дат корректна')
+                       : fail('Смерть раньше рождения', deadBeforeBorn + ' случаев');
+
+  // Mixed-language names
+  const mixedNames = Object.values(IDX.nodes).filter(n =>
+    /[a-zA-Z]/.test(n.name) && /[а-яА-Я]/.test(n.name)
+  ).length;
+  mixedNames === 0 ? ok('Имена без смешения языков')
+                   : warn('Имена со смешением языков', mixedNames);
+
+  // ── 2. UI FUNCTIONS ─────────────────────────────────
+  typeof navigateTo === 'function' ? ok('navigateTo()') : fail('navigateTo() не найдена');
+  typeof showPanel  === 'function' ? ok('showPanel()')  : fail('showPanel() не найдена');
+  typeof render     === 'function' ? ok('render()')     : fail('render() не найдена');
+  typeof goBack     === 'function' ? ok('goBack()')     : fail('goBack() не найдена');
+  typeof openModal  === 'function' ? ok('openModal()')  : fail('openModal() не найдена');
+  typeof buildAndPrint === 'function' ? ok('buildAndPrint()') : fail('buildAndPrint() не найдена');
+
+  // ── 3. TRANSLATION ──────────────────────────────────
+  typeof t  === 'function' ? ok('t() — перевод UI')    : fail('t() не найдена');
+  typeof tr === 'function' ? ok('tr() — перевод ролей') : fail('tr() не найдена');
+  typeof trel === 'function' ? ok('trel() — перевод rel') : fail('trel() не найдена');
+  typeof pname === 'function' ? ok('pname() — имена')   : fail('pname() не найдена');
+
+  const langs = ['ru','en','he'];
+  const testKeys = ['birth','death','back','btn_edit','btn_fix','tree_title'];
+  let missingKeys = 0;
+  for(const lang of langs){
+    for(const key of testKeys){
+      if(!(UI[lang]||{})[key]) missingKeys++;
+    }
+  }
+  missingKeys === 0 ? ok('Словари RU/EN/HE полные')
+                    : warn('Отсутствующих ключей в словарях', missingKeys);
+
+  // NAMES dict coverage
+  const namesCount = Object.keys(NAMES).length;
+  const nodeMissing = Object.keys(IDX.nodes).filter(id => !NAMES[id]).length;
+  nodeMissing === 0 ? ok('NAMES покрывает все персоны', namesCount + ' записей')
+                    : warn('Персон без EN/HE перевода', nodeMissing);
+
+  // ── 4. DOM ELEMENTS ─────────────────────────────────
+  const requiredEls = ['tb','vp','world','svg','panel','bbar','modal-overlay',
+                       'print-overlay','diag-overlay','help-bubble','btn-edit',
+                       'btn-print','btn-back','info','names-list'];
+  let missingEls = 0;
+  for(const id of requiredEls){
+    if(!document.getElementById(id)) missingEls++;
+  }
+  missingEls === 0 ? ok('Все DOM-элементы на месте', requiredEls.length + ' эл.')
+                   : fail('Отсутствующих DOM-элементов', missingEls);
+
+  // ── 5. STATE ────────────────────────────────────────
+  currentFocal ? ok('currentFocal установлен', currentFocal)
+               : warn('currentFocal не установлен');
+  ok('Текущий язык', currentLang);
+  ok('История навигации', (history||[]).length + ' шагов');
+
+  // ── 6. RENDER TEST ──────────────────────────────────
+  try {
+    const svgEl = document.getElementById('svg');
+    const childCount = svgEl ? svgEl.childElementCount : 0;
+    childCount > 0 ? ok('SVG отрендерен', childCount + ' элементов')
+                   : warn('SVG пустой');
+  } catch(e) { fail('Ошибка SVG', e.message); }
+
+  return results;
+}
+
+function showDiagnostics(){
+  const results = runDiagnostics();
+  const passed = results.filter(r=>r.s==='ok').length;
+  const failed = results.filter(r=>r.s==='fail').length;
+  const warned = results.filter(r=>r.s==='warn').length;
+
+  const summary = `<div style="margin-bottom:10px;font-family:Segoe UI,sans-serif;font-size:.8rem">
+    <span class="dt-ok">✓ ${passed}</span> &nbsp;
+    <span class="dt-fail">✗ ${failed}</span> &nbsp;
+    <span class="dt-warn">⚠ ${warned}</span>
+    <span style="opacity:.4;margin-left:8px">${new Date().toLocaleTimeString('ru-RU')}</span>
+  </div>`;
+
+  const rows = results.map(r =>
+    `<div class="dt">
+      <span class="dt-${r.s}">${r.s==='ok'?'✓':r.s==='fail'?'✗':'⚠'}</span>
+      <span class="dt-label">${r.label}</span>
+      ${r.val ? `<span class="dt-val">${r.val}</span>` : ''}
+    </div>`
+  ).join('');
+
+  document.getElementById('diag-results').innerHTML = summary + rows;
+  document.getElementById('diag-overlay').classList.add('open');
+}
+
+document.getElementById('btn-diag').addEventListener('click', showDiagnostics);
+document.getElementById('diag-close').addEventListener('click', () => {
+  document.getElementById('diag-overlay').classList.remove('open');
+});
+document.getElementById('diag-run').addEventListener('click', showDiagnostics);
+document.getElementById('diag-overlay').addEventListener('click', e => {
+  if(e.target === document.getElementById('diag-overlay'))
+    document.getElementById('diag-overlay').classList.remove('open');
+});
+
+// ── R4.3b: Admin management panel — open/close/tabs ─────
+document.getElementById('btn-admin-panel').addEventListener('click', () => {
+  document.getElementById('admin-panel-overlay').style.display = 'flex';
+});
+document.getElementById('admin-panel-close').addEventListener('click', () => {
+  document.getElementById('admin-panel-overlay').style.display = 'none';
+});
+document.getElementById('admin-panel-overlay').addEventListener('click', e => {
+  if(e.target.id === 'admin-panel-overlay')
+    document.getElementById('admin-panel-overlay').style.display = 'none';
+});
+document.querySelectorAll('.ap-tab').forEach(tabBtn => {
+  tabBtn.addEventListener('click', () => {
+    document.querySelectorAll('.ap-tab').forEach(b => {
+      b.classList.remove('active');
+      b.style.borderBottomColor = 'transparent';
+      b.style.color = '#7A5828';
+    });
+    tabBtn.classList.add('active');
+    tabBtn.style.borderBottomColor = '#C09828';
+    tabBtn.style.color = '#5A3C10';
+
+    const targetTab = tabBtn.dataset.apTab;
+    document.querySelectorAll('.ap-panel').forEach(p => {
+      p.style.display = (p.dataset.apPanel === targetTab) ? 'block' : 'none';
+    });
+
+    if(targetTab === 'backups' && typeof loadApBackups === 'function') loadApBackups();
+    if(targetTab === 'proposals' && typeof loadApProposals === 'function') loadApProposals();
+  });
+});
+
+// ── R4.3c: Upload tree file directly from the browser ───
+// Replaces the need for a local server / admin.html — everything
+// happens in-page, since we're already on the same origin as the
+// deployed tree (no file:// CORS restriction here).
+async function handleApTreeUpload(file){
+  const status = document.getElementById('ap-upload-status');
+  status.textContent = '⏳ Читаю файл...';
+  status.style.color = '#7A5828';
+
+  const text = await file.text();
+  // Support both old (const IDX = {...}) and new (FALLBACK_DATA = {...}) formats
+  const m = text.match(/const IDX = ({[\s\S]*?});\n/)
+         || text.match(/FALLBACK_DATA = ({[\s\S]*?});\n/);
+
+  if(!m){
+    status.textContent = '❌ Не удалось найти данные дерева в этом файле';
+    status.style.color = '#C03030';
+    return;
+  }
+
+  let parsed;
+  try { parsed = JSON.parse(m[1]); }
+  catch(e){
+    status.textContent = '❌ Файл повреждён (невалидный JSON): ' + e.message;
+    status.style.color = '#C03030';
+    return;
+  }
+
+  if(!parsed.nodes || !parsed.families){
+    status.textContent = '❌ В файле нет ожидаемой структуры дерева (nodes/families)';
+    status.style.color = '#C03030';
+    return;
+  }
+
+  status.textContent = '⏳ Загружаю на сервер...';
+  try {
+    const r = await fetch(WORKER_URL + '/api/tree', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Password': _sessionPassword },
+      body: JSON.stringify(parsed)
+    });
+    const d = await r.json();
+    if(d.ok){
+      status.textContent = '✅ Дерево успешно загружено (' + Object.keys(parsed.nodes).length + ' персон)';
+      status.style.color = '#2E7D32';
+      IDX = parsed; // reflect immediately without full page reload
+      buildDatalist();
+      renderBookmarks();
+      if(currentFocal) navigateTo(currentFocal);
+    } else {
+      status.textContent = '❌ ' + (d.error || 'Ошибка сервера');
+      status.style.color = '#C03030';
+    }
+  } catch(e){
+    status.textContent = '❌ Ошибка соединения: ' + e.message;
+    status.style.color = '#C03030';
+  }
+}
+
+document.getElementById('ap-upload-drop').addEventListener('click', () => {
+  document.getElementById('ap-upload-input').click();
+});
+document.getElementById('ap-upload-input').addEventListener('change', e => {
+  if(e.target.files[0]) handleApTreeUpload(e.target.files[0]);
+});
+document.getElementById('ap-upload-drop').addEventListener('dragover', e => {
+  e.preventDefault();
+  e.currentTarget.style.borderColor = '#C09828';
+});
+document.getElementById('ap-upload-drop').addEventListener('dragleave', e => {
+  e.currentTarget.style.borderColor = '';
+});
+document.getElementById('ap-upload-drop').addEventListener('drop', e => {
+  e.preventDefault();
+  e.currentTarget.style.borderColor = '';
+  const file = e.dataTransfer.files[0];
+  if(file) handleApTreeUpload(file);
+});
+
+// Auto-translate newly added person name to EN and HE
+function translateNewPerson(nameRu) {
+  // Local transliteration table (no API needed)
+  const MAP = {
+    'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'yo','ж':'zh',
+    'з':'z','и':'i','й':'y','к':'k','л':'l','м':'m','н':'n','о':'o',
+    'п':'p','р':'r','с':'s','т':'t','у':'u','ф':'f','х':'kh','ц':'ts',
+    'ч':'ch','ш':'sh','щ':'shch','ъ':'','ы':'y','ь':'','э':'e','ю':'yu','я':'ya',
+    'А':'A','Б':'B','В':'V','Г':'G','Д':'D','Е':'E','Ё':'Yo','Ж':'Zh',
+    'З':'Z','И':'I','Й':'Y','К':'K','Л':'L','М':'M','Н':'N','О':'O',
+    'П':'P','Р':'R','С':'S','Т':'T','У':'U','Ф':'F','Х':'Kh','Ц':'Ts',
+    'Ч':'Ch','Ш':'Sh','Щ':'Shch','Ъ':'','Ы':'Y','Ь':'','Э':'E','Ю':'Yu','Я':'Ya'
+  };
+  try {
+    const en = nameRu.split('').map(c => MAP[c] !== undefined ? MAP[c] : c).join('');
+    if(en && en !== nameRu){
+      const info = document.getElementById('info');
+      if(info) info.textContent = `EN: ${en}`;
+      if(!window._pendingNames) window._pendingNames = {};
+      window._pendingNames[nameRu] = {en};
+    }
+  } catch(e) {
+    console.log('Transliteration error:', e.message);
+  }
+}
+
+
+// ════════════════════════════════════════════════════════
+//  CLOUDFLARE WORKER INTEGRATION
+// ════════════════════════════════════════════════════════
+
+// После деплоя Worker замените на ваш URL:
+// https://my-family-tree.АККАУНТ.workers.dev
+const WORKER_URL = TREE_CONFIG.workerUrl;
+
+// Session auth token (set after login)
+let _sessionPassword = '';
+
+// Submit proposal to Worker (called after prompt generation if WORKER_URL set)
+async function submitProposal(promptText, type) {
+  if(!WORKER_URL || !_sessionPassword) return;  // offline mode — skip silently
+  try {
+    const r = await fetch(WORKER_URL + '/api/proposal', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Password': _sessionPassword },
+      body: JSON.stringify({
+        prompt: promptText,
+        type:   type || currentType,
+        lang:   currentLang,
+        author: window._userName || 'anonymous',
+      })
+    });
+    const data = await r.json();
+    if(data.ok) {
+      const info = document.getElementById('info');
+      if(info) { info.textContent = '✓ Предложение отправлено администратору'; }
+    }
+  } catch(e) {
+    // Offline or server error — silent fail, user still has email/copy
+    console.log('Worker submit failed (offline?):', e.message);
+  }
+}
+
+// ════════════════════════════════════════════════════════
+//  CONTACTS — download VCF for persons with phone/email/social
+// ════════════════════════════════════════════════════════
+function generateVCF() {
+  const lines = [];
+  let count = 0;
+
+  for(const [id, n] of Object.entries(IDX.nodes)){
+    // Include only persons with phone OR email OR social
+    if(!n.phone && !n.email && !n.social) continue;
+    // Skip deceased
+    if(n.death && n.death.trim() !== '') continue;
+
+    const name = n.name || '';
+    const parts = name.trim().split(/\s+/);
+    const lastName  = parts.length > 1 ? parts[parts.length - 1] : '';
+    const firstName = parts.length > 1 ? parts.slice(0,-1).join(' ') : parts[0] || '';
+    const bYear = n.birth ? (n.birth.match(/\d{4}/)||[''])[0] : '';
+
+    lines.push('BEGIN:VCARD');
+    lines.push('VERSION:3.0');
+    lines.push('FN:' + pname(id));          // translated name
+    lines.push('N:' + lastName + ';' + firstName + ';;;');
+    if(n.phone)  lines.push('TEL;TYPE=CELL:' + n.phone);
+    if(n.email)  lines.push('EMAIL:' + n.email);
+    if(n.social) lines.push('URL:' + n.social);
+    if(bYear)    lines.push('BDAY:' + bYear + '0101');
+    const note = [n.rel ? trel(n.rel) : '', id].filter(Boolean).join(' · ');
+    if(note)     lines.push('NOTE:' + note);
+    lines.push('ORG:' + t('tree_title').replace('🌳 ',''));
+    lines.push('CATEGORIES:Family');
+    lines.push('END:VCARD');
+    lines.push('');
+    count++;
+  }
+  return { vcf: lines.join('\r\n'), count };
+}
+
+// Visible toast notification (works even if user doesn't notice bottom bar)
+function showToast(msg, isWarning){
+  let t = document.getElementById('app-toast');
+  if(!t){
+    t = document.createElement('div');
+    t.id = 'app-toast';
+    t.style.cssText = 'position:fixed;top:60px;left:50%;transform:translateX(-50%);'+
+      'background:#1C1208;color:#EDD890;padding:12px 24px;border-radius:6px;'+
+      'font-size:.85rem;font-family:Segoe UI,sans-serif;z-index:9999;'+
+      'box-shadow:0 6px 24px rgba(0,0,0,.5);max-width:90vw;text-align:center;'+
+      'transition:opacity .3s;border:1px solid rgba(237,216,144,.3)';
+    document.body.appendChild(t);
+  }
+  t.style.background = isWarning ? '#5A2818' : '#1C1208';
+  t.style.opacity = '1';
+  t.textContent = msg;
+  clearTimeout(t._hideTimer);
+  t._hideTimer = setTimeout(() => { t.style.opacity = '0'; }, 4000);
+}
+
+document.getElementById('btn-login').addEventListener('click', e => {
+  e.stopPropagation();
+  // If already logged in — show logout popup
+  if(_sessionPassword && window._userRole){
+    if(confirm(
+      window._userRole === 'admin'
+        ? 'Вы вошли как администратор. Выйти?'
+        : 'Вы вошли как гость. Выйти?'
+    )){
+      _sessionPassword = '';
+      window._userRole = null;
+      sessionStorage.removeItem('tree_pwd');
+      document.getElementById('btn-login').textContent = '🔑';
+      showToast(currentLang==='he' ? 'יצאת' : currentLang==='en' ? 'Logged out' : 'Вы вышли', false);
+    }
+    return;
+  }
+  // Show login form
+  showLoginForm();
+});
+
+document.getElementById('btn-contacts').addEventListener('click', () => {
+  if(!_sessionPassword){
+    document.getElementById('btn-login').click();
+    showToast(currentLang==='he' ? '🔒 התחבר כדי להוריד אנשי קשר'
+             : currentLang==='en' ? '🔒 Login to download contacts'
+             : '🔒 Войдите чтобы скачать контакты', true);
+    return;
+  }
+  const { vcf, count } = generateVCF();
+
+  if(count === 0){
+    const msg = currentLang==='he' ? '⚠ אין אנשי קשר עם נתוני קשר (טלפון/אימייל/רשת חברתית)'
+             : currentLang==='en' ? '⚠ No persons with phone/email/social media found'
+             : '⚠ Нет персон с заполненным телефоном, email или соц. сетями';
+    showToast(msg, true);
+    return;
+  }
+
+  // Download as .vcf file
+  const encoded = btoa(unescape(encodeURIComponent(vcf)));
+  const a = document.createElement('a');
+  a.href = 'data:text/vcard;base64,' + encoded;
+  a.download = TREE_CONFIG.fileSlug + '-family-contacts.vcf';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+
+  const msg = currentLang==='he' ? '✓ הורד ' + count + ' אנשי קשר'
+            : currentLang==='en' ? '✓ Downloaded ' + count + ' contacts'
+            : '✓ Скачано ' + count + ' контактов';
+  showToast(msg, false);
+})
+
+// ── Calendar (ICS) export ────────────────────────────────────────────────
+document.getElementById('btn-calendar').addEventListener('click', () => {
+  if(!_sessionPassword){
+    document.getElementById('btn-login').click();
+    showToast(currentLang==='he'?'🔒 התחבר כדי להוריד את לוח השנה':currentLang==='en'?'🔒 Login to download birthday calendar':'🔒 Войдите чтобы скачать календарь', true);
+    return;
+  }
+  const MONTH = {JAN:1,FEB:2,MAR:3,APR:4,MAY:5,JUN:6,JUL:7,AUG:8,SEP:9,OCT:10,NOV:11,DEC:12};
+  const NOW_YEAR = new Date().getFullYear();
+  const MAX_AGE = 100;
+
+  function pad(n){ return String(n).padStart(2,'0'); }
+
+  function parseDate(birth){
+    // "9 OCT 1970" → {day,month,year} or null
+    const full = birth && birth.match(/^(\d+)\s+([A-Z]{3})\s+(\d{4})$/);
+    if(full) return {day:parseInt(full[1]), month:MONTH[full[2]], year:parseInt(full[3])};
+    const yearOnly = birth && birth.match(/^(\d{4})$/);
+    if(yearOnly) return {day:1, month:1, year:parseInt(yearOnly[1])};
+    return null;
+  }
+
+  const lines = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//' + TREE_CONFIG.familyNameEn + ' Family Tree//RU','CALSCALE:GREGORIAN','X-WR-CALNAME:Дни рождения семьи ' + TREE_CONFIG.familyNameRu,'X-WR-TIMEZONE:Asia/Jerusalem'];
+
+  let count = 0;
+  Object.values(IDX.nodes).forEach(p => {
+    if(p.death) return;
+    const d = parseDate(p.birth);
+    if(!d) return;
+    if(NOW_YEAR - d.year > MAX_AGE) return; // исключаем >100 лет без даты смерти
+
+    const mm = pad(d.month), dd = pad(d.day);
+    // Первое будущее событие — в этом или следующем году
+    const age = NOW_YEAR - d.year;
+    const uid = `birthday-${p.id}@${TREE_CONFIG.calendarUidDomain}`;
+    const summary = `🎂 ${p.name} (${age} лет)`;
+    const dtstart = `${NOW_YEAR}${mm}${dd}`;
+    lines.push('BEGIN:VEVENT');
+    lines.push(`UID:${uid}`);
+    lines.push(`DTSTART;VALUE=DATE:${dtstart}`);
+    const dtEndDate = new Date(NOW_YEAR, d.month-1, d.day+1);
+    const dtend_str = `${dtEndDate.getFullYear()}${pad(dtEndDate.getMonth()+1)}${pad(dtEndDate.getDate())}`;
+    lines.push(`DTEND;VALUE=DATE:${dtend_str}`);
+    lines.push(`RRULE:FREQ=YEARLY`);
+    lines.push(`SUMMARY:${summary}`);
+    if(p.rel) lines.push(`DESCRIPTION:${p.rel}`);
+    lines.push(`TRANSP:TRANSPARENT`);
+    lines.push(`BEGIN:VALARM`);
+    lines.push(`TRIGGER:-P1D`);
+    lines.push(`ACTION:DISPLAY`);
+    lines.push(`DESCRIPTION:Завтра день рождения: ${p.name}`);
+    lines.push(`END:VALARM`);
+    lines.push('END:VEVENT');
+    count++;
+  });
+
+  lines.push('END:VCALENDAR');
+
+  if(count === 0){
+    showToast('⚠ Нет дат рождения для экспорта', true);
+    return;
+  }
+
+  const ics = lines.join('\r\n');
+  const encoded = btoa(unescape(encodeURIComponent(ics)));
+  const a = document.createElement('a');
+  a.href = 'data:text/calendar;base64,' + encoded;
+  a.download = TREE_CONFIG.fileSlug + '-birthdays.ics';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+
+  const msg = currentLang==='he' ? `✓ הורד ${count} ימי הולדת`
+            : currentLang==='en' ? `✓ Downloaded ${count} birthdays`
+            : `✓ Скачано ${count} дней рождения`;
+  showToast(msg);
+});
+;
+
+// ── final init: load tree from API ────────────────────────
+// WORKER_URL объявлен выше
+
+// Показать оверлей загрузки
+function showLoader(msg) {
+  let ov = document.getElementById('tree-loader');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'tree-loader';
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;color:#fff;font-size:18px;gap:16px;';
+    ov.innerHTML = '<div style="font-size:36px">🌳</div><div id="tree-loader-msg"></div>';
+    document.body.appendChild(ov);
+  }
+  document.getElementById('tree-loader-msg').textContent = msg;
+  ov.style.display = 'flex';
+}
+function hideLoader() {
+  const ov = document.getElementById('tree-loader');
+  if (ov) ov.style.display = 'none';
+}
+
+// Показать форму входа
+function showLoginForm(errorMsg) {
+  let modal = document.getElementById('login-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'login-modal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:10000;';
+    modal.innerHTML = `
+      <div style="background:#1a2535;border-radius:12px;padding:32px;min-width:300px;display:flex;flex-direction:column;gap:16px;box-shadow:0 8px 32px rgba(0,0,0,.5);">
+        <div style="font-size:28px;text-align:center">🌳</div>
+        <div style="color:#e8d890;font-size:18px;text-align:center;font-weight:500">${TREE_CONFIG.familyNameRu}</div>
+        <div id="login-error" style="color:#f87171;font-size:13px;text-align:center;min-height:18px"></div>
+        <input id="login-pwd" type="password" placeholder="Пароль" autocomplete="current-password"
+          style="padding:10px 14px;border-radius:8px;border:1px solid #3a4a5a;background:#0f1a25;color:#fff;font-size:15px;outline:none;">
+        <button id="login-btn"
+          style="padding:10px;border-radius:8px;border:none;background:#2a6496;color:#fff;font-size:15px;cursor:pointer;font-weight:500;">
+          Войти
+        </button>
+      </div>`;
+    document.body.appendChild(modal);
+
+    async function doLogin() {
+      const pwd = document.getElementById('login-pwd').value;
+      if (!pwd) return;
+      document.getElementById('login-error').textContent = '';
+      document.getElementById('login-btn').textContent = 'Загрузка...';
+      try {
+        // Step 1: verify password and get role via /api/login
+        const loginRes = await fetch(WORKER_URL + '/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: pwd })
+        });
+        const loginData = await loginRes.json();
+        if (!loginData.ok) {
+          document.getElementById('login-error').textContent = 'Неверный пароль';
+          document.getElementById('login-btn').textContent = 'Войти';
+          return;
+        }
+
+        // Step 2: fetch tree data using the same password
+        const res = await fetch(WORKER_URL + '/api/tree', {
+          headers: { 'X-Password': pwd }
+        });
+        if (!res.ok) throw new Error('Ошибка сервера: ' + res.status);
+        const data = await res.json();
+
+        // Step 3: set session state — role, password, button icon
+        _sessionPassword  = pwd;
+        window._userRole  = loginData.role;
+        sessionStorage.setItem('tree_pwd', pwd);
+        sessionStorage.setItem('tree_role', loginData.role);
+        const loginBtn = document.getElementById('btn-login');
+        if(loginBtn) loginBtn.textContent = loginData.role === 'admin' ? '🔓' : '👤';
+        const editBtn2 = document.getElementById('btn-edit');
+        if(editBtn2) editBtn2.style.display = '';
+        const adminBtn2 = document.getElementById('btn-admin-panel');
+        if(adminBtn2) adminBtn2.style.display = (loginData.role === 'admin') ? '' : 'none';
+        if(typeof updateGenerateButtonLabel === 'function') updateGenerateButtonLabel();
+
+        modal.style.display = 'none';
+        initTree(data, pwd);
+
+        showToast(
+          loginData.role === 'admin'
+            ? (currentLang==='he' ? '✓ נכנסת כמנהל' : currentLang==='en' ? '✓ Logged in as admin' : '✓ Вы вошли как администратор')
+            : (currentLang==='he' ? '✓ נכנסת כאורח' : currentLang==='en' ? '✓ Logged in as guest' : '✓ Вы вошли как гость'),
+          false);
+      } catch(e) {
+        document.getElementById('login-error').textContent = 'Ошибка: ' + e.message;
+        document.getElementById('login-btn').textContent = 'Войти';
+      }
+    }
+
+    document.getElementById('login-btn').addEventListener('click', doLogin);
+    document.getElementById('login-pwd').addEventListener('keydown', e => {
+      if (e.key === 'Enter') doLogin();
+    });
+  }
+  if (errorMsg) document.getElementById('login-error').textContent = errorMsg;
+  modal.style.display = 'flex';
+  setTimeout(() => document.getElementById('login-pwd').focus(), 50);
+}
+
+// ════════════════════════════════════════════════════════
+//  P5: Structurally link a newly created person into the
+//  family graph via the Worker family API (admin only).
+// ════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════
+//  P8: Delete person via API (admin only)
+// ════════════════════════════════════════════════════════
+async function confirmDeletePerson(id){
+  if(!_sessionPassword || window._userRole !== 'admin' || !WORKER_URL) return;
+  const n = IDX.nodes[id];
+  if(!n) return;
+
+  const rel = IDX.relatives[id] || {};
+  const hasChildren = rel.children && rel.children.length > 0;
+
+  if(hasChildren){
+    // Server will refuse — explain why instead of attempting the call
+    const childNames = rel.children.map(cid => pname(cid)).join(', ');
+    alert(
+      (currentLang==='he'
+        ? `לא ניתן למחוק את ${pname(id)} — יש ילדים: ${childNames}.\nיש לשייך את הילדים למשפחה אחרת לפני המחיקה.`
+        : currentLang==='en'
+        ? `Cannot delete ${pname(id)} — has children: ${childNames}.\nReassign the children to a different parent first.`
+        : `Нельзя удалить ${pname(id)} — есть дети: ${childNames}.\nСначала перепривяжите детей к другому родителю (через форму «Исправить» → «Семейная связь»).`)
+    );
+    return;
+  }
+
+  const confirmMsg = currentLang==='he'
+    ? `למחוק את ${pname(id)}? פעולה זו אינה הפיכה.`
+    : currentLang==='en'
+    ? `Delete ${pname(id)}? This cannot be undone.`
+    : `Удалить ${pname(id)}? Это действие необратимо.`;
+  if(!confirm(confirmMsg)) return;
+
+  try {
+    const r = await fetch(WORKER_URL + '/api/person/' + id, {
+      method: 'DELETE',
+      headers: { 'X-Password': _sessionPassword }
+    });
+    const d = await r.json();
+    if(d.ok){
+      // Remove from local IDX/FALLBACK_DATA immediately
+      if(IDX){
+        delete IDX.nodes[id];
+        delete IDX.relatives[id];
+        delete IDX.child_of[id];
+        delete IDX.parent_in[id];
+        for(const [, r2] of Object.entries(IDX.relatives)){
+          r2.siblings = (r2.siblings||[]).filter(s=>s!==id);
+          r2.spouses  = (r2.spouses ||[]).filter(s=>s!==id);
+          r2.children = (r2.children||[]).filter(s=>s!==id);
+        }
+        for(const [, f] of Object.entries(IDX.families)){
+          if(f.husband===id) f.husband=null;
+          if(f.wife===id)    f.wife=null;
+          f.children = (f.children||[]).filter(c=>c!==id);
+        }
+      }
+      document.getElementById('panel').classList.remove('open');
+      if(typeof navigateTo === 'function') navigateTo(currentFocal === id ? 'P3' : currentFocal);
+      showToast(
+        currentLang==='he' ? '✓ נמחק'
+        : currentLang==='en' ? '✓ Deleted'
+        : '✓ Удалено', false);
+    } else {
+      showToast('⚠ ' + (d.error || 'Ошибка сервера'), true);
+    }
+  } catch(e){
+    showToast('⚠ Ошибка соединения: ' + e.message, true);
+  }
+}
+
+async function linkNewPersonToFamily(newId, targetId, relType, newSex){
+  const targetNode = IDX.nodes[targetId];
+  if(!targetNode) throw new Error('Целевая персона не найдена: ' + targetId);
+
+  const headers = {'Content-Type':'application/json','X-Password':_sessionPassword};
+
+  if(relType === 'ребёнок'){
+    // New person is a CHILD of targetId.
+    // Find an existing family where targetId is a parent; add child there.
+    // If no family exists yet, create one with targetId as sole parent.
+    const famIds = IDX.parent_in[targetId] || [];
+    let famId = famIds[0]; // use first existing marriage if present
+
+    if(!famId){
+      const isFemale = targetNode.sex === 'F';
+      const createRes = await fetch(WORKER_URL + '/api/family', {
+        method: 'POST', headers,
+        body: JSON.stringify(isFemale
+          ? {parent1:null, parent2:targetId, children:[]}
+          : {parent1:targetId, parent2:null, children:[]})
+      });
+      const createData = await createRes.json();
+      if(!createData.ok) throw new Error(createData.error || 'Не удалось создать семью');
+      famId = createData.familyId;
+    }
+
+    const r = await fetch(WORKER_URL + '/api/family/' + famId, {
+      method: 'PATCH', headers,
+      body: JSON.stringify({addChild: newId})
+    });
+    const d = await r.json();
+    if(!d.ok) throw new Error(d.error || 'Не удалось добавить ребёнка в семью');
+
+  } else if(relType === 'жена' || relType === 'муж'){
+    // New person becomes spouse of targetId — create a new family/marriage
+    const isNewHusband = relType === 'муж' || newSex === 'Мужской';
+    const p1 = isNewHusband ? newId : targetId;
+    const p2 = isNewHusband ? targetId : newId;
+    const r = await fetch(WORKER_URL + '/api/family', {
+      method: 'POST', headers,
+      body: JSON.stringify({parent1:p1, parent2:p2, children:[]})
+    });
+    const d = await r.json();
+    if(!d.ok) throw new Error(d.error || 'Не удалось создать семью');
+
+  } else if(relType === 'родитель'){
+    // New person becomes a PARENT of targetId.
+    // Find the family targetId is a child in; set the empty parent slot.
+    const famId = IDX.child_of[targetId];
+    if(!famId){
+      // No existing family — create one with newId as sole parent + targetId as child
+      const isFemale = newSex === 'Женский';
+      const r = await fetch(WORKER_URL + '/api/family', {
+        method: 'POST', headers,
+        body: JSON.stringify(isFemale
+          ? {parent1:null, parent2:newId, children:[targetId]}
+          : {parent1:newId, parent2:null, children:[targetId]})
+      });
+      const d = await r.json();
+      if(!d.ok) throw new Error(d.error || 'Не удалось создать семью');
+    } else {
+      const fam = IDX.families[famId];
+      const slot = !fam.husband ? 'parent1' : !fam.wife ? 'parent2' : null;
+      if(!slot) throw new Error('У этой персоны уже есть оба родителя');
+      const r = await fetch(WORKER_URL + '/api/family/' + famId, {
+        method: 'PATCH', headers,
+        body: JSON.stringify({[slot]: newId})
+      });
+      const d = await r.json();
+      if(!d.ok) throw new Error(d.error || 'Не удалось добавить родителя');
+    }
+  } else if(relType === 'брат' || relType === 'сестра'){
+    const famId = IDX.child_of[targetId];
+    if(!famId){
+      const r = await fetch(WORKER_URL + '/api/family', {
+        method: 'POST', headers,
+        body: JSON.stringify({parent1:null, parent2:null, children:[targetId, newId]})
+      });
+      const d = await r.json();
+      if(!d.ok) throw new Error(d.error || 'Не удалось создать семью');
+    } else {
+      const r = await fetch(WORKER_URL + '/api/family/' + famId, {
+        method: 'PATCH', headers,
+        body: JSON.stringify({addChild: newId})
+      });
+      const d = await r.json();
+      if(!d.ok) throw new Error(d.error || 'Не удалось добавить брата/сестру в семью');
+    }
+  }
+  // else: relType empty or unrecognized — silently skip linking
+}
+
+// Инициализировать дерево с данными из API
+function initTree(data, pwd) {
+  IDX = data;
+  if (pwd) _sessionPassword = pwd;
+  buildDatalist();           // ← populate search autocomplete now that IDX is ready
+  updateBackBtn();
+  renderBookmarks();
+
+  const personIds = Object.keys(IDX.nodes || {});
+  if(personIds.length === 0){
+    // Brand new tree with no persons yet — show welcome screen instead
+    // of trying to navigate to a non-existent focal person.
+    showEmptyTreeWelcome();
+  } else {
+    // Use 'P3' if it exists (template convention), otherwise
+    // fall back to whichever person was created first (lowest P-number).
+    const startId = IDX.nodes['P3']
+      ? 'P3'
+      : personIds.sort((a,b) => parseInt(a.slice(1)) - parseInt(b.slice(1)))[0];
+    navigateTo(startId);
+  }
+
+  if(currentLang !== 'ru' && window.applyLang) window.applyLang(currentLang);
+  hideLoader();
+  // Show "Add/Correct" button only when logged in (guest or admin) —
+  // anonymous viewers can browse the tree but not propose edits.
+  const editBtn = document.getElementById('btn-edit');
+  if(editBtn) editBtn.style.display = _sessionPassword ? '' : 'none';
+  const adminBtn = document.getElementById('btn-admin-panel');
+  if(adminBtn) adminBtn.style.display = (window._userRole === 'admin') ? '' : 'none';
+}
+
+// R2.2: Welcome screen shown when the tree has zero persons — guides
+// a new customer to create their first person via the "Add" form.
+function showEmptyTreeWelcome(){
+  const svg = document.getElementById('svg');
+  if(svg) svg.innerHTML = '';
+  const panel = document.getElementById('info');
+  if(panel){
+    const isLoggedIn = !!_sessionPassword;
+    const msg = currentLang==='he'
+      ? '🌳 העץ עדיין ריק.'
+      : currentLang==='en'
+      ? '🌳 This tree is empty.'
+      : '🌳 Дерево пока пустое.';
+    const cta = isLoggedIn
+      ? (currentLang==='he' ? 'לחצו על "הוספה" כדי ליצור את האדם הראשון.'
+        : currentLang==='en' ? 'Click "Add" to create the first person.'
+        : 'Нажмите «Дополнить», чтобы создать первую персону.')
+      : (currentLang==='he' ? 'התחברו כדי להתחיל.'
+        : currentLang==='en' ? 'Log in to get started.'
+        : 'Войдите, чтобы начать.');
+    panel.innerHTML = '';
+    const msgSpan = document.createElement('span');
+    msgSpan.textContent = msg + ' ' + cta;
+    panel.appendChild(msgSpan);
+
+    if(!isLoggedIn){
+      const btn = document.createElement('button');
+      btn.textContent = '🔑 ' + (currentLang==='he' ? 'התחברות' : currentLang==='en' ? 'Log in' : 'Войти');
+      btn.style.cssText = 'margin-left:10px;padding:3px 12px;background:#C09828;color:#fff;border:none;border-radius:4px;cursor:pointer;font-family:inherit;font-size:.78rem';
+      btn.addEventListener('click', () => document.getElementById('btn-login').click());
+      panel.appendChild(btn);
+    } else {
+      const btn = document.createElement('button');
+      btn.textContent = '✏️ ' + (currentLang==='he' ? 'הוספה' : currentLang==='en' ? 'Add' : 'Дополнить');
+      btn.style.cssText = 'margin-left:10px;padding:3px 12px;background:#C09828;color:#fff;border:none;border-radius:4px;cursor:pointer;font-family:inherit;font-size:.78rem';
+      btn.addEventListener('click', () => openModal());
+      panel.appendChild(btn);
+    }
+  }
+}
+
+// Главная функция загрузки
+// ── R4.3c: Admin panel — upload tree HTML, extract data, save to server ──
+document.getElementById('ap-upload-drop').addEventListener('click', () => {
+  document.getElementById('ap-upload-input').click();
+});
+document.getElementById('ap-upload-drop').addEventListener('dragover', e => {
+  e.preventDefault();
+  e.currentTarget.style.borderColor = '#C09828';
+});
+document.getElementById('ap-upload-drop').addEventListener('dragleave', e => {
+  e.currentTarget.style.borderColor = '';
+});
+document.getElementById('ap-upload-drop').addEventListener('drop', e => {
+  e.preventDefault();
+  e.currentTarget.style.borderColor = '';
+  const file = e.dataTransfer.files[0];
+  if(file) handleApUpload(file);
+});
+document.getElementById('ap-upload-input').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if(file) handleApUpload(file);
+});
+
+async function handleApUpload(file){
+  const st = document.getElementById('ap-upload-status');
+  st.style.color = '';
+  st.textContent = '⏳ Читаю файл...';
+
+  const html = await file.text();
+  // Support both old (const IDX = {...}) and new (FALLBACK_DATA = {...}) formats
+  const m = html.match(/const IDX = ({[\s\S]*?});\n/) || html.match(/FALLBACK_DATA = ({[\s\S]*?});\n/);
+  if(!m){
+    st.style.color = '#C03030';
+    st.textContent = '❌ Не удалось найти данные дерева в этом файле';
+    return;
+  }
+
+  let parsed;
+  try { parsed = JSON.parse(m[1]); }
+  catch(e){
+    st.style.color = '#C03030';
+    st.textContent = '❌ Данные повреждены: ' + e.message;
+    return;
+  }
+
+  if(!parsed.nodes){
+    st.style.color = '#C03030';
+    st.textContent = '❌ В файле нет персон (nodes)';
+    return;
+  }
+
+  st.textContent = '⏳ Загружаю на сервер (' + Object.keys(parsed.nodes).length + ' персон)...';
+
+  try {
+    const r = await fetch(WORKER_URL + '/api/tree', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Password': _sessionPassword },
+      body: JSON.stringify(parsed)
+    });
+    const d = await r.json();
+    if(d.ok){
+      st.style.color = '#2E7D32';
+      st.textContent = '✅ Дерево успешно загружено (' + Object.keys(parsed.nodes).length + ' персон)';
+      showToast('✓ Дерево обновлено на сервере', false);
+    } else {
+      st.style.color = '#C03030';
+      st.textContent = '❌ Ошибка сервера: ' + (d.error || 'неизвестна');
+    }
+  } catch(e){
+    st.style.color = '#C03030';
+    st.textContent = '❌ Ошибка соединения: ' + e.message;
+  }
+}
+
+// ── R4.3d: Admin panel — Backups tab ──────────────────────
+async function loadApBackups(){
+  const list = document.getElementById('ap-backups-list');
+  list.innerHTML = '⏳ Загрузка...';
+  try {
+    const r = await fetch(WORKER_URL + '/api/backups', {
+      headers: { 'X-Password': _sessionPassword }
+    });
+    const d = await r.json();
+    if(!d.ok){ list.innerHTML = '❌ ' + (d.error || 'Ошибка сервера'); return; }
+    if(!d.backups || !d.backups.length){ list.innerHTML = 'Резервных копий пока нет'; return; }
+
+    list.innerHTML = '';
+    for(const b of d.backups){
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(184,144,48,.15)';
+      const dateSpan = document.createElement('span');
+      dateSpan.textContent = new Date(b.timestamp || b.key).toLocaleString('ru-RU');
+      const dlBtn = document.createElement('button');
+      dlBtn.textContent = '⬇ Скачать';
+      dlBtn.style.cssText = 'padding:3px 10px;background:#C09828;color:#fff;border:none;border-radius:3px;cursor:pointer;font-size:.72rem';
+      dlBtn.addEventListener('click', () => downloadApBackup(b.key));
+      row.appendChild(dateSpan);
+      row.appendChild(dlBtn);
+      list.appendChild(row);
+    }
+  } catch(e){
+    list.innerHTML = '❌ Ошибка соединения: ' + e.message;
+  }
+}
+
+async function downloadApBackup(key){
+  try {
+    const r = await fetch(WORKER_URL + '/api/backup/' + encodeURIComponent(key), {
+      headers: { 'X-Password': _sessionPassword }
+    });
+    const text = await r.text();
+    const blob = new Blob([text], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'backup-' + key + '.json';
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch(e){
+    showToast('⚠ Ошибка скачивания: ' + e.message, true);
+  }
+}
+
+// ── R4.3d: Admin panel — Proposals tab (email-fallback submissions) ──
+async function loadApProposals(){
+  const list = document.getElementById('ap-proposals-list');
+  list.innerHTML = '⏳ Загрузка...';
+  try {
+    const r = await fetch(WORKER_URL + '/api/proposals', {
+      headers: { 'X-Password': _sessionPassword }
+    });
+    const d = await r.json();
+    if(!d.ok){ list.innerHTML = '❌ ' + (d.error || 'Ошибка сервера'); return; }
+    if(!d.proposals || !d.proposals.length){ list.innerHTML = 'Предложений пока нет'; return; }
+
+    list.innerHTML = '';
+    for(const p of d.proposals){
+      const box = document.createElement('div');
+      box.style.cssText = 'padding:8px;margin-bottom:8px;background:#fff;border:1px solid rgba(184,144,48,.2);border-radius:4px';
+      const meta = document.createElement('div');
+      meta.style.cssText = 'font-size:.68rem;color:#999;margin-bottom:4px';
+      meta.textContent = new Date(p.timestamp).toLocaleString('ru-RU') + ' · ' + (p.email || 'без email');
+      const text = document.createElement('div');
+      text.style.cssText = 'white-space:pre-wrap;font-size:.75rem';
+      text.textContent = p.text || p.message || JSON.stringify(p);
+      box.appendChild(meta);
+      box.appendChild(text);
+      list.appendChild(box);
+    }
+  } catch(e){
+    list.innerHTML = '❌ Ошибка соединения: ' + e.message;
+  }
+}
+
+async function loadTree() {
+  // Проверим сохранённый пароль в sessionStorage
+  const savedPwd = sessionStorage.getItem('tree_pwd');
+  if (savedPwd) {
+    showLoader('Загрузка дерева…');
+    try {
+      const res = await fetch(WORKER_URL + '/api/tree', {
+        headers: { 'X-Password': savedPwd }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        initTree(data, savedPwd);
+        return;
+      }
+      // Пароль устарел — очищаем и проваливаемся в гостевую ветку ниже
+      // (не дублируем fallback-логику здесь)
+      sessionStorage.removeItem('tree_pwd');
+    } catch(e) {
+      console.warn('API недоступен, используем встроенные данные', e);
+      hideLoader();
+      initTree(FALLBACK_DATA, savedPwd);
+      return;
+    }
+  }
+
+  // Гостевая ветка (нет сохранённого пароля, либо он устарел выше).
+  // Пробуем публичный санитизированный снапшот с сервера — если он
+  // доступен, гость видит актуальное дерево, а не встроенный
+  // FALLBACK_DATA. Пустой nodes в успешном ответе — не ошибка (новое
+  // дерево клиента), поэтому не откатываемся на FALLBACK_DATA в этом
+  // случае.
+  showLoader('Загрузка дерева…');
+  try {
+    const res = await fetch(WORKER_URL + '/api/tree/public');
+    if (res.ok) {
+      const data = await res.json();
+      initTree(data, '');
+      return;
+    }
+    // Запрос не удался — различаем заморозку (TREE_ACTIVE=false, 402)
+    // от прочих ошибок сервера, чтобы не молчать про заморозку.
+    const body = await res.json().catch(() => null);
+    if (res.status === 402 && body?.frozen === true) {
+      hideLoader();
+      showToast(body.error, true);
+      initTree(FALLBACK_DATA, '');
+      return;
+    }
+    hideLoader();
+    initTree(FALLBACK_DATA, '');
+  } catch(e) {
+    console.warn('Публичный API недоступен, используем встроенные данные', e);
+    hideLoader();
+    initTree(FALLBACK_DATA, '');
+  }
+}
+
+loadTree();
+</script>
+
+</body></html>

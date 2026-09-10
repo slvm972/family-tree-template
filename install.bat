@@ -31,25 +31,15 @@ if errorlevel 1 (
 )
 
 echo.
-echo   [1/3] Node.js найден, продолжаем...
+echo   [1/2] Node.js найден, продолжаем...
 echo.
-
-REM ── Install dependencies ────────────────────────
-echo   [2/3] Устанавливаю необходимые компоненты...
-echo.
-call npm install
-if errorlevel 1 (
-    echo.
-    echo   [ОШИБКА] Не удалось установить компоненты.
-    echo   Проверьте подключение к интернету и попробуйте снова.
-    echo.
-    pause
-    exit /b 1
-)
 
 REM ── Run the interactive setup script ────────────
-echo.
-echo   [3/3] Запускаю настройку...
+REM (отдельного шага "npm install" не нужно: единственная
+REM  зависимость — Cloudflare Wrangler — запускается через
+REM  "npx wrangler ...", который сам скачивает нужную версию
+REM  по требованию, без локального package.json/node_modules)
+echo   [2/2] Запускаю настройку...
 echo.
 call node setup.js
 
