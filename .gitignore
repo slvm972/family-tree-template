@@ -142,3 +142,9 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
 .aider*
+
+# Local Cloudflare Workers dev state (wrangler pages/workers dev)
+.wrangler/
+
+# Google Drive desktop sync temp files
+.tmp.driveupload/
