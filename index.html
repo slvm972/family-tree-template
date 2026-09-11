@@ -504,6 +504,18 @@ const TREE_CONFIG = {
   bookmarks: [],
 };
 
+// ── Dev convenience: auto-detect local `wrangler dev` Worker ──────
+// When this page is opened via http://localhost or http://127.0.0.1
+// (e.g. `npx wrangler pages dev .` while a separate `npx wrangler dev`
+// is running the Worker), point at the local Worker's default port
+// instead of the production placeholder above. Has zero effect once
+// deployed to a real Pages domain (any other hostname). Safe to leave
+// in place permanently — this block never runs in production.
+if (typeof location !== 'undefined' &&
+    (location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+  TREE_CONFIG.workerUrl = 'http://127.0.0.1:8787';
+}
+
 let IDX = null;
 const FALLBACK_DATA = {"nodes":{},"families":{},"child_of":{},"parent_in":{},"relatives":{},"grandparents":{}};
 </script>

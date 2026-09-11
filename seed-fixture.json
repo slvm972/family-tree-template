@@ -1,0 +1,92 @@
+{
+  "nodes": {
+    "P1": {
+      "id": "P1",
+      "name": "Иван Тестов",
+      "sex": "M",
+      "gen": 0,
+      "birth": "1 JAN 1950",
+      "death": "",
+      "rel": "Дед",
+      "missing": []
+    },
+    "P2": {
+      "id": "P2",
+      "name": "Мария Тестова",
+      "sex": "F",
+      "gen": 0,
+      "birth": "5 MAR 1952",
+      "death": "",
+      "rel": "Бабушка",
+      "missing": []
+    },
+    "P3": {
+      "id": "P3",
+      "name": "Пётр Тестов",
+      "sex": "M",
+      "gen": 1,
+      "birth": "10 JUN 1975",
+      "death": "",
+      "rel": "Отец",
+      "phone": "+1-555-000-0001",
+      "email": "petr.test@example.com",
+      "missing": []
+    },
+    "P4": {
+      "id": "P4",
+      "name": "Анна Тестова",
+      "sex": "F",
+      "gen": 1,
+      "birth": "20 SEP 1978",
+      "death": "12 DEC 2020",
+      "rel": "Тётя",
+      "missing": []
+    },
+    "P5": {
+      "id": "P5",
+      "name": "Олег Тестов",
+      "sex": "M",
+      "gen": 2,
+      "birth": "3 FEB 2005",
+      "death": "",
+      "rel": "Сын",
+      "missing": []
+    },
+    "P6": {
+      "id": "P6",
+      "name": "Света Тестова",
+      "sex": "F",
+      "gen": 2,
+      "birth": "",
+      "death": "",
+      "rel": "Дочь",
+      "missing": [
+        "дата рождения"
+      ]
+    }
+  },
+  "families": {
+    "F1": {
+      "id": "F1",
+      "husband": "P1",
+      "wife": "P2",
+      "children": [
+        "P3",
+        "P4"
+      ]
+    },
+    "F2": {
+      "id": "F2",
+      "husband": "P3",
+      "wife": null,
+      "children": [
+        "P5",
+        "P6"
+      ]
+    }
+  },
+  "child_of": {},
+  "parent_in": {},
+  "relatives": {},
+  "grandparents": {}
+}
