@@ -88,8 +88,8 @@ function runCapture(cmd) {
   let toml = fs.readFileSync(tomlPath, 'utf8');
   toml = toml.replace('PLACEHOLDER_GUEST_HASH', gHash);
   toml = toml.replace('PLACEHOLDER_ADMIN_HASH', aHash);
-  if(kvId) toml = toml.replace('PLACEHOLDER_KV_ID', kvId);
-  if(photosBucketName) toml = toml.replace('PLACEHOLDER_PHOTOS_BUCKET_NAME', photosBucketName);
+  if(kvId) toml = toml.replace('placeholder-kv-id', kvId);
+  if(photosBucketName) toml = toml.replace('placeholder-photos-bucket-name', photosBucketName);
   fs.writeFileSync(tomlPath, toml);
   console.log('✅ Настройки сохранены');
 
