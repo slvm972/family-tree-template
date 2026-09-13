@@ -1985,8 +1985,8 @@ document.getElementById('btn-login').addEventListener('click', e => {
   if(_sessionPassword && window._userRole){
     if(confirm(
       window._userRole === 'admin'
-        ? t('logout_confirm_admin')
-        : t('logout_confirm_guest')
+        ? 'Вы вошли как администратор. Выйти?'
+        : 'Вы вошли как гость. Выйти?'
     )){
       _sessionPassword = '';
       window._userRole = null;
@@ -2141,9 +2141,12 @@ function showLoginForm(errorMsg) {
     modal.id = 'login-modal';
     modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:10000;';
     modal.innerHTML = `
-      <div style="background:#1a2535;border-radius:12px;padding:32px;min-width:300px;display:flex;flex-direction:column;gap:16px;box-shadow:0 8px 32px rgba(0,0,0,.5);">
+      <div style="position:relative;background:#1a2535;border-radius:12px;padding:32px;min-width:300px;display:flex;flex-direction:column;gap:16px;box-shadow:0 8px 32px rgba(0,0,0,.5);">
+        <button id="login-close" type="button" aria-label="Закрыть"
+          style="position:absolute;top:8px;right:10px;background:none;border:none;color:#8a9bb0;
+                 font-size:1.3rem;line-height:1;cursor:pointer;padding:2px 6px">×</button>
         <div style="font-size:28px;text-align:center">🌳</div>
-        <div id="login-title" style="color:#e8d890;font-size:18px;text-align:center;font-weight:500">${TREE_CONFIG.familyNameRu}</div>
+        <div style="color:#e8d890;font-size:18px;text-align:center;font-weight:500">${TREE_CONFIG.familyNameRu}</div>
         <div id="login-error" style="color:#f87171;font-size:13px;text-align:center;min-height:18px"></div>
         <input id="login-pwd" type="password" placeholder="Пароль" autocomplete="current-password"
           style="padding:10px 14px;border-radius:8px;border:1px solid #3a4a5a;background:#0f1a25;color:#fff;font-size:15px;outline:none;">
@@ -2153,15 +2156,25 @@ function showLoginForm(errorMsg) {
         </button>
       </div>`;
     document.body.appendChild(modal);
-    document.getElementById('login-title').textContent = t('login_title');
-    document.getElementById('login-pwd').placeholder    = t('login_pwd_ph');
-    document.getElementById('login-btn').textContent    = t('login_btn');
+
+    function closeLoginModal(){
+      modal.style.display = 'none';
+      document.getElementById('login-error').textContent = '';
+      document.getElementById('login-pwd').value = '';
+    }
+    modal.addEventListener('click', e => {
+      if(e.target === modal) closeLoginModal();
+    });
+    document.getElementById('login-close').addEventListener('click', closeLoginModal);
+    document.addEventListener('keydown', e => {
+      if(e.key === 'Escape' && modal.style.display === 'flex') closeLoginModal();
+    });
 
     async function doLogin() {
       const pwd = document.getElementById('login-pwd').value;
       if (!pwd) return;
       document.getElementById('login-error').textContent = '';
-      document.getElementById('login-btn').textContent = t('login_btn_loading');
+      document.getElementById('login-btn').textContent = 'Загрузка...';
       try {
         // Step 1: verify password and get role via /api/login
         const loginRes = await fetch(WORKER_URL + '/api/login', {
@@ -2171,8 +2184,8 @@ function showLoginForm(errorMsg) {
         });
         const loginData = await loginRes.json();
         if (!loginData.ok) {
-          document.getElementById('login-error').textContent = t('login_err_wrong');
-          document.getElementById('login-btn').textContent = t('login_btn');
+          document.getElementById('login-error').textContent = 'Неверный пароль';
+          document.getElementById('login-btn').textContent = 'Войти';
           return;
         }
 
@@ -2205,8 +2218,8 @@ function showLoginForm(errorMsg) {
             : (currentLang==='he' ? '✓ נכנסת כאורח' : currentLang==='en' ? '✓ Logged in as guest' : '✓ Вы вошли как гость'),
           false);
       } catch(e) {
-        document.getElementById('login-error').textContent = t('login_err_prefix') + e.message;
-        document.getElementById('login-btn').textContent = t('login_btn');
+        document.getElementById('login-error').textContent = 'Ошибка: ' + e.message;
+        document.getElementById('login-btn').textContent = 'Войти';
       }
     }
 
@@ -2215,11 +2228,6 @@ function showLoginForm(errorMsg) {
       if (e.key === 'Enter') doLogin();
     });
   }
-  // Modal may already exist from a previous open (created once, reused) —
-  // refresh its text nodes in case the language changed since then.
-  document.getElementById('login-title').textContent = t('login_title');
-  document.getElementById('login-pwd').placeholder    = t('login_pwd_ph');
-  document.getElementById('login-btn').textContent    = t('login_btn');
   if (errorMsg) document.getElementById('login-error').textContent = errorMsg;
   modal.style.display = 'flex';
   setTimeout(() => document.getElementById('login-pwd').focus(), 50);
