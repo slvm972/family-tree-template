@@ -1221,7 +1221,7 @@ document.getElementById('modal-generate').addEventListener('click', async () => 
     const death = document.getElementById('f-death').value.trim();
     const relP  = document.getElementById('f-rel-person').value.trim();
     const relT  = document.getElementById('f-rel-type').value;
-    if(!name){ alert('Введите имя'); return; }
+    if(!name){ alert(t('alert_name')); return; }
 
     if(isAdminDirect){
       const phoneV  = document.getElementById('f-phone').value.trim();
@@ -1258,18 +1258,18 @@ document.getElementById('modal-generate').addEventListener('click', async () => 
               await linkNewPersonToFamily(newId, relTargetId, relT, sex);
             } catch(linkErr){
               console.warn('[P5] Family link failed (person still created):', linkErr.message);
-              showToast('✓ Персона создана, но связь не удалось установить автоматически', true);
+              showToast(t('toast_person_link_failed'), true);
             }
           }
 
           if(typeof loadTree === 'function') await loadTree();
           document.getElementById('modal-overlay').classList.remove('open');
-          showToast('✓ Добавлено: ' + name, false);
+          showToast(t('toast_added_prefix') + name, false);
         } else {
-          showToast('⚠ ' + (data.error||'Ошибка сервера'), true);
+          showToast('⚠ ' + (data.error||t('toast_server_error')), true);
         }
       } catch(e){
-        showToast('⚠ Ошибка соединения: ' + e.message, true);
+        showToast(t('toast_connection_error_prefix') + e.message, true);
       } finally {
         btn.textContent = origTxt;
         btn.disabled = false;
@@ -1297,7 +1297,7 @@ document.getElementById('modal-generate').addEventListener('click', async () => 
     const cap    = document.getElementById('f-photo-cap').value.trim();
     const photoFileEl = document.getElementById('photoFileInput');
     const photoFile   = (photoFileEl && photoFileEl.files && photoFileEl.files[0]) ? photoFileEl.files[0] : null;
-    if(!person){ alert('Укажите персону'); return; }
+    if(!person){ alert(t('alert_person')); return; }
 
     const photoIdMatch = person.match(/\[(P\d+)\]\s*$/);
     const photoTargetId = photoIdMatch ? photoIdMatch[1] : null;
@@ -1325,7 +1325,7 @@ document.getElementById('modal-generate').addEventListener('click', async () => 
           });
           const uploadData = await uploadRes.json().catch(() => null);
           if(!uploadRes.ok || !uploadData || (!uploadData.url && !uploadData.key)){
-            showToast('⚠ ' + (uploadData && uploadData.error || 'Не удалось загрузить фото'), true);
+            showToast('⚠ ' + (uploadData && uploadData.error || t('toast_photo_upload_failed')), true);
             btn.textContent = origTxt;
             btn.disabled = false;
             return;
@@ -1334,7 +1334,7 @@ document.getElementById('modal-generate').addEventListener('click', async () => 
         }
 
         if(!finalUrl){
-          showToast('⚠ Укажите URL фото или выберите файл', true);
+          showToast(t('toast_photo_url_or_file_required'), true);
           btn.textContent = origTxt;
           btn.disabled = false;
           return;
@@ -1353,12 +1353,12 @@ document.getElementById('modal-generate').addEventListener('click', async () => 
           document.getElementById('modal-overlay').classList.remove('open');
           if(typeof navigateTo === 'function') navigateTo(currentFocal);
           if(typeof showPanel === 'function') showPanel(photoTargetId);
-          showToast('✓ Фото сохранено', false);
+          showToast(t('toast_photo_saved'), false);
         } else {
-          showToast('⚠ ' + (d.error||'Ошибка сервера'), true);
+          showToast('⚠ ' + (d.error||t('toast_server_error')), true);
         }
       } catch(e){
-        showToast('⚠ Ошибка соединения: ' + e.message, true);
+        showToast(t('toast_connection_error_prefix') + e.message, true);
       } finally {
         btn.textContent = origTxt;
         btn.disabled = false;
@@ -1366,7 +1366,7 @@ document.getElementById('modal-generate').addEventListener('click', async () => 
       return;
     }
 
-    if(!url){ alert('Укажите URL фото (гостевой email-путь не поддерживает загрузку файла)'); return; }
+    if(!url){ alert(t('alert_photo_no_source')); return; }
     text  = t('prompt_header');
     text += 'Тип: Добавить фото\n';
     text += 'Персона: ' + person + '\n';
@@ -1377,7 +1377,7 @@ document.getElementById('modal-generate').addEventListener('click', async () => 
     const person = document.getElementById('f-bio-person').value.trim();
     const bio    = document.getElementById('f-bio-text').value.trim();
     const burl   = document.getElementById('f-bio-url').value.trim();
-    if(!person){ alert('Укажите персону'); return; }
+    if(!person){ alert(t('alert_person')); return; }
 
     const bioIdMatch = person.match(/\[(P\d+)\]\s*$/);
     const bioTargetId = bioIdMatch ? bioIdMatch[1] : null;
@@ -1386,7 +1386,7 @@ document.getElementById('modal-generate').addEventListener('click', async () => 
     if(isAdminBio){
       // Worker only has one 'bio' field — merge text + source URL if both given
       const bioValue = burl ? (bio ? bio + '\n\nИсточник: ' + burl : 'Источник: ' + burl) : bio;
-      if(!bioValue){ alert('Укажите текст биографии или ссылку'); return; }
+      if(!bioValue){ alert(t('alert_bio_required')); return; }
 
       const btn = document.getElementById('modal-generate');
       const origTxt = btn.textContent;
@@ -1406,12 +1406,12 @@ document.getElementById('modal-generate').addEventListener('click', async () => 
           document.getElementById('modal-overlay').classList.remove('open');
           if(typeof navigateTo === 'function') navigateTo(currentFocal);
           if(typeof showPanel === 'function') showPanel(bioTargetId);
-          showToast('✓ Биография сохранена', false);
+          showToast(t('toast_bio_saved'), false);
         } else {
-          showToast('⚠ ' + (d.error||'Ошибка сервера'), true);
+          showToast('⚠ ' + (d.error||t('toast_server_error')), true);
         }
       } catch(e){
-        showToast('⚠ Ошибка соединения: ' + e.message, true);
+        showToast(t('toast_connection_error_prefix') + e.message, true);
       } finally {
         btn.textContent = origTxt;
         btn.disabled = false;
@@ -1428,7 +1428,7 @@ document.getElementById('modal-generate').addEventListener('click', async () => 
   } else if(currentType === 'date'){
     const person = document.getElementById('f-date-person').value.trim();
     const note   = document.getElementById('f-date-note').value.trim();
-    if(!person || !note){ alert('Укажите персону и уточнение'); return; }
+    if(!person || !note){ alert(t('alert_person_note')); return; }
     text  = t('prompt_header');
     text += 'Тип: Уточнение дат / места\n';
     text += 'Персона: ' + person + '\n';
@@ -1508,10 +1508,10 @@ document.getElementById('modal-generate').addEventListener('click', async () => 
                   : currentLang==='en' ? '✓ Saved to server'
                   : '✓ Сохранено на сервере', false);
         } else {
-          showToast('⚠ ' + (data.error || 'Ошибка сервера'), true);
+          showToast('⚠ ' + (data.error || t('toast_server_error')), true);
         }
       } catch(e) {
-        showToast('⚠ Ошибка соединения: ' + e.message, true);
+        showToast(t('toast_connection_error_prefix') + e.message, true);
       } finally {
         btn.textContent = origText;
         btn.disabled = false;

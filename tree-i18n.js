@@ -98,7 +98,17 @@ const UI = {
     title_contacts:'Скачать контакты',
     title_calendar:'Скачать календарь дней рождения',
     title_admin:'Управление',
-    title_diag:'Диагностика'
+    title_diag:'Диагностика',
+    alert_photo_no_source:'Укажите URL фото (гостевой email-путь не поддерживает загрузку файла)',
+    alert_bio_required:'Укажите текст биографии или ссылку',
+    toast_person_link_failed:'✓ Персона создана, но связь не удалось установить автоматически',
+    toast_added_prefix:'✓ Добавлено: ',
+    toast_server_error:'Ошибка сервера',
+    toast_connection_error_prefix:'⚠ Ошибка соединения: ',
+    toast_photo_upload_failed:'Не удалось загрузить фото',
+    toast_photo_url_or_file_required:'⚠ Укажите URL фото или выберите файл',
+    toast_photo_saved:'✓ Фото сохранено',
+    toast_bio_saved:'✓ Биография сохранена'
   },
   en: {
     back:'◀ Back', back_n:'◀ Back ({n})',
@@ -194,7 +204,17 @@ const UI = {
     title_contacts:'Download contacts',
     title_calendar:'Download birthday calendar',
     title_admin:'Manage',
-    title_diag:'Diagnostics'
+    title_diag:'Diagnostics',
+    alert_photo_no_source:'Please provide a photo URL (guest email flow does not support file upload)',
+    alert_bio_required:'Please provide biography text or a link',
+    toast_person_link_failed:'✓ Person created, but the family link could not be set automatically',
+    toast_added_prefix:'✓ Added: ',
+    toast_server_error:'Server error',
+    toast_connection_error_prefix:'⚠ Connection error: ',
+    toast_photo_upload_failed:'Failed to upload photo',
+    toast_photo_url_or_file_required:'⚠ Please provide a photo URL or choose a file',
+    toast_photo_saved:'✓ Photo saved',
+    toast_bio_saved:'✓ Biography saved'
   },
   he: {
     back:'◀ חזרה', back_n:'◀ חזרה ({n})',
@@ -290,6 +310,16 @@ const UI = {
     title_contacts:'הורדת אנשי קשר',
     title_calendar:'הורדת לוח שנת ימי הולדת',
     title_admin:'ניהול',
-    title_diag:'אבחון'
+    title_diag:'אבחון',
+    alert_photo_no_source:'נא לציין קישור לתמונה (משתמשי אורח אינם יכולים להעלות קובץ)',
+    alert_bio_required:'נא לציין טקסט ביוגרפי או קישור',
+    toast_person_link_failed:'✓ האדם נוצר, אך לא ניתן היה לקשר אותו למשפחה באופן אוטומטי',
+    toast_added_prefix:'✓ נוסף: ',
+    toast_server_error:'שגיאת שרת',
+    toast_connection_error_prefix:'⚠ שגיאת חיבור: ',
+    toast_photo_upload_failed:'העלאת התמונה נכשלה',
+    toast_photo_url_or_file_required:'⚠ נא לציין קישור לתמונה או לבחור קובץ',
+    toast_photo_saved:'✓ התמונה נשמרה',
+    toast_bio_saved:'✓ הביוגרפיה נשמרה'
   }
 };
