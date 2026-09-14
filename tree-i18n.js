@@ -92,7 +92,13 @@ const UI = {
     login_err_wrong:'Неверный пароль',
     login_err_prefix:'Ошибка: ',
     logout_confirm_admin:'Вы вошли как администратор. Выйти?',
-    logout_confirm_guest:'Вы вошли как гость. Выйти?'
+    logout_confirm_guest:'Вы вошли как гость. Выйти?',
+    title_go:'Перейти',
+    title_print:'Печать A1',
+    title_contacts:'Скачать контакты',
+    title_calendar:'Скачать календарь дней рождения',
+    title_admin:'Управление',
+    title_diag:'Диагностика'
   },
   en: {
     back:'◀ Back', back_n:'◀ Back ({n})',
@@ -182,7 +188,13 @@ const UI = {
     login_err_wrong:'Incorrect password',
     login_err_prefix:'Error: ',
     logout_confirm_admin:'You are logged in as admin. Log out?',
-    logout_confirm_guest:'You are logged in as guest. Log out?'
+    logout_confirm_guest:'You are logged in as guest. Log out?',
+    title_go:'Go',
+    title_print:'Print A1',
+    title_contacts:'Download contacts',
+    title_calendar:'Download birthday calendar',
+    title_admin:'Manage',
+    title_diag:'Diagnostics'
   },
   he: {
     back:'◀ חזרה', back_n:'◀ חזרה ({n})',
@@ -272,6 +284,12 @@ const UI = {
     login_err_wrong:'סיסמה שגויה',
     login_err_prefix:'שגיאה: ',
     logout_confirm_admin:'נכנסת כמנהל. להתנתק?',
-    logout_confirm_guest:'נכנסת כאורח. להתנתק?'
+    logout_confirm_guest:'נכנסת כאורח. להתנתק?',
+    title_go:'עבור',
+    title_print:'הדפסה A1',
+    title_contacts:'הורדת אנשי קשר',
+    title_calendar:'הורדת לוח שנת ימי הולדת',
+    title_admin:'ניהול',
+    title_diag:'אבחון'
   }
 };
