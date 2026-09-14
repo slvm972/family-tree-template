@@ -176,7 +176,7 @@ export default {
       if(!rawData) return err('Данные дерева не найдены. Загрузите начальный файл.', 404);
 
       const source = JSON.parse(rawData);
-      const publicFields = ['id', 'name', 'birth', 'death', 'birth_he', 'death_he',
+      const publicFields = ['id', 'name', 'name_en', 'name_he', 'birth', 'death', 'birth_he', 'death_he',
                             'hebrew_name', 'sex', 'gen', 'missing', 'rel', 'genitive',
                             'rel_en', 'rel_he', 'family_note', 'family_note_en',
                             'family_note_he', 'other_note', 'other_note_en', 'other_note_he'];
@@ -538,7 +538,8 @@ export default {
 
       // Allowed fields for direct update (guards against injecting structural fields)
       const ALLOWED = ['name','birth','death','birth_he','death_he','hebrew_name',
-                       'sex','rel','phone','email','social','bio','photo','missing'];
+                       'sex','rel','phone','email','social','bio','photo','missing',
+                       'name_en','name_he'];
       const applied = {};
       for(const [field, val] of Object.entries(updates)){
         if(!ALLOWED.includes(field)) continue;
