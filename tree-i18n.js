@@ -108,7 +108,8 @@ const UI = {
     toast_photo_upload_failed:'Не удалось загрузить фото',
     toast_photo_url_or_file_required:'⚠ Укажите URL фото или выберите файл',
     toast_photo_saved:'✓ Фото сохранено',
-    toast_bio_saved:'✓ Биография сохранена'
+    toast_bio_saved:'✓ Биография сохранена',
+    ap_proposals_intro:'Здесь появляются правки, предложенные родственниками, у которых нет пароля администратора. Они не применяются автоматически — вы можете принять предложение (текст нужно будет внести вручную) или отклонить его.'
   },
   en: {
     back:'◀ Back', back_n:'◀ Back ({n})',
@@ -214,7 +215,8 @@ const UI = {
     toast_photo_upload_failed:'Failed to upload photo',
     toast_photo_url_or_file_required:'⚠ Please provide a photo URL or choose a file',
     toast_photo_saved:'✓ Photo saved',
-    toast_bio_saved:'✓ Biography saved'
+    toast_bio_saved:'✓ Biography saved',
+    ap_proposals_intro:'This is where edits suggested by relatives without an admin password appear. They are not applied automatically — you can accept a suggestion (you will need to enter the change manually) or reject it.'
   },
   he: {
     back:'◀ חזרה', back_n:'◀ חזרה ({n})',
@@ -320,6 +322,7 @@ const UI = {
     toast_photo_upload_failed:'העלאת התמונה נכשלה',
     toast_photo_url_or_file_required:'⚠ נא לציין קישור לתמונה או לבחור קובץ',
     toast_photo_saved:'✓ התמונה נשמרה',
-    toast_bio_saved:'✓ הביוגרפיה נשמרה'
+    toast_bio_saved:'✓ הביוגרפיה נשמרה',
+    ap_proposals_intro:'כאן מופיעות הצעות לעריכה מבני משפחה שאין להם סיסמת מנהל. ההצעות אינן מוחלות אוטומטית — ניתן לאשר הצעה (יהיה צורך להזין את השינוי ידנית) או לדחות אותה.'
   }
 };
