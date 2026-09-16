@@ -451,6 +451,18 @@ svg{position:absolute;top:0;left:0;overflow:visible}
       </div>
       <input type="file" id="ap-upload-input" accept=".html" style="display:none">
       <div id="ap-upload-status" style="margin-top:10px;font-size:.78rem"></div>
+
+      <button id="btn-export-gedcom" style="margin-top:12px;padding:6px 14px;background:#C09828;color:#fff;
+        border:none;border-radius:4px;cursor:pointer;font-family:inherit;font-size:.78rem">
+        ⬇ Скачать GEDCOM (.ged)
+      </button>
+      <p style="font-size:.7rem;color:#999;margin-top:4px">
+        Формат GEDCOM 5.5.1 — открывается в MyHeritage, Ancestry, Gramps и
+        большинстве генеалогических сервисов. Некоторые поля (родительный
+        падеж, свободные заметки, еврейские даты в структурированном виде)
+        формат не поддерживает и будут либо опущены, либо перенесены как
+        обычный текст в заметки.
+      </p>
     </div>
 
     <!-- Tab: Backups -->
@@ -1974,6 +1986,79 @@ function generateVCF() {
   return { vcf: lines.join('\r\n'), count };
 }
 
+// ════════════════════════════════════════════════════════
+//  GEDCOM 5.5.1 export — full tree (persons + families)
+// ════════════════════════════════════════════════════════
+function generateGEDCOM() {
+  const lines = [];
+  lines.push('0 HEAD');
+  lines.push('1 SOUR ' + (TREE_CONFIG.familyNameEn || 'FamilyTree'));
+  lines.push('1 GEDC');
+  lines.push('2 VERS 5.5.1');
+  lines.push('2 FORM LINEAGE-LINKED');
+  lines.push('1 CHAR UTF-8');
+  lines.push('1 SUBM @SUBM1@');
+  lines.push('0 @SUBM1@ SUBM');
+  lines.push('1 NAME ' + (TREE_CONFIG.familyNameRu || 'Family'));
+
+  // ── Персоны (INDI) ──
+  for(const [id, n] of Object.entries(IDX.nodes)){
+    lines.push('0 @' + id + '@ INDI');
+
+    // Разбор имени: последнее слово — фамилия, если имя из нескольких слов
+    const name  = (n.name || '').trim();
+    const parts = name.split(/\s+/).filter(Boolean);
+    if(parts.length > 1){
+      const surname = parts[parts.length - 1];
+      const given    = parts.slice(0, -1).join(' ');
+      lines.push('1 NAME ' + given + ' /' + surname + '/');
+    } else if(name){
+      lines.push('1 NAME ' + name);
+    }
+
+    if(n.sex === 'M' || n.sex === 'F') lines.push('1 SEX ' + n.sex);
+
+    if(n.birth){
+      lines.push('1 BIRT');
+      lines.push('2 DATE ' + n.birth);
+    }
+    if(n.death && n.death.trim() !== ''){
+      lines.push('1 DEAT');
+      lines.push('2 DATE ' + n.death);
+    }
+
+    // Еврейские даты — сознательно не структурируем как @#DHEBREW@ в этой
+    // версии (см. пометку в задаче), переносим как обычную заметку.
+    if(n.birth_he) lines.push('1 NOTE Дата рождения (евр.): ' + n.birth_he);
+    if(n.death_he) lines.push('1 NOTE Дата смерти (евр.): ' + n.death_he);
+
+    if(n.phone)  lines.push('1 PHON ' + n.phone.split(',')[0].trim());
+    if(n.email)  lines.push('1 EMAIL ' + n.email.split(',')[0].trim());
+    if(n.social) lines.push('1 WWW ' + n.social.split(',')[0].trim());
+    if(n.bio)    lines.push('1 NOTE ' + n.bio.replace(/\n/g, ' '));
+
+    // FAMC — семья, где эта персона ребёнок
+    if(IDX.child_of[id]) lines.push('1 FAMC @' + IDX.child_of[id] + '@');
+    // FAMS — семьи, где эта персона родитель
+    for(const famId of (IDX.parent_in[id] || [])){
+      lines.push('1 FAMS @' + famId + '@');
+    }
+  }
+
+  // ── Семьи (FAM) ──
+  for(const [famId, f] of Object.entries(IDX.families)){
+    lines.push('0 @' + famId + '@ FAM');
+    if(f.husband) lines.push('1 HUSB @' + f.husband + '@');
+    if(f.wife)    lines.push('1 WIFE @' + f.wife + '@');
+    for(const childId of (f.children || [])){
+      lines.push('1 CHIL @' + childId + '@');
+    }
+  }
+
+  lines.push('0 TRLR');
+  return lines.join('\r\n');
+}
+
 // Visible toast notification (works even if user doesn't notice bottom bar)
 function showToast(msg, isWarning){
   let t = document.getElementById('app-toast');
@@ -2013,6 +2098,30 @@ document.getElementById('btn-login').addEventListener('click', e => {
   }
   // Show login form
   showLoginForm();
+});
+
+document.getElementById('btn-export-gedcom').addEventListener('click', () => {
+  if(!IDX || !IDX.nodes || !Object.keys(IDX.nodes).length){
+    showToast(currentLang==='he' ? '⚠ אין נתונים לייצוא'
+             : currentLang==='en' ? '⚠ No data to export'
+             : '⚠ Нет данных для экспорта', true);
+    return;
+  }
+  const ged = generateGEDCOM();
+  const blob = new Blob([ged], {type: 'text/plain;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = (TREE_CONFIG.fileSlug || 'family') + '.ged';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  const msg = currentLang==='he' ? '✓ קובץ GEDCOM הורד'
+            : currentLang==='en' ? '✓ GEDCOM file downloaded'
+            : '✓ Файл GEDCOM скачан';
+  showToast(msg, false);
 });
 
 document.getElementById('btn-contacts').addEventListener('click', () => {
