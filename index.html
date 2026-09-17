@@ -428,35 +428,49 @@ svg{position:absolute;top:0;left:0;overflow:visible}
 <div id="admin-panel-overlay" style="display:none;position:fixed;inset:0;background:rgba(20,12,4,.6);z-index:900;align-items:center;justify-content:center">
   <div style="background:#FAF7F0;border-radius:8px;padding:20px 24px;width:520px;max-height:80vh;overflow-y:auto;box-shadow:0 12px 48px rgba(0,0,0,.4)">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-      <h3 style="margin:0;color:#5A3C10">🛠 Управление деревом</h3>
+      <h3 data-i="ap_title" style="margin:0;color:#5A3C10">🛠 Управление деревом</h3>
       <button id="admin-panel-close" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:#7A5828">×</button>
     </div>
 
     <div style="display:flex;gap:6px;margin-bottom:16px;border-bottom:1px solid rgba(184,144,48,.3)">
-      <button class="ap-tab active" data-ap-tab="upload" style="padding:6px 14px;background:none;border:none;cursor:pointer;font-family:inherit;font-size:.8rem;color:#5A3C10;border-bottom:2px solid #C09828">⬆ Загрузить</button>
-      <button class="ap-tab" data-ap-tab="backups" style="padding:6px 14px;background:none;border:none;cursor:pointer;font-family:inherit;font-size:.8rem;color:#7A5828;border-bottom:2px solid transparent">💾 Копии</button>
-      <button class="ap-tab" data-ap-tab="proposals" style="padding:6px 14px;background:none;border:none;cursor:pointer;font-family:inherit;font-size:.8rem;color:#7A5828;border-bottom:2px solid transparent">📋 Предложения</button>
+      <button class="ap-tab active" data-ap-tab="upload" data-i="ap_tab_upload" style="padding:6px 14px;background:none;border:none;cursor:pointer;font-family:inherit;font-size:.8rem;color:#5A3C10;border-bottom:2px solid #C09828">⬆ Загрузить</button>
+      <button class="ap-tab" data-ap-tab="backups" data-i="ap_tab_backups" style="padding:6px 14px;background:none;border:none;cursor:pointer;font-family:inherit;font-size:.8rem;color:#7A5828;border-bottom:2px solid transparent">💾 Копии</button>
+      <button class="ap-tab" data-ap-tab="proposals" data-i="ap_tab_proposals" style="padding:6px 14px;background:none;border:none;cursor:pointer;font-family:inherit;font-size:.8rem;color:#7A5828;border-bottom:2px solid transparent">📋 Предложения</button>
     </div>
 
     <!-- Tab: Upload -->
     <div class="ap-panel" data-ap-panel="upload">
-      <p style="font-size:.78rem;color:#7A5828;margin-bottom:10px">
+      <h4 data-i="ap_section_import_html" style="font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:#B89030;margin-bottom:6px">Импорт из HTML-файла дерева</h4>
+      <p data-i="ap_upload_intro" style="font-size:.78rem;color:#7A5828;margin-bottom:10px">
         Загрузите обновлённый HTML-файл дерева — данные будут извлечены и сохранены на сервере.
         Предыдущая версия автоматически сохранится как резервная копия.
       </p>
       <div id="ap-upload-drop" style="border:2px dashed rgba(184,144,48,.4);border-radius:6px;padding:20px;text-align:center;cursor:pointer">
         <div style="font-size:1.6rem">📂</div>
-        <div style="font-weight:600;margin-top:6px;font-size:.82rem;color:#5A3C10">Выберите HTML-файл дерева</div>
-        <p style="font-size:.7rem;color:#999;margin-top:4px">или перетащите файл сюда</p>
+        <div data-i="ap_upload_choose" style="font-weight:600;margin-top:6px;font-size:.82rem;color:#5A3C10">Выберите HTML-файл дерева</div>
+        <p data-i="ap_upload_drop_hint" style="font-size:.7rem;color:#999;margin-top:4px">или перетащите файл сюда</p>
       </div>
       <input type="file" id="ap-upload-input" accept=".html" style="display:none">
       <div id="ap-upload-status" style="margin-top:10px;font-size:.78rem"></div>
 
-      <button id="btn-export-gedcom" style="margin-top:12px;padding:6px 14px;background:#C09828;color:#fff;
+      <h4 data-i="ap_section_import_gedcom" style="font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:#B89030;margin:20px 0 6px;padding-top:16px;border-top:1px solid rgba(184,144,48,.2)">Импорт из GEDCOM (.ged)</h4>
+      <p data-i="ap_gedcom_import_intro" style="font-size:.78rem;color:#7A5828;margin-bottom:10px">
+        Загрузите файл .ged, экспортированный из MyHeritage, Ancestry, Gramps или другого сервиса — он ПОЛНОСТЬЮ заменит текущее дерево. Предыдущая версия автоматически сохранится как резервная копия.
+      </p>
+      <div id="ap-gedcom-import-drop" style="border:2px dashed rgba(184,144,48,.4);border-radius:6px;padding:20px;text-align:center;cursor:pointer">
+        <div style="font-size:1.6rem">📥</div>
+        <div data-i="ap_gedcom_import_choose" style="font-weight:600;margin-top:6px;font-size:.82rem;color:#5A3C10">Выберите файл .ged</div>
+        <p data-i="ap_upload_drop_hint" style="font-size:.7rem;color:#999;margin-top:4px">или перетащите файл сюда</p>
+      </div>
+      <input type="file" id="ap-gedcom-import-input" accept=".ged" style="display:none">
+      <div id="ap-gedcom-import-status" style="margin-top:10px;font-size:.78rem"></div>
+
+      <h4 data-i="ap_section_export_gedcom" style="font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:#B89030;margin:20px 0 6px;padding-top:16px;border-top:1px solid rgba(184,144,48,.2)">Экспорт в GEDCOM (.ged)</h4>
+      <button id="btn-export-gedcom" data-i="ap_gedcom_export_btn" style="padding:6px 14px;background:#C09828;color:#fff;
         border:none;border-radius:4px;cursor:pointer;font-family:inherit;font-size:.78rem">
         ⬇ Скачать GEDCOM (.ged)
       </button>
-      <p style="font-size:.7rem;color:#999;margin-top:4px">
+      <p data-i="ap_gedcom_export_note" style="font-size:.7rem;color:#999;margin-top:4px">
         Формат GEDCOM 5.5.1 — открывается в MyHeritage, Ancestry, Gramps и
         большинстве генеалогических сервисов. Некоторые поля (родительный
         падеж, свободные заметки, еврейские даты в структурированном виде)
@@ -965,6 +979,46 @@ function trel(s){
 <script src="tree-names.js"></script>
 <script>
 
+// ── Автоматическая транслитерация имени, если нет ручного
+// перевода (name_en/name_he) и нет записи в статическом словаре
+// NAMES. Гарантирует, что ЛЮБАЯ персона (тестовая, импортированная
+// из GEDCOM, только что созданная) получает читаемое имя на EN/HE,
+// а не остаётся молча на русском. Транслитерация в иврит — best-effort
+// (единого стандарта кириллица→иврит не существует), той же точности,
+// что и приблизительные еврейские даты в GEDCOM-экспорте.
+const TRANSLIT_LAT = {
+  'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'yo','ж':'zh',
+  'з':'z','и':'i','й':'y','к':'k','л':'l','м':'m','н':'n','о':'o',
+  'п':'p','р':'r','с':'s','т':'t','у':'u','ф':'f','х':'kh','ц':'ts',
+  'ч':'ch','ш':'sh','щ':'shch','ъ':'','ы':'y','ь':'','э':'e','ю':'yu','я':'ya',
+  'А':'A','Б':'B','В':'V','Г':'G','Д':'D','Е':'E','Ё':'Yo','Ж':'Zh',
+  'З':'Z','И':'I','Й':'Y','К':'K','Л':'L','М':'M','Н':'N','О':'O',
+  'П':'P','Р':'R','С':'S','Т':'T','У':'U','Ф':'F','Х':'Kh','Ц':'Ts',
+  'Ч':'Ch','Ш':'Sh','Щ':'Shch','Ъ':'','Ы':'Y','Ь':'','Э':'E','Ю':'Yu','Я':'Ya'
+};
+const TRANSLIT_HEB = {
+  'а':'א','б':'ב','в':'ו','г':'ג','д':'ד','е':'ה','ё':'יו','ж':"ז'",
+  'з':'ז','и':'י','й':'י','к':'ק','л':'ל','м':'מ','н':'נ','о':'ו',
+  'п':'פ','р':'ר','с':'ס','т':'ט','у':'ו','ф':'פ','х':'ח','ц':'צ',
+  'ч':"צ'",'ш':'ש','щ':"שץ'",'ъ':'','ы':'י','ь':'','э':'א','ю':'יו','я':'יה'
+};
+TRANSLIT_HEB['А']=TRANSLIT_HEB['а']; TRANSLIT_HEB['Б']=TRANSLIT_HEB['б']; TRANSLIT_HEB['В']=TRANSLIT_HEB['в'];
+TRANSLIT_HEB['Г']=TRANSLIT_HEB['г']; TRANSLIT_HEB['Д']=TRANSLIT_HEB['д']; TRANSLIT_HEB['Е']=TRANSLIT_HEB['е'];
+TRANSLIT_HEB['Ё']=TRANSLIT_HEB['ё']; TRANSLIT_HEB['Ж']=TRANSLIT_HEB['ж']; TRANSLIT_HEB['З']=TRANSLIT_HEB['з'];
+TRANSLIT_HEB['И']=TRANSLIT_HEB['и']; TRANSLIT_HEB['Й']=TRANSLIT_HEB['й']; TRANSLIT_HEB['К']=TRANSLIT_HEB['к'];
+TRANSLIT_HEB['Л']=TRANSLIT_HEB['л']; TRANSLIT_HEB['М']=TRANSLIT_HEB['м']; TRANSLIT_HEB['Н']=TRANSLIT_HEB['н'];
+TRANSLIT_HEB['О']=TRANSLIT_HEB['о']; TRANSLIT_HEB['П']=TRANSLIT_HEB['п']; TRANSLIT_HEB['Р']=TRANSLIT_HEB['р'];
+TRANSLIT_HEB['С']=TRANSLIT_HEB['с']; TRANSLIT_HEB['Т']=TRANSLIT_HEB['т']; TRANSLIT_HEB['У']=TRANSLIT_HEB['у'];
+TRANSLIT_HEB['Ф']=TRANSLIT_HEB['ф']; TRANSLIT_HEB['Х']=TRANSLIT_HEB['х']; TRANSLIT_HEB['Ц']=TRANSLIT_HEB['ц'];
+TRANSLIT_HEB['Ч']=TRANSLIT_HEB['ч']; TRANSLIT_HEB['Ш']=TRANSLIT_HEB['ш']; TRANSLIT_HEB['Щ']=TRANSLIT_HEB['щ'];
+TRANSLIT_HEB['Ъ']=TRANSLIT_HEB['ъ']; TRANSLIT_HEB['Ы']=TRANSLIT_HEB['ы']; TRANSLIT_HEB['Ь']=TRANSLIT_HEB['ь'];
+TRANSLIT_HEB['Э']=TRANSLIT_HEB['э']; TRANSLIT_HEB['Ю']=TRANSLIT_HEB['ю']; TRANSLIT_HEB['Я']=TRANSLIT_HEB['я'];
+
+function transliterateName(name, table){
+  if(!name) return name;
+  return name.split('').map(c => table[c] !== undefined ? table[c] : c).join('');
+}
+
 // Get person's display name in current language
 // Falls back to Russian name from IDX if not in dict
 function pname(id) {
@@ -973,8 +1027,9 @@ function pname(id) {
   const manual = n['name_' + currentLang];
   if(manual) return manual;
   const d = NAMES[id];
-  if(!d) return n.name;  // fallback to Russian
-  return d[currentLang] || n.name;
+  if(d && d[currentLang]) return d[currentLang];
+  const table = currentLang === 'he' ? TRANSLIT_HEB : currentLang === 'en' ? TRANSLIT_LAT : null;
+  return table ? transliterateName(n.name, table) : n.name;
 }
 
 
@@ -1561,11 +1616,6 @@ document.getElementById('modal-generate').addEventListener('click', async () => 
   // Submit to Worker if configured (async, non-blocking)
   submitProposal(text, currentType);
 
-  // I2: Auto-translate new person name to EN+HE via Claude API
-  if(currentType === 'person'){
-    const newName = document.getElementById('f-name').value.trim();
-    if(newName) translateNewPerson(newName);
-  }
   const out = document.getElementById('prompt-out');
   out.textContent = text;
   out.style.display = 'block';
@@ -1708,11 +1758,14 @@ function runDiagnostics(){
   missingKeys === 0 ? ok('Словари RU/EN/HE полные')
                     : warn('Отсутствующих ключей в словарях', missingKeys);
 
-  // NAMES dict coverage
+  // NAMES dict coverage (informational only — pname() now auto-transliterates
+  // any person missing a manual name_en/name_he or a NAMES[] entry, so this
+  // count is no longer "broken names", just "names without a curated
+  // manual translation, currently shown via automatic transliteration")
   const namesCount = Object.keys(NAMES).length;
   const nodeMissing = Object.keys(IDX.nodes).filter(id => !NAMES[id]).length;
   nodeMissing === 0 ? ok('NAMES покрывает все персоны', namesCount + ' записей')
-                    : warn('Персон без EN/HE перевода', nodeMissing);
+                    : ok('Персон без ручного перевода (используется автотранслитерация)', nodeMissing);
 
   // ── 4. DOM ELEMENTS ─────────────────────────────────
   const requiredEls = ['tb','vp','world','svg','panel','bbar','modal-overlay',
@@ -1810,109 +1863,16 @@ document.querySelectorAll('.ap-tab').forEach(tabBtn => {
 });
 
 // ── R4.3c: Upload tree file directly from the browser ───
-// Replaces the need for a local server / admin.html — everything
-// happens in-page, since we're already on the same origin as the
-// deployed tree (no file:// CORS restriction here).
-async function handleApTreeUpload(file){
-  const status = document.getElementById('ap-upload-status');
-  status.textContent = '⏳ Читаю файл...';
-  status.style.color = '#7A5828';
+// (active upload handler + listeners live further below, near
+// handleApUpload() — see the "R4.3c: Admin panel — upload tree HTML"
+// section. A duplicate legacy copy of this wiring, calling a since-removed
+// handleApTreeUpload(), was deleted here after being found dead: both
+// sets fired on every click/drop, double-submitting each upload.)
 
-  const text = await file.text();
-  // Support both old (const IDX = {...}) and new (FALLBACK_DATA = {...}) formats
-  const m = text.match(/const IDX = ({[\s\S]*?});\n/)
-         || text.match(/FALLBACK_DATA = ({[\s\S]*?});\n/);
-
-  if(!m){
-    status.textContent = '❌ Не удалось найти данные дерева в этом файле';
-    status.style.color = '#C03030';
-    return;
-  }
-
-  let parsed;
-  try { parsed = JSON.parse(m[1]); }
-  catch(e){
-    status.textContent = '❌ Файл повреждён (невалидный JSON): ' + e.message;
-    status.style.color = '#C03030';
-    return;
-  }
-
-  if(!parsed.nodes || !parsed.families){
-    status.textContent = '❌ В файле нет ожидаемой структуры дерева (nodes/families)';
-    status.style.color = '#C03030';
-    return;
-  }
-
-  status.textContent = '⏳ Загружаю на сервер...';
-  try {
-    const r = await fetch(WORKER_URL + '/api/tree', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Password': _sessionPassword },
-      body: JSON.stringify(parsed)
-    });
-    const d = await r.json();
-    if(d.ok){
-      status.textContent = '✅ Дерево успешно загружено (' + Object.keys(parsed.nodes).length + ' персон)';
-      status.style.color = '#2E7D32';
-      IDX = parsed; // reflect immediately without full page reload
-      buildDatalist();
-      renderBookmarks();
-      if(currentFocal) navigateTo(currentFocal);
-    } else {
-      status.textContent = '❌ ' + (d.error || 'Ошибка сервера');
-      status.style.color = '#C03030';
-    }
-  } catch(e){
-    status.textContent = '❌ Ошибка соединения: ' + e.message;
-    status.style.color = '#C03030';
-  }
-}
-
-document.getElementById('ap-upload-drop').addEventListener('click', () => {
-  document.getElementById('ap-upload-input').click();
-});
-document.getElementById('ap-upload-input').addEventListener('change', e => {
-  if(e.target.files[0]) handleApTreeUpload(e.target.files[0]);
-});
-document.getElementById('ap-upload-drop').addEventListener('dragover', e => {
-  e.preventDefault();
-  e.currentTarget.style.borderColor = '#C09828';
-});
-document.getElementById('ap-upload-drop').addEventListener('dragleave', e => {
-  e.currentTarget.style.borderColor = '';
-});
-document.getElementById('ap-upload-drop').addEventListener('drop', e => {
-  e.preventDefault();
-  e.currentTarget.style.borderColor = '';
-  const file = e.dataTransfer.files[0];
-  if(file) handleApTreeUpload(file);
-});
-
-// Auto-translate newly added person name to EN and HE
-function translateNewPerson(nameRu) {
-  // Local transliteration table (no API needed)
-  const MAP = {
-    'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'yo','ж':'zh',
-    'з':'z','и':'i','й':'y','к':'k','л':'l','м':'m','н':'n','о':'o',
-    'п':'p','р':'r','с':'s','т':'t','у':'u','ф':'f','х':'kh','ц':'ts',
-    'ч':'ch','ш':'sh','щ':'shch','ъ':'','ы':'y','ь':'','э':'e','ю':'yu','я':'ya',
-    'А':'A','Б':'B','В':'V','Г':'G','Д':'D','Е':'E','Ё':'Yo','Ж':'Zh',
-    'З':'Z','И':'I','Й':'Y','К':'K','Л':'L','М':'M','Н':'N','О':'O',
-    'П':'P','Р':'R','С':'S','Т':'T','У':'U','Ф':'F','Х':'Kh','Ц':'Ts',
-    'Ч':'Ch','Ш':'Sh','Щ':'Shch','Ъ':'','Ы':'Y','Ь':'','Э':'E','Ю':'Yu','Я':'Ya'
-  };
-  try {
-    const en = nameRu.split('').map(c => MAP[c] !== undefined ? MAP[c] : c).join('');
-    if(en && en !== nameRu){
-      const info = document.getElementById('info');
-      if(info) info.textContent = `EN: ${en}`;
-      if(!window._pendingNames) window._pendingNames = {};
-      window._pendingNames[nameRu] = {en};
-    }
-  } catch(e) {
-    console.log('Transliteration error:', e.message);
-  }
-}
+// (translateNewPerson() removed — was dead code: computed an EN-only
+// transliteration into an unused window global, never persisted, no HE
+// support. Superseded by the automatic TRANSLIT_LAT/TRANSLIT_HEB fallback
+// now built into pname() itself, which covers every person unconditionally.)
 
 
 // ════════════════════════════════════════════════════════
@@ -2627,17 +2587,239 @@ document.getElementById('ap-upload-input').addEventListener('change', e => {
   if(file) handleApUpload(file);
 });
 
+// ── GEDCOM import — parser (GEDCOM 5.5.x line format) ──────
+// Known, documented limitations (consistent with the export note above):
+// - No CONT/CONC multi-line note merging — only single-line NOTE values.
+// - UTF-8 only (no ANSEL/ANSI legacy encodings from very old exports).
+// - Date qualifiers (ABT/EST/CAL/BEF/AFT) and ranges (BET...AND) are
+//   simplified to their core date, losing the "approximate" flag.
+function parseGedcomLines(text){
+  const norm = text.replace(/^\uFEFF/, '').split(/\r\n|\r|\n/);
+  const lines = [];
+  for(const raw of norm){
+    if(!raw.trim()) continue;
+    const m = raw.match(/^(\d+)\s+(?:@([^@]+)@\s+)?(\S+)(?:\s+(.*))?$/);
+    if(!m) continue;
+    lines.push({ level: parseInt(m[1],10), xref: m[2] || null, tag: m[3], value: (m[4]||'').trim() });
+  }
+  return lines;
+}
+
+function normalizeGedcomDate(raw){
+  if(!raw) return '';
+  let s = raw.trim().toUpperCase();
+  s = s.replace(/^(ABT|EST|CAL|BEF|AFT)\.?\s+/, '');
+  const betMatch = s.match(/^BET\.?\s+(.+?)\s+AND\s+.+$/);
+  if(betMatch) s = betMatch[1];
+  let m = s.match(/^(\d{1,2})\s+([A-Z]{3})\s+(\d{3,4})$/);
+  if(m) return `${parseInt(m[1],10)} ${m[2]} ${m[3]}`;
+  m = s.match(/^([A-Z]{3})\s+(\d{3,4})$/);
+  if(m) return `${m[1]} ${m[2]}`;
+  m = s.match(/(\d{3,4})/);
+  if(m) return m[1];
+  return '';
+}
+
+function parseGedcom(text){
+  const lines = parseGedcomLines(text);
+  const indiRecords = [], famRecords = [];
+  let current = null;
+  for(const ln of lines){
+    if(ln.level === 0){
+      if(ln.tag === 'INDI' && ln.xref){ current = {xref: ln.xref, lines: []}; indiRecords.push(current); }
+      else if(ln.tag === 'FAM' && ln.xref){ current = {xref: ln.xref, lines: []}; famRecords.push(current); }
+      else current = null;
+    } else if(current){
+      current.lines.push(ln);
+    }
+  }
+
+  function firstValue(recLines, tag, level=1){
+    const l = recLines.find(x => x.level===level && x.tag===tag);
+    return l ? l.value : null;
+  }
+  function findAnyLevel(recLines, tag){
+    const l = recLines.find(x => x.tag === tag);
+    return l ? l.value : null;
+  }
+  function unescapeAt(v){
+    return v ? v.replace(/@@/g, '@') : v;
+  }
+  function eventDate(recLines, eventTag){
+    const idx = recLines.findIndex(x => x.level===1 && x.tag===eventTag);
+    if(idx === -1) return null;
+    for(let i=idx+1; i<recLines.length; i++){
+      if(recLines[i].level <= 1) break;
+      if(recLines[i].tag === 'DATE') return recLines[i].value;
+    }
+    return null;
+  }
+  const stripXref = v => v ? v.replace(/^@|@$/g, '') : v;
+
+  const idMap = {};
+  const nodes = {};
+  let pCounter = 0;
+  for(const rec of indiRecords){
+    pCounter++;
+    const id = 'P' + pCounter;
+    idMap[rec.xref] = id;
+
+    const rawName = firstValue(rec.lines, 'NAME') || '';
+    const nameMatch = rawName.match(/^([^\/]*)\/([^\/]*)\/?\s*(.*)$/);
+    let name;
+    if(nameMatch){
+      const given = nameMatch[1].trim();
+      const surname = nameMatch[2].trim();
+      name = [given, surname].filter(Boolean).join(' ');
+    } else {
+      name = rawName.trim();
+    }
+
+    const sexRaw = firstValue(rec.lines, 'SEX');
+    const sex = (sexRaw === 'M' || sexRaw === 'F') ? sexRaw : '';
+
+    const birth = normalizeGedcomDate(eventDate(rec.lines, 'BIRT'));
+    const death = normalizeGedcomDate(eventDate(rec.lines, 'DEAT'));
+
+    const notes = rec.lines.filter(x => x.level===1 && x.tag==='NOTE').map(x=>x.value).filter(Boolean);
+    const phon  = findAnyLevel(rec.lines, 'PHON');
+    const email = findAnyLevel(rec.lines, 'EMAIL');
+    const www   = findAnyLevel(rec.lines, 'WWW');
+
+    const missing = [];
+    if(!birth) missing.push('дата рождения');
+
+    nodes[id] = {
+      id, name: unescapeAt(name) || ('P' + pCounter), sex,
+      birth: birth || '', death: death || '',
+      missing,
+      ...(notes.length ? {bio: unescapeAt(notes.join('\n'))} : {}),
+      ...(phon  ? {phone:  unescapeAt(phon)}  : {}),
+      ...(email ? {email:  unescapeAt(email)} : {}),
+      ...(www   ? {social: unescapeAt(www)}   : {}),
+    };
+  }
+
+  const families = {};
+  let fCounter = 0;
+  for(const rec of famRecords){
+    fCounter++;
+    const famId = 'F' + fCounter;
+    const husbXref = stripXref(firstValue(rec.lines, 'HUSB'));
+    const wifeXref = stripXref(firstValue(rec.lines, 'WIFE'));
+    const childXrefs = rec.lines.filter(x=>x.level===1 && x.tag==='CHIL').map(x=>stripXref(x.value));
+
+    families[famId] = {
+      id: famId,
+      husband: husbXref ? (idMap[husbXref] || null) : null,
+      wife: wifeXref ? (idMap[wifeXref] || null) : null,
+      children: childXrefs.map(x => idMap[x]).filter(Boolean),
+    };
+  }
+
+  return { nodes, families, personCount: indiRecords.length, familyCount: famRecords.length };
+}
+
+// ── GEDCOM import — UI wiring + upload ─────────────────────
+document.getElementById('ap-gedcom-import-drop').addEventListener('click', () => {
+  document.getElementById('ap-gedcom-import-input').click();
+});
+document.getElementById('ap-gedcom-import-drop').addEventListener('dragover', e => {
+  e.preventDefault();
+  e.currentTarget.style.borderColor = '#C09828';
+});
+document.getElementById('ap-gedcom-import-drop').addEventListener('dragleave', e => {
+  e.currentTarget.style.borderColor = '';
+});
+document.getElementById('ap-gedcom-import-drop').addEventListener('drop', e => {
+  e.preventDefault();
+  e.currentTarget.style.borderColor = '';
+  const file = e.dataTransfer.files[0];
+  if(file) handleGedcomImport(file);
+});
+document.getElementById('ap-gedcom-import-input').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if(file) handleGedcomImport(file);
+});
+
+async function handleGedcomImport(file){
+  const st = document.getElementById('ap-gedcom-import-status');
+  st.style.color = '';
+  st.textContent = '⏳ ' + t('ap_gedcom_parsing');
+
+  let parsed;
+  try {
+    const text = await file.text();
+    parsed = parseGedcom(text);
+  } catch(e){
+    st.style.color = '#C03030';
+    st.textContent = '❌ ' + t('ap_data_corrupted_prefix') + e.message;
+    return;
+  }
+
+  if(!parsed.personCount){
+    st.style.color = '#C03030';
+    st.textContent = '❌ ' + t('ap_gedcom_no_records');
+    return;
+  }
+
+  st.textContent = t('ap_gedcom_parsed_summary')
+    .replace('{n}', parsed.personCount)
+    .replace('{f}', parsed.familyCount);
+
+  const idx = {
+    nodes: parsed.nodes,
+    families: parsed.families,
+    child_of: {}, parent_in: {}, relatives: {}, grandparents: {}
+  };
+
+  try {
+    const r1 = await fetch(WORKER_URL + '/api/tree', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Password': _sessionPassword },
+      body: JSON.stringify(idx)
+    });
+    const d1 = await r1.json();
+    if(!d1.ok){
+      st.style.color = '#C03030';
+      st.textContent = '❌ ' + (d1.error || t('toast_server_error'));
+      return;
+    }
+
+    st.textContent = '⏳ ' + t('ap_gedcom_rebuilding');
+    const r2 = await fetch(WORKER_URL + '/api/rebuild-cache', {
+      method: 'POST',
+      headers: { 'X-Password': _sessionPassword }
+    });
+    const d2 = await r2.json();
+    if(!d2.ok){
+      st.style.color = '#C03030';
+      st.textContent = '❌ ' + (d2.error || t('toast_server_error'));
+      return;
+    }
+
+    st.style.color = '#2E7D32';
+    st.textContent = t('ap_gedcom_imported_toast');
+    showToast(t('ap_gedcom_imported_toast'), false);
+
+    if(typeof loadTree === 'function') await loadTree();
+  } catch(e){
+    st.style.color = '#C03030';
+    st.textContent = t('toast_connection_error_prefix') + e.message;
+  }
+}
+
 async function handleApUpload(file){
   const st = document.getElementById('ap-upload-status');
   st.style.color = '';
-  st.textContent = '⏳ Читаю файл...';
+  st.textContent = '⏳ ' + t('login_btn_loading');
 
   const html = await file.text();
   // Support both old (const IDX = {...}) and new (FALLBACK_DATA = {...}) formats
   const m = html.match(/const IDX = ({[\s\S]*?});\n/) || html.match(/FALLBACK_DATA = ({[\s\S]*?});\n/);
   if(!m){
     st.style.color = '#C03030';
-    st.textContent = '❌ Не удалось найти данные дерева в этом файле';
+    st.textContent = '❌ ' + t('ap_no_tree_data_found');
     return;
   }
 
@@ -2645,17 +2827,17 @@ async function handleApUpload(file){
   try { parsed = JSON.parse(m[1]); }
   catch(e){
     st.style.color = '#C03030';
-    st.textContent = '❌ Данные повреждены: ' + e.message;
+    st.textContent = '❌ ' + t('ap_data_corrupted_prefix') + e.message;
     return;
   }
 
   if(!parsed.nodes){
     st.style.color = '#C03030';
-    st.textContent = '❌ В файле нет персон (nodes)';
+    st.textContent = '❌ ' + t('ap_no_persons_in_file');
     return;
   }
 
-  st.textContent = '⏳ Загружаю на сервер (' + Object.keys(parsed.nodes).length + ' персон)...';
+  st.textContent = t('ap_uploading_n_persons').replace('{n}', Object.keys(parsed.nodes).length);
 
   try {
     const r = await fetch(WORKER_URL + '/api/tree', {
@@ -2666,38 +2848,42 @@ async function handleApUpload(file){
     const d = await r.json();
     if(d.ok){
       st.style.color = '#2E7D32';
-      st.textContent = '✅ Дерево успешно загружено (' + Object.keys(parsed.nodes).length + ' персон)';
-      showToast('✓ Дерево обновлено на сервере', false);
+      st.textContent = t('ap_uploaded_n_persons').replace('{n}', Object.keys(parsed.nodes).length);
+      showToast(t('ap_tree_updated_toast'), false);
     } else {
       st.style.color = '#C03030';
-      st.textContent = '❌ Ошибка сервера: ' + (d.error || 'неизвестна');
+      st.textContent = '❌ ' + (d.error || t('toast_server_error'));
     }
   } catch(e){
     st.style.color = '#C03030';
-    st.textContent = '❌ Ошибка соединения: ' + e.message;
+    st.textContent = t('toast_connection_error_prefix') + e.message;
   }
 }
 
 // ── R4.3d: Admin panel — Backups tab ──────────────────────
+function apLocale(){
+  return currentLang === 'he' ? 'he-IL' : currentLang === 'en' ? 'en-US' : 'ru-RU';
+}
+
 async function loadApBackups(){
   const list = document.getElementById('ap-backups-list');
-  list.innerHTML = '⏳ Загрузка...';
+  list.innerHTML = '⏳ ' + t('login_btn_loading');
   try {
     const r = await fetch(WORKER_URL + '/api/backups', {
       headers: { 'X-Password': _sessionPassword }
     });
     const d = await r.json();
-    if(!d.ok){ list.innerHTML = '❌ ' + (d.error || 'Ошибка сервера'); return; }
-    if(!d.backups || !d.backups.length){ list.innerHTML = 'Резервных копий пока нет'; return; }
+    if(!d.ok){ list.innerHTML = '❌ ' + (d.error || t('toast_server_error')); return; }
+    if(!d.backups || !d.backups.length){ list.innerHTML = t('ap_no_backups_yet'); return; }
 
     list.innerHTML = '';
     for(const b of d.backups){
       const row = document.createElement('div');
       row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(184,144,48,.15)';
       const dateSpan = document.createElement('span');
-      dateSpan.textContent = new Date(b.timestamp || b.key).toLocaleString('ru-RU');
+      dateSpan.textContent = new Date(b.timestamp || b.key).toLocaleString(apLocale());
       const dlBtn = document.createElement('button');
-      dlBtn.textContent = '⬇ Скачать';
+      dlBtn.textContent = t('ap_backup_download_btn');
       dlBtn.style.cssText = 'padding:3px 10px;background:#C09828;color:#fff;border:none;border-radius:3px;cursor:pointer;font-size:.72rem';
       dlBtn.addEventListener('click', () => downloadApBackup(b.key));
       row.appendChild(dateSpan);
@@ -2705,7 +2891,7 @@ async function loadApBackups(){
       list.appendChild(row);
     }
   } catch(e){
-    list.innerHTML = '❌ Ошибка соединения: ' + e.message;
+    list.innerHTML = t('toast_connection_error_prefix') + e.message;
   }
 }
 
@@ -2723,21 +2909,21 @@ async function downloadApBackup(key){
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   } catch(e){
-    showToast('⚠ Ошибка скачивания: ' + e.message, true);
+    showToast(t('ap_download_error_prefix') + e.message, true);
   }
 }
 
 // ── R4.3d: Admin panel — Proposals tab (email-fallback submissions) ──
 async function loadApProposals(){
   const list = document.getElementById('ap-proposals-list');
-  list.innerHTML = '⏳ Загрузка...';
+  list.innerHTML = '⏳ ' + t('login_btn_loading');
   try {
     const r = await fetch(WORKER_URL + '/api/proposals', {
       headers: { 'X-Password': _sessionPassword }
     });
     const d = await r.json();
-    if(!d.ok){ list.innerHTML = '❌ ' + (d.error || 'Ошибка сервера'); return; }
-    if(!d.proposals || !d.proposals.length){ list.innerHTML = 'Предложений пока нет'; return; }
+    if(!d.ok){ list.innerHTML = '❌ ' + (d.error || t('toast_server_error')); return; }
+    if(!d.proposals || !d.proposals.length){ list.innerHTML = t('ap_no_proposals_yet'); return; }
 
     list.innerHTML = '';
     for(const p of d.proposals){
@@ -2745,7 +2931,7 @@ async function loadApProposals(){
       box.style.cssText = 'padding:8px;margin-bottom:8px;background:#fff;border:1px solid rgba(184,144,48,.2);border-radius:4px';
       const meta = document.createElement('div');
       meta.style.cssText = 'font-size:.68rem;color:#999;margin-bottom:4px';
-      meta.textContent = new Date(p.timestamp).toLocaleString('ru-RU') + ' · ' + (p.email || 'без email');
+      meta.textContent = new Date(p.timestamp).toLocaleString(apLocale()) + ' · ' + (p.email || t('ap_no_email'));
       const text = document.createElement('div');
       text.style.cssText = 'white-space:pre-wrap;font-size:.75rem';
       text.textContent = p.text || p.message || JSON.stringify(p);
@@ -2754,7 +2940,7 @@ async function loadApProposals(){
       list.appendChild(box);
     }
   } catch(e){
-    list.innerHTML = '❌ Ошибка соединения: ' + e.message;
+    list.innerHTML = t('toast_connection_error_prefix') + e.message;
   }
 }
 
