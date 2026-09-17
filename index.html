@@ -2767,6 +2767,22 @@ async function handleGedcomImport(file){
     .replace('{n}', parsed.personCount)
     .replace('{f}', parsed.familyCount);
 
+  const treeIsEmpty = !(IDX && IDX.nodes && Object.keys(IDX.nodes).length > 0);
+  const confirmMsg = treeIsEmpty
+    ? t('ap_gedcom_confirm_empty')
+        .replace('{n}', parsed.personCount)
+        .replace('{f}', parsed.familyCount)
+    : t('ap_gedcom_confirm_overwrite')
+        .replace('{n}', parsed.personCount)
+        .replace('{f}', parsed.familyCount)
+        .replace('{existing}', Object.keys(IDX.nodes).length);
+
+  if(!confirm(confirmMsg)){
+    st.style.color = '';
+    st.textContent = t('ap_gedcom_cancelled');
+    return;
+  }
+
   const idx = {
     nodes: parsed.nodes,
     families: parsed.families,
