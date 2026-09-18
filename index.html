@@ -1021,19 +1021,86 @@ function transliterateName(name, table){
   return name.split('').map(c => table[c] !== undefined ? table[c] : c).join('');
 }
 
-// Get person's display name in current language
-// Falls back to Russian name from IDX if not in dict
+// ── Определение алфавита строки — нужно, чтобы pname() не считал
+// n.name "всегда русским" (было так до этого фикса: RU-режим слепо
+// возвращал n.name, даже если там иврит или латиница).
+function detectScript(s){
+  if(!s) return 'empty';
+  if(/[\u0590-\u05FF]/.test(s)) return 'hebrew';
+  if(/[\u0400-\u04FF]/.test(s)) return 'cyrillic';
+  if(/[a-zA-Z]/.test(s)) return 'latin';
+  return 'other';
+}
+
+// ── Обратная транслитерация: латиница → кириллица, для RU-режима,
+// когда n.name изначально введён латиницей (напр. "Alexander Goldberg"
+// в реальном дереве). В отличие от иврита, эта пара МЕХАНИЧЕСКИ надёжна
+// для имён, действительно составленных из транслитерируемых звуков —
+// НО не для любого латинского имени вообще (буквы x/j/c/q/w не имеют
+// однозначного соответствия в русской фонетике). Поэтому: если хотя бы
+// одна латинская буква не раскладывается по таблице — функция возвращает
+// null и pname() показывает исходное имя как есть, вместо угадывания
+// (тот же принцип, что уже применён к ивриту после прошлого бага).
+const LAT_TO_CYR_TABLE = [
+  ['shch','щ'],['kh','х'],['ts','ц'],['ch','ч'],['sh','ш'],
+  ['yo','ё'],['zh','ж'],['yu','ю'],['ya','я'],
+  ['a','а'],['b','б'],['v','в'],['g','г'],['d','д'],['e','е'],
+  ['z','з'],['i','и'],['y','й'],['k','к'],['l','л'],['m','м'],
+  ['n','н'],['o','о'],['p','п'],['r','р'],['s','с'],['t','т'],
+  ['u','у'],['f','ф']
+].sort((a,b) => b[0].length - a[0].length);
+
+function transliterateLatinToCyrillic(name){
+  if(!name) return null;
+  let result = '';
+  let i = 0;
+  const lower = name.toLowerCase();
+  while(i < name.length){
+    const ch = name[i];
+    if(!/[a-zA-Z]/.test(ch)){ result += ch; i++; continue; }
+    let matched = false;
+    for(const [lat, cyr] of LAT_TO_CYR_TABLE){
+      if(lower.slice(i, i+lat.length) === lat){
+        const isUpper = ch === ch.toUpperCase() && ch !== ch.toLowerCase();
+        result += isUpper ? (cyr[0].toUpperCase() + cyr.slice(1)) : cyr;
+        i += lat.length;
+        matched = true;
+        break;
+      }
+    }
+    if(!matched) return null; // не смогли надёжно разложить — не гадаем
+  }
+  return result;
+}
+
+// Get person's display name in current language.
+// name_<lang> (ручной перевод) и NAMES[id][lang] (статический словарь)
+// теперь проверяются для ЛЮБОГО языка, включая RU — раньше RU был
+// особым случаем и слепо возвращал n.name, из-за чего персона с
+// ивритским или латинским n.name показывала нечитаемый для
+// русскоязычного родственника текст даже в русском интерфейсе.
 function pname(id) {
   const n = IDX.nodes[id]; if(!n) return id;
-  if(currentLang === 'ru') return n.name;
   const manual = n['name_' + currentLang];
   if(manual) return manual;
   const d = NAMES[id];
   if(d && d[currentLang]) return d[currentLang];
-  // Автотранслитерация — только для EN. Для HE намеренно нет фолбэка
-  // (см. комментарий у TRANSLIT_LAT выше) — без ручного перевода
-  // персона показывается на русском.
-  if(currentLang === 'en') return transliterateName(n.name, TRANSLIT_LAT);
+
+  const script = detectScript(n.name);
+
+  if(currentLang === 'ru'){
+    if(script === 'latin'){
+      const cyr = transliterateLatinToCyrillic(n.name);
+      if(cyr) return cyr;
+    }
+    return n.name; // иврит или неразложимая латиница — честно как есть
+  }
+  if(currentLang === 'en'){
+    if(script === 'cyrillic') return transliterateName(n.name, TRANSLIT_LAT);
+    return n.name; // иврит или уже латиница — как есть
+  }
+  // HE: намеренно без автоматики (см. комментарий у TRANSLIT_LAT) —
+  // без ручного name_he/NAMES персона показывается как есть.
   return n.name;
 }
 
@@ -1771,6 +1838,19 @@ function runDiagnostics(){
   const nodeMissing = Object.keys(IDX.nodes).filter(id => !NAMES[id]).length;
   nodeMissing === 0 ? ok('NAMES покрывает все персоны', namesCount + ' записей')
                     : ok('Персон без ручного перевода (используется автотранслитерация)', nodeMissing);
+
+  // Персоны, чьё имя (n.name) написано на иврите, но нет ни name_ru,
+  // ни name_en — для них RU/EN-режим честно покажет исходный иврит
+  // как есть (автоматика для иврита ненадёжна, см. комментарий у
+  // TRANSLIT_LAT), поэтому нужен ручной перевод. Без этой проверки
+  // проблема была бы полностью не видна админу.
+  const hebrewOriginNoTranslation = Object.entries(IDX.nodes)
+    .filter(([id, n]) => typeof detectScript === 'function' && detectScript(n.name) === 'hebrew'
+                       && !n.name_ru && !n.name_en && !NAMES[id]);
+  hebrewOriginNoTranslation.length === 0
+    ? ok('Нет ивритских имён без перевода на RU/EN')
+    : warn('Имя на иврите без name_ru/name_en (покажется как есть)',
+           hebrewOriginNoTranslation.map(([id]) => id).join(', '));
 
   // ── 4. DOM ELEMENTS ─────────────────────────────────
   const requiredEls = ['tb','vp','world','svg','panel','bbar','modal-overlay',
