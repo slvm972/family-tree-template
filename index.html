@@ -986,6 +986,25 @@ function trel(s){
 // а не остаётся молча на русском. Транслитерация в иврит — best-effort
 // (единого стандарта кириллица→иврит не существует), той же точности,
 // что и приблизительные еврейские даты в GEDCOM-экспорте.
+// ── Автоматическая транслитерация имени в латиницу (EN), если нет
+// ручного перевода (name_en) и нет записи в статическом словаре NAMES.
+// Гарантирует, что ЛЮБАЯ персона (тестовая, импортированная из GEDCOM,
+// только что созданная) получает читаемое латинское имя, а не остаётся
+// молча на русском.
+//
+// ВАЖНО: для иврита (HE) аналогичной механической схемы НЕТ и не
+// добавляется. Первая попытка (побуквенная кириллица→иврит) давала
+// систематически искажённые, нечитаемые результаты — например
+// «Яков»→«יהקוו» вместо принятого «יעקב», «Мостовой»→«מוסטוווי»
+// (тройное ו подряд) вместо «מוסטובוי». Причина не в опечатке в
+// таблице, а в самой природе иврита: письмо в основном консонантное,
+// буквы ו/י/א одновременно и согласные, и «матери чтения» для гласных,
+// плюс у многих имён есть исторически сложившиеся ивритские эквиваленты
+// (Яков = יעקב — это не транслитерация звуков, а само еврейское имя),
+// которые никакая посимвольная схема не воспроизведёт. Ошибочно
+// написанное имя на иврите хуже, чем показ исходного русского текста —
+// поэтому для HE используется ТОЛЬКО ручной name_he или запись в NAMES;
+// без них персона показывается на русском как есть.
 const TRANSLIT_LAT = {
   'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'yo','ж':'zh',
   'з':'z','и':'i','й':'y','к':'k','л':'l','м':'m','н':'n','о':'o',
@@ -996,23 +1015,6 @@ const TRANSLIT_LAT = {
   'П':'P','Р':'R','С':'S','Т':'T','У':'U','Ф':'F','Х':'Kh','Ц':'Ts',
   'Ч':'Ch','Ш':'Sh','Щ':'Shch','Ъ':'','Ы':'Y','Ь':'','Э':'E','Ю':'Yu','Я':'Ya'
 };
-const TRANSLIT_HEB = {
-  'а':'א','б':'ב','в':'ו','г':'ג','д':'ד','е':'ה','ё':'יו','ж':"ז'",
-  'з':'ז','и':'י','й':'י','к':'ק','л':'ל','м':'מ','н':'נ','о':'ו',
-  'п':'פ','р':'ר','с':'ס','т':'ט','у':'ו','ф':'פ','х':'ח','ц':'צ',
-  'ч':"צ'",'ш':'ש','щ':"שץ'",'ъ':'','ы':'י','ь':'','э':'א','ю':'יו','я':'יה'
-};
-TRANSLIT_HEB['А']=TRANSLIT_HEB['а']; TRANSLIT_HEB['Б']=TRANSLIT_HEB['б']; TRANSLIT_HEB['В']=TRANSLIT_HEB['в'];
-TRANSLIT_HEB['Г']=TRANSLIT_HEB['г']; TRANSLIT_HEB['Д']=TRANSLIT_HEB['д']; TRANSLIT_HEB['Е']=TRANSLIT_HEB['е'];
-TRANSLIT_HEB['Ё']=TRANSLIT_HEB['ё']; TRANSLIT_HEB['Ж']=TRANSLIT_HEB['ж']; TRANSLIT_HEB['З']=TRANSLIT_HEB['з'];
-TRANSLIT_HEB['И']=TRANSLIT_HEB['и']; TRANSLIT_HEB['Й']=TRANSLIT_HEB['й']; TRANSLIT_HEB['К']=TRANSLIT_HEB['к'];
-TRANSLIT_HEB['Л']=TRANSLIT_HEB['л']; TRANSLIT_HEB['М']=TRANSLIT_HEB['м']; TRANSLIT_HEB['Н']=TRANSLIT_HEB['н'];
-TRANSLIT_HEB['О']=TRANSLIT_HEB['о']; TRANSLIT_HEB['П']=TRANSLIT_HEB['п']; TRANSLIT_HEB['Р']=TRANSLIT_HEB['р'];
-TRANSLIT_HEB['С']=TRANSLIT_HEB['с']; TRANSLIT_HEB['Т']=TRANSLIT_HEB['т']; TRANSLIT_HEB['У']=TRANSLIT_HEB['у'];
-TRANSLIT_HEB['Ф']=TRANSLIT_HEB['ф']; TRANSLIT_HEB['Х']=TRANSLIT_HEB['х']; TRANSLIT_HEB['Ц']=TRANSLIT_HEB['ц'];
-TRANSLIT_HEB['Ч']=TRANSLIT_HEB['ч']; TRANSLIT_HEB['Ш']=TRANSLIT_HEB['ш']; TRANSLIT_HEB['Щ']=TRANSLIT_HEB['щ'];
-TRANSLIT_HEB['Ъ']=TRANSLIT_HEB['ъ']; TRANSLIT_HEB['Ы']=TRANSLIT_HEB['ы']; TRANSLIT_HEB['Ь']=TRANSLIT_HEB['ь'];
-TRANSLIT_HEB['Э']=TRANSLIT_HEB['э']; TRANSLIT_HEB['Ю']=TRANSLIT_HEB['ю']; TRANSLIT_HEB['Я']=TRANSLIT_HEB['я'];
 
 function transliterateName(name, table){
   if(!name) return name;
@@ -1028,8 +1030,11 @@ function pname(id) {
   if(manual) return manual;
   const d = NAMES[id];
   if(d && d[currentLang]) return d[currentLang];
-  const table = currentLang === 'he' ? TRANSLIT_HEB : currentLang === 'en' ? TRANSLIT_LAT : null;
-  return table ? transliterateName(n.name, table) : n.name;
+  // Автотранслитерация — только для EN. Для HE намеренно нет фолбэка
+  // (см. комментарий у TRANSLIT_LAT выше) — без ручного перевода
+  // персона показывается на русском.
+  if(currentLang === 'en') return transliterateName(n.name, TRANSLIT_LAT);
+  return n.name;
 }
 
 
@@ -1871,7 +1876,8 @@ document.querySelectorAll('.ap-tab').forEach(tabBtn => {
 
 // (translateNewPerson() removed — was dead code: computed an EN-only
 // transliteration into an unused window global, never persisted, no HE
-// support. Superseded by the automatic TRANSLIT_LAT/TRANSLIT_HEB fallback
+// support. Superseded by the automatic TRANSLIT_LAT fallback (EN only —
+// HE has no automatic fallback, see comment above TRANSLIT_LAT for why —
 // now built into pname() itself, which covers every person unconditionally.)
 
 
