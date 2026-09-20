@@ -13,9 +13,9 @@
 
 // Paper sizes in mm (landscape)
 const PAPER = {
-  A0L: { w: 1189, h: 841, label: 'A0 альбом' },
-  A1L: { w: 841,  h: 594, label: 'A1 альбом' },
-  A2L: { w: 594,  h: 420, label: 'A2 альбом' },
+  A0L: { w: 1189, h: 841, label: t('print_fmt_a0') },
+  A1L: { w: 841,  h: 594, label: t('print_fmt_a1') },
+  A2L: { w: 594,  h: 420, label: t('print_fmt_a2') },
 };
 let printFmt = 'A1L';
 
@@ -32,13 +32,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ── Open print dialog ───────────────────────────────────
   document.getElementById('btn-print').addEventListener('click', () => {
-    if(!IDX){ showToast('Данные не загружены', true); return; }
+    if(!IDX){ showToast(t('toast_no_data_loaded'), true); return; }
     const n = Object.keys(IDX.nodes).length;
     const f = Object.keys(IDX.families).length;
     const stats = document.getElementById('print-stats');
     stats.style.color = '';
     stats.style.fontWeight = '';
-    stats.textContent = `В дереве: ${n} персон, ${f} семей`;
+    stats.textContent = t('print_stats_line').replace('{n}', n).replace('{f}', f);
     document.getElementById('print-overlay').classList.add('open');
   });
   document.getElementById('print-cancel').addEventListener('click', () => {
@@ -436,14 +436,14 @@ function buildAndPrint() {
 
   const svgBody = `
   <text x="${printW/2}" y="30" font-family="Segoe UI,Arial,sans-serif" font-size="20" font-weight="700" fill="#28180A" text-anchor="middle">${title}</text>
-  <text x="${printW/2}" y="50" font-family="Segoe UI,Arial,sans-serif" font-size="11" fill="#888" text-anchor="middle">${today} · ${Object.keys(IDX.nodes).length} персон</text>
+  <text x="${printW/2}" y="50" font-family="Segoe UI,Arial,sans-serif" font-size="11" fill="#888" text-anchor="middle">${today} · ${Object.keys(IDX.nodes).length} ${t('diag_unit_persons')}</text>
   ${edges}
   ${cardsHTML}`;
 
   // ── 5. Build full HTML and download ───────────────────
   const fullHTML = `<!DOCTYPE html>
 <html><head><meta charset="UTF-8">
-<title>Семейное дерево — ${pageSize}</title>
+<title>${t('print_gen_title')} — ${pageSize}</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{width:100%;height:100%;overflow:hidden;background:#FAF7F0;font-family:Segoe UI,Arial,sans-serif}
@@ -466,12 +466,12 @@ html,body{width:100%;height:100%;overflow:hidden;background:#FAF7F0;font-family:
 </style></head>
 <body>
 <div id="toolbar">
-  🌳 Семейное дерево — ${pageSize}
-  <button onclick="resetZoom()">⊡ Вписать</button>
+  🌳 ${t('print_gen_title')} — ${pageSize}
+  <button onclick="resetZoom()">⊡ ${t('print_gen_fit')}</button>
   <button onclick="zoomIn()">＋</button>
   <button onclick="zoomOut()">－</button>
-  <button onclick="window.print()" style="background:rgba(237,216,144,.3);font-weight:600">🖨 Печать / PDF</button>
-  <span id="hint">Колесо мыши — масштаб · Тяни — перемещение</span>
+  <button onclick="window.print()" style="background:rgba(237,216,144,.3);font-weight:600">🖨 ${t('print_gen_pdf')}</button>
+  <span id="hint">${t('print_gen_hint')}</span>
 </div>
 <div id="canvas">
   <div id="svg-wrap">
@@ -559,6 +559,6 @@ window.onload = resetZoom;
   const info = document.getElementById('print-stats');
   info.style.color = '#C09828';
   info.style.fontWeight = '600';
-  info.textContent = '✓ Файл скачан. Откройте его в браузере → Ctrl+P → Печать / PDF';
+  info.textContent = t('print_downloaded_msg');
   document.getElementById('print-overlay').classList.add('open');
 }

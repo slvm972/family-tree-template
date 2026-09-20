@@ -230,7 +230,7 @@ svg{position:absolute;top:0;left:0;overflow:visible}
   <button class="btn" id="btn-contacts" style="background:rgba(237,216,144,.15);border-color:rgba(237,216,144,.4)" title="Скачать контакты" data-title="title_contacts">📇</button>
   <button class="btn" id="btn-calendar" style="background:rgba(237,216,144,.15);border-color:rgba(237,216,144,.4)" title="Скачать календарь дней рождения" data-title="title_calendar">📅</button>
   <button class="btn" id="btn-login" style="background:rgba(237,216,144,.15);border-color:rgba(237,216,144,.4)" title="Войти" data-title="login_btn">🔑</button>
-  <button class="btn" id="btn-admin-panel" style="display:none;background:rgba(237,216,144,.15);border-color:rgba(237,216,144,.4)" title="Управление" data-title="title_admin">🛠 Управление</button>
+  <button class="btn" id="btn-admin-panel" style="display:none;background:rgba(237,216,144,.15);border-color:rgba(237,216,144,.4)" title="Управление" data-title="title_admin" data-i="ap_toolbar_btn">🛠 Управление</button>
   <button class="btn" id="btn-diag" style="padding:4px 8px;opacity:.5;font-size:.65rem" title="Диагностика" data-title="title_diag">⚙</button>
   <button class="btn" id="btn-help" style="padding:4px 8px;opacity:.7">?</button>
 </div>
@@ -418,9 +418,9 @@ svg{position:absolute;top:0;left:0;overflow:visible}
 <div id="diag-overlay">
   <div id="diag-box">
     <button id="diag-close">×</button>
-    <h3>⚙ Диагностика системы</h3>
+    <h3 data-i="diag_modal_title">⚙ Диагностика системы</h3>
     <div id="diag-results"></div>
-    <button id="diag-run">↺ Повторить тест</button>
+    <button id="diag-run" data-i="diag_btn_rerun">↺ Повторить тест</button>
   </div>
 </div>
 
@@ -497,17 +497,17 @@ svg{position:absolute;top:0;left:0;overflow:visible}
 <!-- ── PRINT PREVIEW ── -->
 <div id="print-overlay">
   <div id="print-box">
-    <h3>🖨 Печать генеалогического дерева</h3>
-    <p>Будет сформирован и скачан HTML-файл. Откройте его в браузере и нажмите <strong>Ctrl+P</strong> (или ⌘P на Mac) — выберите принтер или «Сохранить как PDF».</p>
+    <h3 data-i="print_modal_title">🖨 Печать генеалогического дерева</h3>
+    <p data-i="print_modal_intro">Будет сформирован и скачан HTML-файл. Откройте его в браузере и нажмите <strong>Ctrl+P</strong> (или ⌘P на Mac) — выберите принтер или «Сохранить как PDF».</p>
     <div class="print-opts">
-      <div class="print-opt active" data-fmt="A1L">A1 альбом</div>
-      <div class="print-opt" data-fmt="A0L">A0 альбом</div>
-      <div class="print-opt" data-fmt="A2L">A2 альбом</div>
+      <div class="print-opt active" data-fmt="A1L" data-i="print_fmt_a1">A1 альбом</div>
+      <div class="print-opt" data-fmt="A0L" data-i="print_fmt_a0">A0 альбом</div>
+      <div class="print-opt" data-fmt="A2L" data-i="print_fmt_a2">A2 альбом</div>
     </div>
     <p id="print-stats" style="font-size:.72rem;color:#888"></p>
     <div class="print-btns">
-      <button class="pbtn pbtn-cancel" id="print-cancel">Отмена</button>
-      <button class="pbtn pbtn-primary" id="print-go">⬇ Скачать для печати</button>
+      <button class="pbtn pbtn-cancel" id="print-cancel" data-i="print_btn_cancel">Отмена</button>
+      <button class="pbtn pbtn-primary" id="print-go" data-i="print_btn_go">⬇ Скачать для печати</button>
     </div>
   </div>
 </div>
@@ -1770,13 +1770,14 @@ function runDiagnostics(){
   function ok(label, val)   { results.push({s:'ok',   label, val: val !== undefined ? String(val) : ''}); }
   function fail(label, val) { results.push({s:'fail', label, val: val !== undefined ? String(val) : ''}); }
   function warn(label, val) { results.push({s:'warn', label, val: val !== undefined ? String(val) : ''}); }
+  const nf = t('diag_not_found');
 
   // ── 1. DATA INTEGRITY ───────────────────────────────
   const nodeCount = Object.keys(IDX.nodes).length;
-  nodeCount > 0 ? ok('Персоны загружены', nodeCount + ' чел.') : fail('IDX.nodes пустой');
+  nodeCount > 0 ? ok(t('diag_persons_loaded'), nodeCount + ' ' + t('diag_unit_persons')) : fail(t('diag_nodes_empty'));
 
   const famCount = Object.keys(IDX.families).length;
-  famCount > 0 ? ok('Семьи загружены', famCount + ' семей') : fail('IDX.families пустой');
+  famCount > 0 ? ok(t('diag_families_loaded'), famCount + ' ' + t('diag_unit_families')) : fail(t('diag_families_empty'));
 
   // Broken family references
   let brokenRefs = 0;
@@ -1785,14 +1786,14 @@ function runDiagnostics(){
     if(f.wife    && !IDX.nodes[f.wife])    brokenRefs++;
     for(const cid of f.children) if(!IDX.nodes[cid]) brokenRefs++;
   }
-  brokenRefs === 0 ? ok('Ссылки семей корректны') : fail('Битых ссылок в семьях', brokenRefs);
+  brokenRefs === 0 ? ok(t('diag_family_refs_ok')) : fail(t('diag_broken_family_refs'), brokenRefs);
 
   // Orphan nodes
   const orphans = Object.keys(IDX.nodes).filter(id =>
     !IDX.child_of[id] && (!IDX.parent_in[id] || !IDX.parent_in[id].length)
   ).length;
-  orphans === 0 ? ok('Нет изолированных персон')
-                : warn('Изолированные персоны (без связей)', orphans);
+  orphans === 0 ? ok(t('diag_no_orphans'))
+                : warn(t('diag_orphans'), orphans);
 
   // Death before birth
   let deadBeforeBorn = 0;
@@ -1801,29 +1802,29 @@ function runDiagnostics(){
     const d = n.death ? (n.death.match(/\d{4}/)||[])[0] : null;
     if(b && d && +d < +b) deadBeforeBorn++;
   }
-  deadBeforeBorn === 0 ? ok('Хронология дат корректна')
-                       : fail('Смерть раньше рождения', deadBeforeBorn + ' случаев');
+  deadBeforeBorn === 0 ? ok(t('diag_dates_ok'))
+                       : fail(t('diag_death_before_birth'), deadBeforeBorn + ' ' + t('diag_unit_cases'));
 
   // Mixed-language names
   const mixedNames = Object.values(IDX.nodes).filter(n =>
     /[a-zA-Z]/.test(n.name) && /[а-яА-Я]/.test(n.name)
   ).length;
-  mixedNames === 0 ? ok('Имена без смешения языков')
-                   : warn('Имена со смешением языков', mixedNames);
+  mixedNames === 0 ? ok(t('diag_names_clean'))
+                   : warn(t('diag_names_mixed'), mixedNames);
 
   // ── 2. UI FUNCTIONS ─────────────────────────────────
-  typeof navigateTo === 'function' ? ok('navigateTo()') : fail('navigateTo() не найдена');
-  typeof showPanel  === 'function' ? ok('showPanel()')  : fail('showPanel() не найдена');
-  typeof render     === 'function' ? ok('render()')     : fail('render() не найдена');
-  typeof goBack     === 'function' ? ok('goBack()')     : fail('goBack() не найдена');
-  typeof openModal  === 'function' ? ok('openModal()')  : fail('openModal() не найдена');
-  typeof buildAndPrint === 'function' ? ok('buildAndPrint()') : fail('buildAndPrint() не найдена');
+  typeof navigateTo === 'function' ? ok('navigateTo()') : fail('navigateTo() ' + nf);
+  typeof showPanel  === 'function' ? ok('showPanel()')  : fail('showPanel() ' + nf);
+  typeof render     === 'function' ? ok('render()')     : fail('render() ' + nf);
+  typeof goBack     === 'function' ? ok('goBack()')     : fail('goBack() ' + nf);
+  typeof openModal  === 'function' ? ok('openModal()')  : fail('openModal() ' + nf);
+  typeof buildAndPrint === 'function' ? ok('buildAndPrint()') : fail('buildAndPrint() ' + nf);
 
   // ── 3. TRANSLATION ──────────────────────────────────
-  typeof t  === 'function' ? ok('t() — перевод UI')    : fail('t() не найдена');
-  typeof tr === 'function' ? ok('tr() — перевод ролей') : fail('tr() не найдена');
-  typeof trel === 'function' ? ok('trel() — перевод rel') : fail('trel() не найдена');
-  typeof pname === 'function' ? ok('pname() — имена')   : fail('pname() не найдена');
+  typeof t  === 'function' ? ok('t() — ' + t('diag_translates_ui'))    : fail('t() ' + nf);
+  typeof tr === 'function' ? ok('tr() — ' + t('diag_translates_roles')) : fail('tr() ' + nf);
+  typeof trel === 'function' ? ok('trel() — ' + t('diag_translates_rel')) : fail('trel() ' + nf);
+  typeof pname === 'function' ? ok('pname() — ' + t('diag_translates_names'))   : fail('pname() ' + nf);
 
   const langs = ['ru','en','he'];
   const testKeys = ['birth','death','back','btn_edit','btn_fix','tree_title'];
@@ -1833,8 +1834,8 @@ function runDiagnostics(){
       if(!(UI[lang]||{})[key]) missingKeys++;
     }
   }
-  missingKeys === 0 ? ok('Словари RU/EN/HE полные')
-                    : warn('Отсутствующих ключей в словарях', missingKeys);
+  missingKeys === 0 ? ok(t('diag_dicts_complete'))
+                    : warn(t('diag_missing_dict_keys'), missingKeys);
 
   // NAMES dict coverage (informational only — pname() now auto-transliterates
   // any person missing a manual name_en/name_he or a NAMES[] entry, so this
@@ -1842,8 +1843,8 @@ function runDiagnostics(){
   // manual translation, currently shown via automatic transliteration")
   const namesCount = Object.keys(NAMES).length;
   const nodeMissing = Object.keys(IDX.nodes).filter(id => !NAMES[id]).length;
-  nodeMissing === 0 ? ok('NAMES покрывает все персоны', namesCount + ' записей')
-                    : ok('Персон без ручного перевода (используется автотранслитерация)', nodeMissing);
+  nodeMissing === 0 ? ok(t('diag_names_full_coverage'), namesCount + ' ' + t('diag_unit_entries'))
+                    : ok(t('diag_names_auto_translit'), nodeMissing);
 
   // Персоны, чьё имя (n.name) написано на иврите — для них RU/EN-режим
   // честно покажет исходный иврит как есть (автоматика для иврита
@@ -1856,8 +1857,8 @@ function runDiagnostics(){
     .filter(([id, n]) => typeof detectScript === 'function' && detectScript(n.name) === 'hebrew'
                        && !n.name_en && !NAMES[id]);
   hebrewOriginNoTranslation.length === 0
-    ? ok('Нет ивритских имён без перевода на RU/EN')
-    : warn('Имя на иврите — нужно поправить поле «Имя» и/или добавить name_en',
+    ? ok(t('diag_no_hebrew_untranslated'))
+    : warn(t('diag_hebrew_untranslated'),
            hebrewOriginNoTranslation.map(([id]) => id).join(', '));
 
   // ── 4. DOM ELEMENTS ─────────────────────────────────
@@ -1868,22 +1869,22 @@ function runDiagnostics(){
   for(const id of requiredEls){
     if(!document.getElementById(id)) missingEls++;
   }
-  missingEls === 0 ? ok('Все DOM-элементы на месте', requiredEls.length + ' эл.')
-                   : fail('Отсутствующих DOM-элементов', missingEls);
+  missingEls === 0 ? ok(t('diag_dom_ok'), requiredEls.length + ' ' + t('diag_unit_elements_short'))
+                   : fail(t('diag_dom_missing'), missingEls);
 
   // ── 5. STATE ────────────────────────────────────────
-  currentFocal ? ok('currentFocal установлен', currentFocal)
-               : warn('currentFocal не установлен');
-  ok('Текущий язык', currentLang);
-  ok('История навигации', (history||[]).length + ' шагов');
+  currentFocal ? ok(t('diag_focal_set'), currentFocal)
+               : warn(t('diag_focal_not_set'));
+  ok(t('diag_current_lang'), currentLang);
+  ok(t('diag_nav_history'), (history||[]).length + ' ' + t('diag_unit_steps'));
 
   // ── 6. RENDER TEST ──────────────────────────────────
   try {
     const svgEl = document.getElementById('svg');
     const childCount = svgEl ? svgEl.childElementCount : 0;
-    childCount > 0 ? ok('SVG отрендерен', childCount + ' элементов')
-                   : warn('SVG пустой');
-  } catch(e) { fail('Ошибка SVG', e.message); }
+    childCount > 0 ? ok(t('diag_svg_rendered'), childCount + ' ' + t('diag_unit_elements'))
+                   : warn(t('diag_svg_empty'));
+  } catch(e) { fail(t('diag_svg_error'), e.message); }
 
   return results;
 }
@@ -1898,7 +1899,7 @@ function showDiagnostics(){
     <span class="dt-ok">✓ ${passed}</span> &nbsp;
     <span class="dt-fail">✗ ${failed}</span> &nbsp;
     <span class="dt-warn">⚠ ${warned}</span>
-    <span style="opacity:.4;margin-left:8px">${new Date().toLocaleTimeString('ru-RU')}</span>
+    <span style="opacity:.4;margin-left:8px">${new Date().toLocaleTimeString(apLocale())}</span>
   </div>`;
 
   const rows = results.map(r =>
