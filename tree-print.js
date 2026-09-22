@@ -32,6 +32,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ── Open print dialog ───────────────────────────────────
   document.getElementById('btn-print').addEventListener('click', () => {
+    if(!_sessionPassword){
+      document.getElementById('btn-login').click();
+      showToast(t('toast_login_required_print'), true);
+      return;
+    }
     if(!IDX){ showToast(t('toast_no_data_loaded'), true); return; }
     const n = Object.keys(IDX.nodes).length;
     const f = Object.keys(IDX.families).length;

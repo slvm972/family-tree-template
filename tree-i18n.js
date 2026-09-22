@@ -4,6 +4,7 @@
 // подключаться ПОСЛЕ того, как TREE_CONFIG уже определён в разметке.
 const UI = {
   ru: {
+    toast_login_required_print:'🔒 Войдите чтобы распечатать дерево',
     toast_no_data_loaded:'Данные не загружены',
     print_stats_line:'В дереве: {n} персон, {f} семей',
     print_gen_title:'Семейное дерево',
@@ -185,6 +186,7 @@ const UI = {
     ap_gedcom_cancelled:'Импорт отменён'
   },
   en: {
+    toast_login_required_print:'🔒 Login to print the tree',
     toast_no_data_loaded:'Data not loaded',
     print_stats_line:'Tree: {n} persons, {f} families',
     print_gen_title:'Family tree',
@@ -365,6 +367,7 @@ const UI = {
     ap_gedcom_cancelled:'Import cancelled'
   },
   he: {
+    toast_login_required_print:'🔒 התחברו כדי להדפיס את העץ',
     toast_no_data_loaded:'הנתונים לא נטענו',
     print_stats_line:'בעץ: {n} אנשים, {f} משפחות',
     print_gen_title:'עץ משפחה',
