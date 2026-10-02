@@ -539,10 +539,13 @@ export default {
       // Allowed fields for direct update (guards against injecting structural fields)
       const ALLOWED = ['name','birth','death','birth_he','death_he','hebrew_name',
                        'sex','rel','phone','email','social','bio','photo','missing',
-                       'name_en','name_he'];
+                       'name_en','name_he','rel_en','rel_he','gen'];
       const applied = {};
       for(const [field, val] of Object.entries(updates)){
         if(!ALLOWED.includes(field)) continue;
+        if(field === 'gen' && val !== null && val !== undefined && !Number.isInteger(val)) {
+          return err('Поле gen должно быть целым числом', 400);
+        }
         if(val === null || val === undefined) {
           delete IDX.nodes[personId][field];
         } else {
@@ -752,7 +755,7 @@ export default {
 
     // ── PATCH /api/family/:id ────────────────────────────
     // Admin only: add a child to existing family, or update parents
-    // Body: { addChild?, removeChild?, parent1?, parent2? }
+    // Body: { addChild?, removeChild?, addParent?, parent1?, parent2? }
     const patchFamMatch = path.match(/^\/api\/family\/([^/]+)$/);
     if(patchFamMatch && method === 'PATCH') {
       const auth = await getRole(request, env);
@@ -813,22 +816,56 @@ export default {
         changes.push('removeChild:' + cid);
       }
 
-      // Update parent1/parent2
-      if(body.parent1 !== undefined){
-        if(body.parent1 && !IDX.nodes[body.parent1]) return err('Персона не найдена: ' + body.parent1, 404);
-        fam.husband = body.parent1 || null;
-        if(fam.husband){
-          IDX.parent_in[fam.husband] = [...new Set([...(IDX.parent_in[fam.husband]||[]), famId])];
+      // Add second parent (e.g. previously unknown parent discovered)
+      if(body.addParent){
+        const pid = body.addParent;
+        if(!IDX.nodes[pid]) return err('Персона не найдена: ' + pid, 404);
+        const sex = IDX.nodes[pid].sex;
+        if(!fam.husband && sex !== 'F') fam.husband = pid;
+        else if(!fam.wife && sex !== 'M') fam.wife = pid;
+        else fam.husband = pid; // fallback
+
+        if(!IDX.parent_in[pid]) IDX.parent_in[pid] = [];
+        if(!IDX.parent_in[pid].includes(famId)) IDX.parent_in[pid].push(famId);
+        if(!IDX.relatives[pid]) IDX.relatives[pid] = { parents:[], siblings:[], spouses:[], children:[] };
+        const otherP = pid === fam.husband ? fam.wife : fam.husband;
+        if(otherP && !IDX.relatives[pid].spouses.includes(otherP)) IDX.relatives[pid].spouses.push(otherP);
+        if(otherP && !IDX.relatives[otherP].spouses.includes(pid)) IDX.relatives[otherP].spouses.push(pid);
+        for(const cid of fam.children){
+          if(!IDX.relatives[pid].children.includes(cid)) IDX.relatives[pid].children.push(cid);
+          if(IDX.relatives[cid] && !IDX.relatives[cid].parents.includes(pid)) IDX.relatives[cid].parents.push(pid);
         }
-        changes.push('parent1:' + body.parent1);
+        changes.push('addParent:' + pid);
       }
-      if(body.parent2 !== undefined){
-        if(body.parent2 && !IDX.nodes[body.parent2]) return err('Персона не найдена: ' + body.parent2, 404);
-        fam.wife = body.parent2 || null;
-        if(fam.wife){
-          IDX.parent_in[fam.wife] = [...new Set([...(IDX.parent_in[fam.wife]||[]), famId])];
-        }
-        changes.push('parent2:' + body.parent2);
+
+      // Fill a specific parent slot directly (parent1 = husband, parent2 = wife).
+      // Uses the same relatives-sync logic as addParent above, with an
+      // explicit target slot instead of inferring it from sex.
+      if(body.parent1 !== undefined || body.parent2 !== undefined){
+        const setSlot = (slotKey, pid) => {
+          if(pid === null){ fam[slotKey] = null; return; }
+          if(!IDX.nodes[pid]) throw new Error('Персона не найдена: ' + pid);
+          fam[slotKey] = pid;
+
+          if(!IDX.parent_in[pid]) IDX.parent_in[pid] = [];
+          if(!IDX.parent_in[pid].includes(famId)) IDX.parent_in[pid].push(famId);
+          if(!IDX.relatives[pid]) IDX.relatives[pid] = { parents:[], siblings:[], spouses:[], children:[] };
+
+          const otherP = slotKey === 'husband' ? fam.wife : fam.husband;
+          if(otherP){
+            if(!IDX.relatives[pid].spouses.includes(otherP)) IDX.relatives[pid].spouses.push(otherP);
+            if(!IDX.relatives[otherP]) IDX.relatives[otherP] = { parents:[], siblings:[], spouses:[], children:[] };
+            if(!IDX.relatives[otherP].spouses.includes(pid)) IDX.relatives[otherP].spouses.push(pid);
+          }
+          for(const cid of fam.children){
+            if(!IDX.relatives[pid].children.includes(cid)) IDX.relatives[pid].children.push(cid);
+            if(IDX.relatives[cid] && !IDX.relatives[cid].parents.includes(pid)) IDX.relatives[cid].parents.push(pid);
+          }
+        };
+        try {
+          if(body.parent1 !== undefined){ setSlot('husband', body.parent1); changes.push('parent1:' + body.parent1); }
+          if(body.parent2 !== undefined){ setSlot('wife',    body.parent2); changes.push('parent2:' + body.parent2); }
+        } catch(e){ return err(e.message, 404); }
       }
 
       if(changes.length === 0) return err('Нечего обновлять');
@@ -862,12 +899,21 @@ export default {
       const parents = [fam.husband, fam.wife].filter(Boolean);
       delete IDX.families[famId];
 
-      // Remove from parent_in and relatives.spouses
+      // Remove from parent_in; only clear the spouse link if no OTHER
+      // family record still connects the same two people (e.g. duplicate
+      // marriage entries, or remarriage after a recorded divorce).
+      const stillMarried = (pid1, pid2) =>
+        Object.values(IDX.families).some(f =>
+          (f.husband === pid1 && f.wife === pid2) ||
+          (f.husband === pid2 && f.wife === pid1));
+
       for(const pid of parents){
         if(IDX.parent_in[pid]) IDX.parent_in[pid] = IDX.parent_in[pid].filter(f => f !== famId);
         if(IDX.relatives[pid]){
           const otherP = parents.find(p => p !== pid);
-          if(otherP) IDX.relatives[pid].spouses = IDX.relatives[pid].spouses.filter(s => s !== otherP);
+          if(otherP && !stillMarried(pid, otherP)){
+            IDX.relatives[pid].spouses = IDX.relatives[pid].spouses.filter(s => s !== otherP);
+          }
         }
       }
 
