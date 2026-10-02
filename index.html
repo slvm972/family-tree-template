@@ -2150,6 +2150,12 @@ document.getElementById('btn-login').addEventListener('click', e => {
       window._userRole = null;
       sessionStorage.removeItem('tree_pwd');
       document.getElementById('btn-login').textContent = '🔑';
+      const editBtnOut = document.getElementById('btn-edit');
+      if(editBtnOut) editBtnOut.style.display = 'none';
+      const adminBtnOut = document.getElementById('btn-admin-panel');
+      if(adminBtnOut) adminBtnOut.style.display = 'none';
+      const adminOverlayOut = document.getElementById('admin-panel-overlay');
+      if(adminOverlayOut) adminOverlayOut.style.display = 'none';
       showToast(currentLang==='he' ? 'יצאת' : currentLang==='en' ? 'Logged out' : 'Вы вышли', false);
     }
     return;
@@ -2992,7 +2998,7 @@ async function loadApBackups(){
       const row = document.createElement('div');
       row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(184,144,48,.15)';
       const dateSpan = document.createElement('span');
-      dateSpan.textContent = new Date(b.timestamp || b.key).toLocaleString(apLocale());
+      dateSpan.textContent = b.date || new Date(b.ts).toLocaleString(apLocale());
       const dlBtn = document.createElement('button');
       dlBtn.textContent = t('ap_backup_download_btn');
       dlBtn.style.cssText = 'padding:3px 10px;background:#C09828;color:#fff;border:none;border-radius:3px;cursor:pointer;font-size:.72rem';
@@ -3042,10 +3048,10 @@ async function loadApProposals(){
       box.style.cssText = 'padding:8px;margin-bottom:8px;background:#fff;border:1px solid rgba(184,144,48,.2);border-radius:4px';
       const meta = document.createElement('div');
       meta.style.cssText = 'font-size:.68rem;color:#999;margin-bottom:4px';
-      meta.textContent = new Date(p.timestamp).toLocaleString(apLocale()) + ' · ' + (p.email || t('ap_no_email'));
+      meta.textContent = new Date(p.createdAt).toLocaleString(apLocale()) + ' · ' + (p.author || '') + ' · ' + (p.type || '') + ' · ' + (p.status || '');
       const text = document.createElement('div');
       text.style.cssText = 'white-space:pre-wrap;font-size:.75rem';
-      text.textContent = p.text || p.message || JSON.stringify(p);
+      text.textContent = p.prompt;
       box.appendChild(meta);
       box.appendChild(text);
       list.appendChild(box);
