@@ -96,7 +96,8 @@ function buildAndPrint() {
   const famsByLevel = {};  // level → [famId]
   for (const [famId, fam] of Object.entries(IDX.families)) {
     // Determine level from husband or wife gen
-    const refId = fam.husband || fam.wife;
+    let refId = fam.husband || fam.wife;
+    if (!refId && fam.children.length > 0) refId = fam.children[0];
     if (!refId) continue;
     const g = IDX.nodes[refId]?.gen ?? 0;
     if (!famsByLevel[g]) famsByLevel[g] = [];
@@ -187,8 +188,11 @@ function buildAndPrint() {
 
   // Layout root families side by side
   for (const famId of rootFams) {
-    const w = subtreeWidth(famId, minGen);
-    layoutFam(famId, curX + w/2, minGen);
+    const fam = IDX.families[famId];
+    const isParentless = !fam.husband && !fam.wife;
+    const layoutLevel = isParentless ? minGen - 1 : minGen;
+    const w = subtreeWidth(famId, layoutLevel);
+    layoutFam(famId, curX + w/2, layoutLevel);
     curX += w + PGAPX * 2;
   }
 
@@ -315,6 +319,29 @@ function buildAndPrint() {
   const parentStroke = 'stroke="#C09828" stroke-width="1.5" opacity="0.6"';
   const spouseStroke = 'stroke="#C09828" stroke-width="1" stroke-dasharray="3,3" opacity="0.6"';
 
+  // ── Связь супругов (сердце) — рисуется НЕЗАВИСИМО от наличия детей.
+  // Раньше сердце пропадало у бездетных пар, т.к. этот код лежал внутри
+  // блока, требующего fam.children.length (см. normalFams ниже) — E1-fix.
+  for (const [, fam] of Object.entries(IDX.families)) {
+    const pars = [fam.husband, fam.wife].filter(id => id && finalPos[id]);
+    if (pars.length !== 2) continue;
+    const p0 = finalPos[pars[0]], p1 = finalPos[pars[1]];
+    // Супруги оказались в разных рядах печати (разный gen → разный
+    // scale ряда) — прямая линия между ними была бы визуально
+    // некорректной (тянулась бы через посторонние карточки). Пропускаем
+    // до кластерного layout из Этапа 2, вместо рисования вводящей в
+    // заблуждение линии.
+    if (p0.scale !== p1.scale) continue;
+    const halfW = (PCW * p0.scale) / 2;
+    const lx = Math.min(p0.x, p1.x) + halfW;
+    const rx = Math.max(p0.x, p1.x) - halfW;
+    const cy = p0.cy;
+    if (rx > lx) {
+      edges += `<line x1="${lx}" y1="${cy}" x2="${rx}" y2="${cy}" ${spouseStroke}/>`;
+      edges += `<text x="${(lx+rx)/2}" y="${cy+4}" font-family="Segoe UI,Arial,sans-serif" font-size="10" fill="#C09828" text-anchor="middle">♥</text>`;
+    }
+  }
+
   const normalFams = [];
   for (const [, fam] of Object.entries(IDX.families)) {
     if (!fam.husband && !fam.wife && fam.children.length > 0) {
@@ -387,17 +414,8 @@ function buildAndPrint() {
     for (const cid of visCh) {
       edges += `<line x1="${finalPos[cid].x}" y1="${midY}" x2="${finalPos[cid].x}" y2="${finalPos[cid].top}" ${parentStroke}/>`;
     }
-    if (pars.length === 2) {
-      const p0 = finalPos[pars[0]], p1 = finalPos[pars[1]];
-      const halfW = (PCW * p0.scale) / 2;
-      const lx = Math.min(p0.x, p1.x) + halfW;
-      const rx = Math.max(p0.x, p1.x) - halfW;
-      const cy = p0.cy;
-      if (rx > lx) {
-        edges += `<line x1="${lx}" y1="${cy}" x2="${rx}" y2="${cy}" ${spouseStroke}/>`;
-        edges += `<text x="${(lx+rx)/2}" y="${cy+4}" font-family="Segoe UI,Arial,sans-serif" font-size="10" fill="#C09828" text-anchor="middle">♥</text>`;
-      }
-    }
+    // Связь супругов рисуется отдельным циклом выше (E1-fix) — здесь
+    // остаются только линии родитель→ребёнок.
   }
 
   let cardsHTML = '';
