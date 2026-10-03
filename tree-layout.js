@@ -56,7 +56,11 @@ function splitName(name){
 // ── place a couple centered on anchorX at given y ─────────
 // returns [{id, x, y, role}]
 function placeCouple(husband, wife, anchorX, y, role){
-  const people = [husband, wife].filter(Boolean);
+  // Guard against ghost cards: only place IDs that actually exist in
+  // IDX.nodes. Stale entries in derived caches (grandparents/relatives)
+  // can point at persons removed via merge/delete — without this filter
+  // they'd render as grey "P47"-style placeholder cards.
+  const people = [husband, wife].filter(Boolean).filter(id => IDX.nodes[id]);
   const totalW = people.length * CW + (people.length - 1) * COUPLE_GAP;
   let x = anchorX - totalW / 2;
   return people.map(id => {
@@ -74,10 +78,16 @@ function getCenteredLayout(focalId){
   const rel  = IDX.relatives[focalId];
   const gps  = IDX.grandparents[focalId] || [];
   const fams = IDX.families;
-  if(!rel) return {nodes:[], focalId, coupleAnchorX: 0};
+  if(!rel) {
+    console.warn('[getCenteredLayout] IDX.relatives[' + focalId + '] отсутствует — '
+      + 'дерево для этого узла построить нельзя. Обычно это значит, что кэш '
+      + 'relatives не был пересоздан при ручной правке JSON соседних персон.');
+    return {nodes:[], focalId, coupleAnchorX: 0, _missingRel: true};
+  }
 
   const placed = new Set();  // avoid placing same person twice
   const nodes  = [];
+  const MAX_GC = Infinity; // без ограничения — показываем всех внуков
 
   function add(n){
     if(placed.has(n.id)) return;
@@ -159,6 +169,7 @@ function getCenteredLayout(focalId){
     if(!parId || !(parId in parentCX)) continue;
     const anchor = parentCX[parId];
     const gpNodes = placeCouple(gp.husband, gp.wife, anchor, -2*LEVEL_H, 'grandparent');
+    if(!gpNodes.length) continue; // both grandparents missing from nodes — nothing to draw
     gpRaw.push({
       nodes: gpNodes,
       left:  gpNodes[0].x,
@@ -183,6 +194,26 @@ function getCenteredLayout(focalId){
 
   // Add all GP nodes (skip duplicates)
   for(const family of gpRaw) family.nodes.forEach(n => add(n));
+
+  // ── Пре-расчёт "footprint": сколько горизонтального места
+  //    понадобится каждому ребёнку под его собственных детей (внуков
+  //    фокальной персоны), чтобы на LEVEL +1 их можно было расставить
+  //    заранее с нужным запасом, не толкая друг друга постфактум.
+  const childFootprint = {}; // childId -> requiredWidth (px)
+  for(const cId of rel.children){
+    const cRel = IDX.relatives[cId];
+    if(!cRel || !cRel.children.length){ childFootprint[cId] = CW; continue; }
+    const cFamChildren = Object.values(fams)
+      .filter(f => f.husband === cId || f.wife === cId)
+      .flatMap(f => f.children || []);
+    const gcSource = cFamChildren.length > 0 ? cFamChildren : cRel.children;
+    const gcCount = [...new Set(gcSource)]
+      .filter(gc => IDX.nodes[gc])
+      .slice(0, MAX_GC).length;
+    childFootprint[cId] = gcCount > 0
+      ? Math.max(CW, gcCount * CW + (gcCount - 1) * SIBLING_GAP)
+      : CW;
+  }
 
   // ── LEVEL +1: children ────────────────────────────────
   // Group children by which marriage/family they belong to,
@@ -219,13 +250,20 @@ function getCenteredLayout(focalId){
     let prevRight = -Infinity;
 
     for(const group of familyGroups){
-      const totalW = group.kids.length * CW + (group.kids.length - 1) * SIBLING_GAP;
+      // ширина слота под каждого ребёнка теперь учитывает его собственный
+      // footprint (место под будущих внуков), а не фиксированную CW —
+      // это резервирует место заранее и убирает необходимость толкать
+      // соседей после факта
+      const widths = group.kids.map(cId => Math.max(CW, childFootprint[cId] || CW));
+      const totalW = widths.reduce((s,w) => s+w, 0) + (group.kids.length - 1) * SIBLING_GAP;
       let cx = group.anchorX - totalW / 2;
       if(cx < prevRight + GROUP_GAP) cx = prevRight + GROUP_GAP;
-      for(const cId of group.kids){
-        add({id: cId, x: cx, y: LEVEL_H, role: 'child'});
-        cx += CW + SIBLING_GAP;
-      }
+      group.kids.forEach((cId, i) => {
+        const w = widths[i];
+        // сама карточка ребёнка остаётся по центру выделенного ему слота
+        add({id: cId, x: cx + (w - CW) / 2, y: LEVEL_H, role: 'child'});
+        cx += w + SIBLING_GAP;
+      });
       prevRight = cx - SIBLING_GAP;
     }
 
@@ -264,8 +302,8 @@ function getCenteredLayout(focalId){
     .filter(n => n.y === LEVEL_H && n.id !== focalId)
     .sort((a,b) => a.x - b.x);  // left to right order
 
-  const MAX_GC = 5; // raised from 3 — show more grandchildren
-  let prevRightGC = -Infinity; // track right edge of last grandchild group
+  let prevRightGC = -Infinity; // track right edge of last placed grandchildren group
+
   for(const cNode of placedChildren){
     const cId  = cNode.id;
     const cRel = IDX.relatives[cId];
@@ -290,7 +328,11 @@ function getCenteredLayout(focalId){
     const gcW     = gcList.length * CW + (gcList.length - 1) * SIBLING_GAP;
     const childCX = cNode.x + CW / 2;
     let gx = childCX - gcW / 2;
-    // Avoid overlap with previously placed grandchildren
+    // Anti-overlap: a wide grandchildren group under this child can start
+    // to the left of where the previous child's own (possibly narrower or
+    // wider) grandchildren group already ended. Clamp forward so groups
+    // never overlap, at the cost of drifting right of the "ideal" center
+    // under a densely-populated branch.
     if(gx < prevRightGC + SIBLING_GAP) gx = prevRightGC + SIBLING_GAP;
 
     for(const gcId of gcList){
@@ -311,13 +353,8 @@ function drawEdges(layout, parent, focalId){
   const LW   = '1.8';
   const OPACITY = '.72';
 
-  // Build position lookup from layout
   const pos = {};
   for(const n of layout.nodes) pos[n.id] = {x: n.x, y: n.y};
-
-  function cX(id){ return pos[id] ? pos[id].x + CW/2 : null; }  // centre X
-  function bY(id){ return pos[id] ? pos[id].y + CH   : null; }  // bottom Y
-  function tY(id){ return pos[id] ? pos[id].y        : null; }  // top Y
 
   function line(x1,y1,x2,y2){
     svgEl('line',{x1,y1,x2,y2,stroke:LCOL,'stroke-width':LW,
@@ -330,62 +367,96 @@ function drawEdges(layout, parent, focalId){
     t.textContent = '♥';
   }
 
-  // Iterate every family in the index; draw only if members are visible
+  // ── Pass 1: collect renderable family units ──────────
+  const units = [];
   for(const [, fam] of Object.entries(IDX.families)){
     const h = fam.husband, w = fam.wife;
     const hIn = h && pos[h], wIn = w && pos[w];
     const visCh = (fam.children || []).filter(c => pos[c]);
+    if(!hIn && !wIn) continue;
 
-    if(!hIn && !wIn) continue;  // no parents visible → skip
-
-    // ── couple connector ───────────────────────────────
     const parentRowY = Math.max(hIn ? pos[h].y : 0, wIn ? pos[w].y : 0);
-    const coupleLineY = parentRowY + CH / 2;  // mid-height of card
+    const coupleLineY = parentRowY + CH / 2;
 
     let anchorX;
     if(hIn && wIn){
-      // horizontal bar between inner edges of the two cards
-      const leftCX  = Math.min(pos[h].x, pos[w].x) + CW;   // right edge of left card
-      const rightCX = Math.max(pos[h].x, pos[w].x);         // left edge of right card
       anchorX = (pos[h].x + CW/2 + pos[w].x + CW/2) / 2;
-      if(rightCX > leftCX) line(leftCX, coupleLineY, rightCX, coupleLineY);
-      heart(anchorX, coupleLineY + 5);
     } else {
       anchorX = hIn ? pos[h].x + CW/2 : pos[w].x + CW/2;
     }
 
-    // ── stem + crossbar + drops to children ───────────
-    if(visCh.length === 0) continue;
+    units.push({h, w, hIn, wIn, visCh, parentRowY, coupleLineY, anchorX});
+  }
 
-    const junctionY = parentRowY + CH + 10;     // just below the couple
-    const childRowY = pos[visCh[0]].y;           // top of child cards
-    const crossbarY = childRowY - 12;            // just above child cards
-
-    const childXs = visCh.map(c => pos[c].x + CW/2);
-    const crossL  = Math.min(...childXs);
-    const crossR  = Math.max(...childXs);
-
-    // Stem meet-point: clamp anchorX to [crossL, crossR] so stem always hits crossbar
-    const stemX = Math.max(crossL, Math.min(crossR, anchorX));
-
-    // vertical stem: couple → crossbarY (using stemX so it lands on crossbar)
-    line(anchorX, junctionY, anchorX, crossbarY);
-
-    // bridge: if anchor is outside child range, draw horizontal to crossbar edge
-    if(anchorX < crossL){
-      line(anchorX, crossbarY, crossL, crossbarY);
-    } else if(anchorX > crossR){
-      line(crossR, crossbarY, anchorX, crossbarY);
+  // ── Pass 2: couple connectors (bars + hearts) — unaffected by lanes ──
+  for(const u of units){
+    if(u.hIn && u.wIn){
+      const leftCX  = Math.min(pos[u.h].x, pos[u.w].x) + CW;
+      const rightCX = Math.max(pos[u.h].x, pos[u.w].x);
+      if(rightCX > leftCX) line(leftCX, u.coupleLineY, rightCX, u.coupleLineY);
+      heart(u.anchorX, u.coupleLineY + 5);
     }
+  }
 
-    // horizontal crossbar connecting all visible children (only between children)
-    if(visCh.length > 1){
-      line(crossL, crossbarY, crossR, crossbarY);
+  // ── Pass 3: group families-with-children sharing the same
+  //    (parentRowY, childRowY) pair, so overlapping marriages of the
+  //    same focal person get separated onto vertical "lanes" instead
+  //    of drawing their crossbars at an identical height.
+  const withChildren = units.filter(u => u.visCh.length > 0);
+  const groups = {};
+  for(const u of withChildren){
+    const childRowY = pos[u.visCh[0]].y;
+    const key = u.parentRowY + '|' + childRowY;
+    (groups[key] = groups[key] || []).push({...u, childRowY});
+  }
+
+  const LANE_STEP   = 10;  // px vertical offset between overlapping crossbars
+  const LANE_GAP_PX = 6;   // min horizontal gap to treat footprints as non-overlapping
+
+  for(const key of Object.keys(groups)){
+    const group = groups[key].slice().sort((a,b) => {
+      const aMin = Math.min(a.anchorX, ...a.visCh.map(c=>pos[c].x+CW/2));
+      const bMin = Math.min(b.anchorX, ...b.visCh.map(c=>pos[c].x+CW/2));
+      return aMin - bMin;
+    });
+
+    const laneEnds = [];
+    for(const u of group){
+      const childXs = u.visCh.map(c => pos[c].x + CW/2);
+      const footL = Math.min(u.anchorX, ...childXs);
+      const footR = Math.max(u.anchorX, ...childXs);
+      let lane = laneEnds.findIndex(end => end + LANE_GAP_PX < footL);
+      if(lane === -1){ lane = laneEnds.length; laneEnds.push(footR); }
+      else laneEnds[lane] = footR;
+      u.lane = lane;
     }
+    const numLanes = laneEnds.length;
 
-    // vertical drop to each child
-    for(const cId of visCh){
-      line(pos[cId].x + CW/2, crossbarY, pos[cId].x + CW/2, childRowY);
+    for(const u of group){
+      const { visCh, anchorX, parentRowY, childRowY, lane } = u;
+      const junctionY     = parentRowY + CH + 10;
+      const baseCrossbarY = childRowY - 12;
+      const crossbarY = numLanes > 1 ? baseCrossbarY - lane * LANE_STEP : baseCrossbarY;
+
+      const childXs = visCh.map(c => pos[c].x + CW/2);
+      const crossL  = Math.min(...childXs);
+      const crossR  = Math.max(...childXs);
+
+      line(anchorX, junctionY, anchorX, crossbarY);
+
+      if(anchorX < crossL){
+        line(anchorX, crossbarY, crossL, crossbarY);
+      } else if(anchorX > crossR){
+        line(crossR, crossbarY, anchorX, crossbarY);
+      }
+
+      if(visCh.length > 1){
+        line(crossL, crossbarY, crossR, crossbarY);
+      }
+
+      for(const cId of visCh){
+        line(pos[cId].x + CW/2, crossbarY, pos[cId].x + CW/2, childRowY);
+      }
     }
   }
 }
@@ -398,7 +469,19 @@ function render(focalId){
 
   // size the SVG around ALL nodes (including negative y)
   if(!layout.nodes.length){
-    document.getElementById('info').textContent = t('no_data')||'—';
+    if(layout._missingRel){
+      console.warn('[render] Пустой canvas для focalId=' + focalId
+        + ': отсутствует IDX.relatives[' + focalId + ']. Нужно починить данные '
+        + '(см. предупреждение выше от getCenteredLayout).');
+      const msg = currentLang==='he'
+        ? '⚠ נתונים פגומים עבור ' + focalId + ' — לא ניתן לבנות עץ. פנה למנהל.'
+        : currentLang==='en'
+        ? '⚠ Corrupted data for ' + focalId + ' — tree cannot be built. Contact the admin.'
+        : '⚠ Повреждены данные для ' + focalId + ' — дерево не может быть построено. Сообщите администратору.';
+      document.getElementById('info').textContent = msg;
+    } else {
+      document.getElementById('info').textContent = t('no_data')||'—';
+    }
     return;
   }
   const xs   = layout.nodes.map(n => n.x);
