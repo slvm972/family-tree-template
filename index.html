@@ -1383,11 +1383,21 @@ document.getElementById('modal-generate').addEventListener('click', async () => 
       const phoneV  = document.getElementById('f-phone').value.trim();
       const emailV  = document.getElementById('f-email').value.trim();
       const socialV = document.getElementById('f-social').value.trim();
+      let computedGen = null;
+      const relIdMatchEarly = relP.match(/\[(P\d+)\]\s*$/);
+      const relTargetIdEarly = relIdMatchEarly ? relIdMatchEarly[1] : null;
+      const relatedNode = relTargetIdEarly ? IDX.nodes[relTargetIdEarly] : null;
+      if(relatedNode && typeof relatedNode.gen === 'number'){
+        if(relT === 'ребёнок')      computedGen = relatedNode.gen + 1;
+        else if(relT === 'родитель') computedGen = relatedNode.gen - 1;
+        else                         computedGen = relatedNode.gen;
+      }
       const body = {
         name,
         sex: document.getElementById('f-sex').value || '',
         birth, death,
         rel: relP ? (relT + ' ' + relP) : '',
+        ...(computedGen !== null ? {gen: computedGen} : {}),
         ...(phoneV  ? {phone:phoneV}   : {}),
         ...(emailV  ? {email:emailV}   : {}),
         ...(socialV ? {social:socialV} : {}),
