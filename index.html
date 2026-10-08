@@ -36,9 +36,10 @@ svg { transition: opacity 0.22s ease-out; }
 svg.fading { opacity: 0 !important; }
 
 /* ── BOTTOM INFO PANEL ── */
+:root { --panel-h: 220px; }
 #panel {
   position: fixed; left: 0; right: 0;
-  bottom: -220px; height: 220px;
+  bottom: calc(-1 * var(--panel-h)); height: var(--panel-h);
   background: #FAF7F0;
   border-top: 1px solid rgba(184,144,48,.28);
   box-shadow: 0 -3px 20px rgba(40,24,10,.13);
@@ -49,6 +50,18 @@ svg.fading { opacity: 0 !important; }
 #panel.open { bottom: 32px; }
 #panel::-webkit-scrollbar { height: 3px; }
 #panel::-webkit-scrollbar-thumb { background: rgba(184,144,48,.3); border-radius: 2px; }
+/* resize handle (drag the panel's top edge) */
+#panel-resize {
+  position: absolute; top: 0; left: 0; right: 0; height: 10px;
+  cursor: ns-resize; touch-action: none; z-index: 0;
+}
+#panel-resize::after {
+  content: ''; position: absolute; top: 3px; left: 50%; width: 40px; height: 3px;
+  margin-left: -20px; border-radius: 2px; background: #B89030; opacity: .55;
+}
+#panel-resize:hover::after { opacity: .9; }
+body.panel-resizing { user-select: none; cursor: ns-resize; }
+body.panel-resizing #panel, body.panel-resizing #vp { transition: none !important; }
 
 /* panel inner layout: horizontal flex */
 #panel-inner {
@@ -82,7 +95,7 @@ svg.fading { opacity: 0 !important; }
   line-height: 1.35; padding-right: 20px; margin-bottom: 3px;
 }
 /* viewport shrinks when panel open */
-#vp.panel-open { bottom: 252px; }
+#vp.panel-open { bottom: calc(32px + var(--panel-h)); }
 .p-rel {
   font-size: .6rem; text-transform: uppercase; letter-spacing: .09em;
   color: #B89030; font-weight: 700; margin-bottom: 10px; display: block;
@@ -245,6 +258,7 @@ svg{position:absolute;top:0;left:0;overflow:visible}
 </div>
 <!-- ── BOTTOM INFO PANEL ── -->
 <div id="panel" class="open">
+  <div id="panel-resize" role="separator" aria-orientation="horizontal"></div>
   <button id="panel-close">×</button>
   <div id="panel-inner">
     <div id="panel-col1"></div>
@@ -339,8 +353,7 @@ svg{position:absolute;top:0;left:0;overflow:visible}
     <label data-i="fix_name">Имя</label>
     <input id="ff-name" type="text" data-ph="ph_name" placeholder="Например: Анна Иванова">
     <div style="display:flex;gap:8px;margin-top:4px">
-      <input id="ff-name-ru" type="text" placeholder="RU" style="font-size:.72rem">
-<input id="ff-name-en" type="text" placeholder="EN" style="font-size:.72rem">
+      <input id="ff-name-en" type="text" placeholder="EN" style="font-size:.72rem">
       <input id="ff-name-he" type="text" placeholder="עברית" dir="rtl" style="font-size:.72rem">
     </div>
 
@@ -553,6 +566,7 @@ let IDX = null;
 const FALLBACK_DATA = {"nodes":{},"families":{},"child_of":{},"parent_in":{},"relatives":{},"grandparents":{}};
 </script>
 <script src="tree-layout.js"></script>
+<script src="tree-kinship.js"></script>
 <script>
 
 // ════════════════════════════════════════════════════════
@@ -657,6 +671,66 @@ function panelNavigate(id){
   navigateTo(id);
 }
 
+/** Resolve a typed name / "Name (year) [Pid]" from the datalist to a person id. */
+function resolvePersonQuery(q) {
+  if (!q || !IDX || !IDX.nodes) return null;
+  q = q.trim();
+  if (!q) return null;
+  if (IDX.nodes[q]) return q;
+  const m = q.match(/\[(P\d+)\]\s*$/i);
+  if (m && IDX.nodes[m[1]]) return m[1];
+  const lower = q.toLowerCase();
+  for (const [id, n] of Object.entries(IDX.nodes)) {
+    if ((n.name || '').toLowerCase() === lower) return id;
+  }
+  for (const [id, n] of Object.entries(IDX.nodes)) {
+    if ((n.name || '').toLowerCase().startsWith(lower)) return id;
+  }
+  for (const [id, n] of Object.entries(IDX.nodes)) {
+    if ((n.name || '').toLowerCase().includes(lower)) return id;
+  }
+  return null;
+}
+
+/**
+ * Panel action: how the viewed person (idB) relates to the person in #kin-other (idA).
+ */
+function panelCheckKinship(idB) {
+  const input = document.getElementById('kin-other');
+  const out = document.getElementById('kin-result');
+  if (!out) return;
+  const q = input ? input.value : '';
+  const idA = resolvePersonQuery(q);
+  if (!idA) {
+    out.style.color = '#A03818';
+    out.textContent = currentLang === 'he' ? 'לא נמצא אדם כזה'
+                    : currentLang === 'en' ? 'Person not found'
+                    : 'Человек не найден — выберите из списка';
+    return;
+  }
+  if (typeof TreeKinship === 'undefined' || !TreeKinship.explainKinship) {
+    out.style.color = '#A03818';
+    out.textContent = 'tree-kinship.js not loaded';
+    return;
+  }
+  // X (открытая персона) — <term> для Y (введённая): X = idB, Y = idA
+  const r = TreeKinship.explainKinship(IDX, idB, idA, currentLang || 'ru', pname);
+  out.style.color = r.found ? '#28180A' : '#A03818';
+  out.textContent = r.message;
+  try { sessionStorage.setItem('kin_last_query', q); } catch (e) {}
+}
+
+// Kinship panel: Enter in #kin-other triggers check
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter') return;
+  const el = document.getElementById('kin-other');
+  if (!el || document.activeElement !== el) return;
+  e.preventDefault();
+  const idB = el.getAttribute('data-panel-id');
+  if (idB) panelCheckKinship(idB);
+});
+
+
 function showPanel(id){
   const n = IDX.nodes[id]; if(!n) return;
 
@@ -721,6 +795,27 @@ function showPanel(id){
   }
   if(!isFocal) col1 += `<button class="p-nav-btn" onclick="navigateTo('${id}')">${t('show_tree')}</button>`;
 
+  // ── Kinship checker ──
+  col1 += `<div class="p-sec" id="kin-block" style="margin-top:10px">
+    <h3>${currentLang==='he'?'קרבה משפחתית':currentLang==='en'?'Relationship':'Кем приходится'}</h3>
+    <div style="font-size:.68rem;color:#7A5828;margin-bottom:4px">
+      ${currentLang==='he'?'ביחס ל:':currentLang==='en'?'Relative to:':'Относительно:'}
+    </div>
+    <div style="display:flex;gap:4px;align-items:center">
+      <input id="kin-other" type="text" list="names-list" autocomplete="off"
+        data-panel-id="${id}"
+        placeholder="${currentLang==='he'?'הקלד שם...':currentLang==='en'?'Type a name...':'Введите имя...'}"
+        style="flex:1;min-width:0;padding:4px 7px;border:1px solid rgba(184,144,48,.35);border-radius:3px;
+               font-size:.72rem;font-family:inherit;background:#FFFDF7;color:#28180A">
+      <button type="button" onclick="panelCheckKinship('${id}')"
+        style="flex-shrink:0;padding:4px 8px;font-size:.68rem;background:#1E4870;color:#fff;border:none;
+               border-radius:3px;cursor:pointer;font-family:inherit">
+        ${currentLang==='he'?'בדוק':currentLang==='en'?'Check':'Показать'}
+      </button>
+    </div>
+    <div id="kin-result" style="margin-top:6px;font-size:.72rem;line-height:1.55;color:#28180A;white-space:pre-wrap"></div>
+  </div>`;
+
   // ── Column 2: relatives ──
   let col2 = '';
   if(parents.length)  col2 += `<div class="p-sec"><h3>${t('parents')}</h3>${parents.map(pLink).join('')}</div>`;
@@ -729,6 +824,11 @@ function showPanel(id){
 
   document.getElementById('panel-col1').innerHTML = col1;
   document.getElementById('panel-col2').innerHTML = col2;
+  try {
+    const lastQ = sessionStorage.getItem('kin_last_query');
+    const kinInput = document.getElementById('kin-other');
+    if (lastQ && kinInput) kinInput.value = lastQ;
+  } catch (e) {}
   document.getElementById('panel').classList.add('open');
   document.getElementById('vp').classList.add('panel-open');
 }
@@ -739,6 +839,73 @@ function closePanel(){
 }
 
 document.getElementById('panel-close').addEventListener('click', closePanel);
+
+// ── Panel resize: перетаскивание верхней границы #panel (мышь + палец) ──
+(function initPanelResize(){
+  const DEFAULT_H = 220, MIN_H = 120, MAX_FRAC = 0.7, KEY = 'treePanelH';
+  const root   = document.documentElement;
+  const panel  = document.getElementById('panel');
+  const handle = document.getElementById('panel-resize');
+  if(!panel || !handle) return;
+
+  const maxH   = () => Math.max(MIN_H, Math.floor(window.innerHeight * MAX_FRAC));
+  const clamp  = h => Math.min(maxH(), Math.max(MIN_H, h));
+  const curH   = () => panel.getBoundingClientRect().height;
+  function setH(h){ root.style.setProperty('--panel-h', Math.round(clamp(h)) + 'px'); }
+  function save(){ try { localStorage.setItem(KEY, String(Math.round(curH()))); } catch(e){} }
+  function reset(){
+    root.style.removeProperty('--panel-h');           // вернуться к значению из CSS (220px)
+    try { localStorage.removeItem(KEY); } catch(e){}
+    afterChange();
+  }
+  // карта не масштабируется и не двигается: меняется только видимая область #vp;
+  // resize нужен лишь чтобы пересчитались индикаторы прокрутки
+  function afterChange(){ window.dispatchEvent(new Event('resize')); }
+
+  // применить сохранённое значение при загрузке
+  try {
+    const saved = parseFloat(localStorage.getItem(KEY));
+    if(isFinite(saved)) setH(saved);
+  } catch(e){}
+
+  let dragging = false, moved = false, startY = 0, startH = 0, lastDown = 0;
+
+  handle.addEventListener('pointerdown', e => {
+    if(e.pointerType === 'mouse' && e.button !== 0) return;
+    const now = Date.now();
+    if(now - lastDown < 320){ lastDown = 0; reset(); e.preventDefault(); return; } // двойной клик/тап
+    lastDown = now;
+    dragging = true; moved = false;
+    startY = e.clientY;
+    startH = curH();
+    document.body.classList.add('panel-resizing');
+    try { handle.setPointerCapture(e.pointerId); } catch(err){}
+    e.preventDefault();
+  });
+  handle.addEventListener('pointermove', e => {
+    if(!dragging) return;
+    if(Math.abs(startY - e.clientY) > 3) moved = true;
+    setH(startH + (startY - e.clientY));              // тянем вверх → выше
+  });
+  function end(e){
+    if(!dragging) return;
+    dragging = false;
+    if(moved) lastDown = 0;                            // перетаскивание — не часть двойного клика
+    document.body.classList.remove('panel-resizing');
+    try { handle.releasePointerCapture(e.pointerId); } catch(err){}
+    save();
+    afterChange();
+  }
+  handle.addEventListener('pointerup', end);
+  handle.addEventListener('pointercancel', end);
+
+  // при изменении размера окна — зажать текущее значение в новые пределы
+  window.addEventListener('resize', () => {
+    if(dragging) return;
+    const h = curH(), c = clamp(h);
+    if(Math.abs(h - c) > 0.5) setH(c);
+  });
+})();
 
 // ── hook showPanel into card clicks ───────────────────────
 // Patch: when a non-focal card is clicked, also show its panel
@@ -805,7 +972,7 @@ function goToSearchResult(){
     // Fallback: try matching by name substring (case-insensitive) across current language
     const lower = val.toLowerCase();
     const found = Object.keys(IDX.nodes).find(id =>
-      nameVariants(IDX.nodes[id], id, NAMES).some(v => v.toLowerCase().includes(lower))
+      pname(id).toLowerCase().includes(lower) || IDX.nodes[id].name.toLowerCase().includes(lower)
     );
     if(found){
       navigateTo(found);
@@ -978,14 +1145,139 @@ function trel(s){
 // ════════════════════════════════════════════════════════
 </script>
 <script src="tree-names.js"></script>
-<script src="tree-translit.js"></script>
 <script>
-// pname(): выбор имени для показа (ручные поля -> NAMES -> автотранслитерация -> оригинал).
-// Вся логика живёт в tree-translit.js (resolveName); здесь только обёртка.
+
+// ── Автоматическая транслитерация имени, если нет ручного
+// перевода (name_en/name_he) и нет записи в статическом словаре
+// NAMES. Гарантирует, что ЛЮБАЯ персона (тестовая, импортированная
+// из GEDCOM, только что созданная) получает читаемое имя на EN/HE,
+// а не остаётся молча на русском. Транслитерация в иврит — best-effort
+// (единого стандарта кириллица→иврит не существует), той же точности,
+// что и приблизительные еврейские даты в GEDCOM-экспорте.
+// ── Автоматическая транслитерация имени в латиницу (EN), если нет
+// ручного перевода (name_en) и нет записи в статическом словаре NAMES.
+// Гарантирует, что ЛЮБАЯ персона (тестовая, импортированная из GEDCOM,
+// только что созданная) получает читаемое латинское имя, а не остаётся
+// молча на русском.
+//
+// ВАЖНО: для иврита (HE) аналогичной механической схемы НЕТ и не
+// добавляется. Первая попытка (побуквенная кириллица→иврит) давала
+// систематически искажённые, нечитаемые результаты — например
+// «Яков»→«יהקוו» вместо принятого «יעקב», «Мостовой»→«מוסטוווי»
+// (тройное ו подряд) вместо «מוסטובוי». Причина не в опечатке в
+// таблице, а в самой природе иврита: письмо в основном консонантное,
+// буквы ו/י/א одновременно и согласные, и «матери чтения» для гласных,
+// плюс у многих имён есть исторически сложившиеся ивритские эквиваленты
+// (Яков = יעקב — это не транслитерация звуков, а само еврейское имя),
+// которые никакая посимвольная схема не воспроизведёт. Ошибочно
+// написанное имя на иврите хуже, чем показ исходного русского текста —
+// поэтому для HE используется ТОЛЬКО ручной name_he или запись в NAMES;
+// без них персона показывается на русском как есть.
+const TRANSLIT_LAT = {
+  'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'yo','ж':'zh',
+  'з':'z','и':'i','й':'y','к':'k','л':'l','м':'m','н':'n','о':'o',
+  'п':'p','р':'r','с':'s','т':'t','у':'u','ф':'f','х':'kh','ц':'ts',
+  'ч':'ch','ш':'sh','щ':'shch','ъ':'','ы':'y','ь':'','э':'e','ю':'yu','я':'ya',
+  'А':'A','Б':'B','В':'V','Г':'G','Д':'D','Е':'E','Ё':'Yo','Ж':'Zh',
+  'З':'Z','И':'I','Й':'Y','К':'K','Л':'L','М':'M','Н':'N','О':'O',
+  'П':'P','Р':'R','С':'S','Т':'T','У':'U','Ф':'F','Х':'Kh','Ц':'Ts',
+  'Ч':'Ch','Ш':'Sh','Щ':'Shch','Ъ':'','Ы':'Y','Ь':'','Э':'E','Ю':'Yu','Я':'Ya'
+};
+
+function transliterateName(name, table){
+  if(!name) return name;
+  return name.split('').map(c => table[c] !== undefined ? table[c] : c).join('');
+}
+
+// ── Определение алфавита строки — нужно, чтобы pname() не считал
+// n.name "всегда русским" (было так до этого фикса: RU-режим слепо
+// возвращал n.name, даже если там иврит или латиница).
+function detectScript(s){
+  if(!s) return 'empty';
+  if(/[\u0590-\u05FF]/.test(s)) return 'hebrew';
+  if(/[\u0400-\u04FF]/.test(s)) return 'cyrillic';
+  if(/[a-zA-Z]/.test(s)) return 'latin';
+  return 'other';
+}
+
+// ── Обратная транслитерация: латиница → кириллица, для RU-режима,
+// когда n.name изначально введён латиницей (напр. "Alexander Goldberg"
+// в реальном дереве). В отличие от иврита, эта пара МЕХАНИЧЕСКИ надёжна
+// для имён, действительно составленных из транслитерируемых звуков —
+// НО не для любого латинского имени вообще (буквы x/j/c/q/w не имеют
+// однозначного соответствия в русской фонетике). Поэтому: если хотя бы
+// одна латинская буква не раскладывается по таблице — функция возвращает
+// null и pname() показывает исходное имя как есть, вместо угадывания
+// (тот же принцип, что уже применён к ивриту после прошлого бага).
+const LAT_TO_CYR_TABLE = [
+  ['shch','щ'],['kh','х'],['ts','ц'],['ch','ч'],['sh','ш'],
+  ['yo','ё'],['zh','ж'],['yu','ю'],['ya','я'],
+  ['a','а'],['b','б'],['v','в'],['g','г'],['d','д'],['e','е'],
+  ['z','з'],['i','и'],['y','й'],['k','к'],['l','л'],['m','м'],
+  ['n','н'],['o','о'],['p','п'],['r','р'],['s','с'],['t','т'],
+  ['u','у'],['f','ф']
+].sort((a,b) => b[0].length - a[0].length);
+
+function transliterateLatinToCyrillic(name){
+  if(!name) return null;
+  let result = '';
+  let i = 0;
+  const lower = name.toLowerCase();
+  while(i < name.length){
+    const ch = name[i];
+    if(!/[a-zA-Z]/.test(ch)){ result += ch; i++; continue; }
+    let matched = false;
+    for(const [lat, cyr] of LAT_TO_CYR_TABLE){
+      if(lower.slice(i, i+lat.length) === lat){
+        const isUpper = ch === ch.toUpperCase() && ch !== ch.toLowerCase();
+        result += isUpper ? (cyr[0].toUpperCase() + cyr.slice(1)) : cyr;
+        i += lat.length;
+        matched = true;
+        break;
+      }
+    }
+    if(!matched) return null; // не смогли надёжно разложить — не гадаем
+  }
+  return result;
+}
+
+// Get person's display name in current language.
+// name_<lang> (ручной перевод) и NAMES[id][lang] (статический словарь)
+// теперь проверяются для ЛЮБОГО языка, включая RU — раньше RU был
+// особым случаем и слепо возвращал n.name, из-за чего персона с
+// ивритским или латинским n.name показывала нечитаемый для
+// русскоязычного родственника текст даже в русском интерфейсе.
+// ПРИМЕЧАНИЕ: name_ru как реального поля не существует — ни в этой
+// форме, ни в ALLOWED backend (сверено с mostovoy-tree — там тоже нет).
+// Проверка n['name_ru'] здесь безвредна (всегда undefined на практике),
+// оставлена только чтобы не городить отдельный if для RU. Реальный
+// способ поправить ошибочный n.name — отредактировать поле «Имя»
+// напрямую в форме «Исправить».
 function pname(id) {
   const n = IDX.nodes[id]; if(!n) return id;
-  return resolveName(n, id, currentLang, NAMES);
+  const manual = n['name_' + currentLang];
+  if(manual) return manual;
+  const d = NAMES[id];
+  if(d && d[currentLang]) return d[currentLang];
+
+  const script = detectScript(n.name);
+
+  if(currentLang === 'ru'){
+    if(script === 'latin'){
+      const cyr = transliterateLatinToCyrillic(n.name);
+      if(cyr) return cyr;
+    }
+    return n.name; // иврит или неразложимая латиница — честно как есть
+  }
+  if(currentLang === 'en'){
+    if(script === 'cyrillic') return transliterateName(n.name, TRANSLIT_LAT);
+    return n.name; // иврит или уже латиница — как есть
+  }
+  // HE: намеренно без автоматики (см. комментарий у TRANSLIT_LAT) —
+  // без ручного name_he/NAMES персона показывается как есть.
+  return n.name;
 }
+
 
 // Apply language to all static UI elements and re-render
 window.applyLang = function(lang){
@@ -1086,7 +1378,7 @@ function buildDatalist(){
   for(const [id, n] of Object.entries(IDX.nodes)){
     const opt = document.createElement('option');
     const by  = n.birth ? (n.birth.match(/\d{4}/)||[''])[0] : '';
-    opt.value = pname(id) + (by ? ' (' + by + ')' : '') + ' [' + id + ']'; const _shown = pname(id); for(const v of nameVariants(n, id, NAMES)){ if(v !== _shown){ const o2 = document.createElement('option'); o2.value = v + (by ? ' (' + by + ')' : '') + ' [' + id + ']'; dl.appendChild(o2); } }
+    opt.value = pname(id) + (by ? ' (' + by + ')' : '') + ' [' + id + ']';
     dl.appendChild(opt);
   }
 }
@@ -1105,7 +1397,7 @@ function openModal(prefillId, mode){
    'f-photo-url','f-photo-cap','photoFileInput',
    'f-bio-text','f-bio-url',
    'f-date-note',
-   'ff-name','ff-name-ru','ff-name-en','ff-name-he','ff-birth','ff-death','ff-birth-he','ff-death-he',
+   'ff-name','ff-name-en','ff-name-he','ff-birth','ff-death','ff-birth-he','ff-death-he',
    'ff-phone','ff-email','ff-social','ff-rel','ff-family','ff-other',
    'f-fix-comment'].forEach(fid => {
     const el = document.getElementById(fid);
@@ -1174,7 +1466,6 @@ function openModal(prefillId, mode){
     // Prefill the editable fields with CURRENT values so user only changes what's wrong
     const setVal = (id, val) => { const el = document.getElementById(id); if(el) el.value = val || ''; };
     setVal('ff-name',      n.name);
-    setVal('ff-name-ru',   n.name_ru);
     setVal('ff-name-en',   n.name_en);
     setVal('ff-name-he',   n.name_he);
     setVal('ff-birth',     n.birth);
@@ -1490,7 +1781,6 @@ document.getElementById('modal-generate').addEventListener('click', async () => 
 
     const fields = [
       { key: 'name',     label: t('fix_name'),       val: getV('ff-name'),     orig: orig.name || '' },
-      { key: 'name_ru', label: t('fix_name') + ' (RU)', val: getV('ff-name-ru'), orig: orig.name_ru || '' },
       { key: 'name_en',  label: t('fix_name') + ' (EN)', val: getV('ff-name-en'), orig: orig.name_en || '' },
       { key: 'name_he',  label: t('fix_name') + ' (HE)', val: getV('ff-name-he'), orig: orig.name_he || '' },
       { key: 'birth',    label: t('fix_birth'),       val: getV('ff-birth'),    orig: orig.birth || '' },
@@ -1743,7 +2033,7 @@ function runDiagnostics(){
   // корректный русский текст (плюс, по желанию, name_en для EN-режима).
   const hebrewOriginNoTranslation = Object.entries(IDX.nodes)
     .filter(([id, n]) => typeof detectScript === 'function' && detectScript(n.name) === 'hebrew'
-                       && !n.name_en && !NAMES[id] && !autoEnglish(n.name));
+                       && !n.name_en && !NAMES[id]);
   hebrewOriginNoTranslation.length === 0
     ? ok(t('diag_no_hebrew_untranslated'))
     : warn(t('diag_hebrew_untranslated'),
@@ -1907,7 +2197,7 @@ function generateVCF() {
     // Skip deceased
     if(n.death && n.death.trim() !== '') continue;
 
-    const name = pname(id) || n.name || '';
+    const name = n.name || '';
     const parts = name.trim().split(/\s+/);
     const lastName  = parts.length > 1 ? parts[parts.length - 1] : '';
     const firstName = parts.length > 1 ? parts.slice(0,-1).join(' ') : parts[0] || '';
@@ -2119,16 +2409,6 @@ document.getElementById('btn-calendar').addEventListener('click', () => {
   const MONTH = {JAN:1,FEB:2,MAR:3,APR:4,MAY:5,JUN:6,JUL:7,AUG:8,SEP:9,OCT:10,NOV:11,DEC:12};
   const NOW_YEAR = new Date().getFullYear();
   const MAX_AGE = 100;
-  const calName  = currentLang==='he' ? 'ימי הולדת של המשפחה' : currentLang==='en' ? 'Family birthdays' : 'Дни рождения семьи';
-  const calAlarm = currentLang==='he' ? 'מחר יום הולדת: ' : currentLang==='en' ? 'Birthday tomorrow: ' : 'Завтра день рождения: ';
-  function calAge(n){
-    if(currentLang==='he') return 'גיל ' + n;
-    if(currentLang==='en') return 'age ' + n;
-    const m10 = n % 10, m100 = n % 100;
-    const w = (m10 === 1 && m100 !== 11) ? 'год'
-            : (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) ? 'года' : 'лет';
-    return n + ' ' + w;
-  }
 
   function pad(n){ return String(n).padStart(2,'0'); }
 
@@ -2141,7 +2421,7 @@ document.getElementById('btn-calendar').addEventListener('click', () => {
     return null;
   }
 
-  const lines = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//' + TREE_CONFIG.familyNameEn + ' Family Tree//RU','CALSCALE:GREGORIAN','X-WR-CALNAME:' + calName + ' ' + (currentLang==='he' ? TREE_CONFIG.familyNameHe : currentLang==='en' ? TREE_CONFIG.familyNameEn : TREE_CONFIG.familyNameRu),'X-WR-TIMEZONE:Asia/Jerusalem'];
+  const lines = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//' + TREE_CONFIG.familyNameEn + ' Family Tree//RU','CALSCALE:GREGORIAN','X-WR-CALNAME:Дни рождения семьи ' + TREE_CONFIG.familyNameRu,'X-WR-TIMEZONE:Asia/Jerusalem'];
 
   let count = 0;
   Object.values(IDX.nodes).forEach(p => {
@@ -2154,7 +2434,7 @@ document.getElementById('btn-calendar').addEventListener('click', () => {
     // Первое будущее событие — в этом или следующем году
     const age = NOW_YEAR - d.year;
     const uid = `birthday-${p.id}@${TREE_CONFIG.calendarUidDomain}`;
-    const summary = `🎂 ${pname(p.id)} (${calAge(age)})`;
+    const summary = `🎂 ${p.name} (${age} лет)`;
     const dtstart = `${NOW_YEAR}${mm}${dd}`;
     lines.push('BEGIN:VEVENT');
     lines.push(`UID:${uid}`);
@@ -2164,12 +2444,12 @@ document.getElementById('btn-calendar').addEventListener('click', () => {
     lines.push(`DTEND;VALUE=DATE:${dtend_str}`);
     lines.push(`RRULE:FREQ=YEARLY`);
     lines.push(`SUMMARY:${summary}`);
-    if(p.rel) lines.push(`DESCRIPTION:${trel(p.rel)}`);
+    if(p.rel) lines.push(`DESCRIPTION:${p.rel}`);
     lines.push(`TRANSP:TRANSPARENT`);
     lines.push(`BEGIN:VALARM`);
     lines.push(`TRIGGER:-P1D`);
     lines.push(`ACTION:DISPLAY`);
-    lines.push(`DESCRIPTION:${calAlarm}${pname(p.id)}`);
+    lines.push(`DESCRIPTION:Завтра день рождения: ${p.name}`);
     lines.push(`END:VALARM`);
     lines.push('END:VEVENT');
     count++;
