@@ -63,6 +63,46 @@
       "missing": [
         "дата рождения"
       ]
+    },
+    "P7": {
+      "id": "P7",
+      "name": "ולאדיק מוסטובוי",
+      "sex": "M",
+      "gen": 2,
+      "birth": "1 JAN 2008",
+      "death": "",
+      "rel": "Сын",
+      "missing": []
+    },
+    "P8": {
+      "id": "P8",
+      "name": "אבא בלבלב",
+      "sex": "F",
+      "gen": 2,
+      "birth": "2 FEB 2010",
+      "death": "",
+      "rel": "Дочь",
+      "missing": []
+    },
+    "P9": {
+      "id": "P9",
+      "name": "Mikhail Berman",
+      "sex": "M",
+      "gen": 2,
+      "birth": "3 MAR 2012",
+      "death": "",
+      "rel": "Сын",
+      "missing": []
+    },
+    "P10": {
+      "id": "P10",
+      "name": "Jack Wright",
+      "sex": "M",
+      "gen": 2,
+      "birth": "4 APR 2014",
+      "death": "",
+      "rel": "Сын",
+      "missing": []
     }
   },
   "families": {
@@ -81,7 +121,11 @@
       "wife": null,
       "children": [
         "P5",
-        "P6"
+        "P6",
+        "P7",
+        "P8",
+        "P9",
+        "P10"
       ]
     }
   },

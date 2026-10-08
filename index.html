@@ -339,7 +339,8 @@ svg{position:absolute;top:0;left:0;overflow:visible}
     <label data-i="fix_name">Имя</label>
     <input id="ff-name" type="text" data-ph="ph_name" placeholder="Например: Анна Иванова">
     <div style="display:flex;gap:8px;margin-top:4px">
-      <input id="ff-name-en" type="text" placeholder="EN" style="font-size:.72rem">
+      <input id="ff-name-ru" type="text" placeholder="RU" style="font-size:.72rem">
+<input id="ff-name-en" type="text" placeholder="EN" style="font-size:.72rem">
       <input id="ff-name-he" type="text" placeholder="עברית" dir="rtl" style="font-size:.72rem">
     </div>
 
@@ -804,7 +805,7 @@ function goToSearchResult(){
     // Fallback: try matching by name substring (case-insensitive) across current language
     const lower = val.toLowerCase();
     const found = Object.keys(IDX.nodes).find(id =>
-      pname(id).toLowerCase().includes(lower) || IDX.nodes[id].name.toLowerCase().includes(lower)
+      nameVariants(IDX.nodes[id], id, NAMES).some(v => v.toLowerCase().includes(lower))
     );
     if(found){
       navigateTo(found);
@@ -977,139 +978,14 @@ function trel(s){
 // ════════════════════════════════════════════════════════
 </script>
 <script src="tree-names.js"></script>
+<script src="tree-translit.js"></script>
 <script>
-
-// ── Автоматическая транслитерация имени, если нет ручного
-// перевода (name_en/name_he) и нет записи в статическом словаре
-// NAMES. Гарантирует, что ЛЮБАЯ персона (тестовая, импортированная
-// из GEDCOM, только что созданная) получает читаемое имя на EN/HE,
-// а не остаётся молча на русском. Транслитерация в иврит — best-effort
-// (единого стандарта кириллица→иврит не существует), той же точности,
-// что и приблизительные еврейские даты в GEDCOM-экспорте.
-// ── Автоматическая транслитерация имени в латиницу (EN), если нет
-// ручного перевода (name_en) и нет записи в статическом словаре NAMES.
-// Гарантирует, что ЛЮБАЯ персона (тестовая, импортированная из GEDCOM,
-// только что созданная) получает читаемое латинское имя, а не остаётся
-// молча на русском.
-//
-// ВАЖНО: для иврита (HE) аналогичной механической схемы НЕТ и не
-// добавляется. Первая попытка (побуквенная кириллица→иврит) давала
-// систематически искажённые, нечитаемые результаты — например
-// «Яков»→«יהקוו» вместо принятого «יעקב», «Мостовой»→«מוסטוווי»
-// (тройное ו подряд) вместо «מוסטובוי». Причина не в опечатке в
-// таблице, а в самой природе иврита: письмо в основном консонантное,
-// буквы ו/י/א одновременно и согласные, и «матери чтения» для гласных,
-// плюс у многих имён есть исторически сложившиеся ивритские эквиваленты
-// (Яков = יעקב — это не транслитерация звуков, а само еврейское имя),
-// которые никакая посимвольная схема не воспроизведёт. Ошибочно
-// написанное имя на иврите хуже, чем показ исходного русского текста —
-// поэтому для HE используется ТОЛЬКО ручной name_he или запись в NAMES;
-// без них персона показывается на русском как есть.
-const TRANSLIT_LAT = {
-  'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'yo','ж':'zh',
-  'з':'z','и':'i','й':'y','к':'k','л':'l','м':'m','н':'n','о':'o',
-  'п':'p','р':'r','с':'s','т':'t','у':'u','ф':'f','х':'kh','ц':'ts',
-  'ч':'ch','ш':'sh','щ':'shch','ъ':'','ы':'y','ь':'','э':'e','ю':'yu','я':'ya',
-  'А':'A','Б':'B','В':'V','Г':'G','Д':'D','Е':'E','Ё':'Yo','Ж':'Zh',
-  'З':'Z','И':'I','Й':'Y','К':'K','Л':'L','М':'M','Н':'N','О':'O',
-  'П':'P','Р':'R','С':'S','Т':'T','У':'U','Ф':'F','Х':'Kh','Ц':'Ts',
-  'Ч':'Ch','Ш':'Sh','Щ':'Shch','Ъ':'','Ы':'Y','Ь':'','Э':'E','Ю':'Yu','Я':'Ya'
-};
-
-function transliterateName(name, table){
-  if(!name) return name;
-  return name.split('').map(c => table[c] !== undefined ? table[c] : c).join('');
-}
-
-// ── Определение алфавита строки — нужно, чтобы pname() не считал
-// n.name "всегда русским" (было так до этого фикса: RU-режим слепо
-// возвращал n.name, даже если там иврит или латиница).
-function detectScript(s){
-  if(!s) return 'empty';
-  if(/[\u0590-\u05FF]/.test(s)) return 'hebrew';
-  if(/[\u0400-\u04FF]/.test(s)) return 'cyrillic';
-  if(/[a-zA-Z]/.test(s)) return 'latin';
-  return 'other';
-}
-
-// ── Обратная транслитерация: латиница → кириллица, для RU-режима,
-// когда n.name изначально введён латиницей (напр. "Alexander Goldberg"
-// в реальном дереве). В отличие от иврита, эта пара МЕХАНИЧЕСКИ надёжна
-// для имён, действительно составленных из транслитерируемых звуков —
-// НО не для любого латинского имени вообще (буквы x/j/c/q/w не имеют
-// однозначного соответствия в русской фонетике). Поэтому: если хотя бы
-// одна латинская буква не раскладывается по таблице — функция возвращает
-// null и pname() показывает исходное имя как есть, вместо угадывания
-// (тот же принцип, что уже применён к ивриту после прошлого бага).
-const LAT_TO_CYR_TABLE = [
-  ['shch','щ'],['kh','х'],['ts','ц'],['ch','ч'],['sh','ш'],
-  ['yo','ё'],['zh','ж'],['yu','ю'],['ya','я'],
-  ['a','а'],['b','б'],['v','в'],['g','г'],['d','д'],['e','е'],
-  ['z','з'],['i','и'],['y','й'],['k','к'],['l','л'],['m','м'],
-  ['n','н'],['o','о'],['p','п'],['r','р'],['s','с'],['t','т'],
-  ['u','у'],['f','ф']
-].sort((a,b) => b[0].length - a[0].length);
-
-function transliterateLatinToCyrillic(name){
-  if(!name) return null;
-  let result = '';
-  let i = 0;
-  const lower = name.toLowerCase();
-  while(i < name.length){
-    const ch = name[i];
-    if(!/[a-zA-Z]/.test(ch)){ result += ch; i++; continue; }
-    let matched = false;
-    for(const [lat, cyr] of LAT_TO_CYR_TABLE){
-      if(lower.slice(i, i+lat.length) === lat){
-        const isUpper = ch === ch.toUpperCase() && ch !== ch.toLowerCase();
-        result += isUpper ? (cyr[0].toUpperCase() + cyr.slice(1)) : cyr;
-        i += lat.length;
-        matched = true;
-        break;
-      }
-    }
-    if(!matched) return null; // не смогли надёжно разложить — не гадаем
-  }
-  return result;
-}
-
-// Get person's display name in current language.
-// name_<lang> (ручной перевод) и NAMES[id][lang] (статический словарь)
-// теперь проверяются для ЛЮБОГО языка, включая RU — раньше RU был
-// особым случаем и слепо возвращал n.name, из-за чего персона с
-// ивритским или латинским n.name показывала нечитаемый для
-// русскоязычного родственника текст даже в русском интерфейсе.
-// ПРИМЕЧАНИЕ: name_ru как реального поля не существует — ни в этой
-// форме, ни в ALLOWED backend (сверено с mostovoy-tree — там тоже нет).
-// Проверка n['name_ru'] здесь безвредна (всегда undefined на практике),
-// оставлена только чтобы не городить отдельный if для RU. Реальный
-// способ поправить ошибочный n.name — отредактировать поле «Имя»
-// напрямую в форме «Исправить».
+// pname(): выбор имени для показа (ручные поля -> NAMES -> автотранслитерация -> оригинал).
+// Вся логика живёт в tree-translit.js (resolveName); здесь только обёртка.
 function pname(id) {
   const n = IDX.nodes[id]; if(!n) return id;
-  const manual = n['name_' + currentLang];
-  if(manual) return manual;
-  const d = NAMES[id];
-  if(d && d[currentLang]) return d[currentLang];
-
-  const script = detectScript(n.name);
-
-  if(currentLang === 'ru'){
-    if(script === 'latin'){
-      const cyr = transliterateLatinToCyrillic(n.name);
-      if(cyr) return cyr;
-    }
-    return n.name; // иврит или неразложимая латиница — честно как есть
-  }
-  if(currentLang === 'en'){
-    if(script === 'cyrillic') return transliterateName(n.name, TRANSLIT_LAT);
-    return n.name; // иврит или уже латиница — как есть
-  }
-  // HE: намеренно без автоматики (см. комментарий у TRANSLIT_LAT) —
-  // без ручного name_he/NAMES персона показывается как есть.
-  return n.name;
+  return resolveName(n, id, currentLang, NAMES);
 }
-
 
 // Apply language to all static UI elements and re-render
 window.applyLang = function(lang){
@@ -1210,7 +1086,7 @@ function buildDatalist(){
   for(const [id, n] of Object.entries(IDX.nodes)){
     const opt = document.createElement('option');
     const by  = n.birth ? (n.birth.match(/\d{4}/)||[''])[0] : '';
-    opt.value = pname(id) + (by ? ' (' + by + ')' : '') + ' [' + id + ']';
+    opt.value = pname(id) + (by ? ' (' + by + ')' : '') + ' [' + id + ']'; const _shown = pname(id); for(const v of nameVariants(n, id, NAMES)){ if(v !== _shown){ const o2 = document.createElement('option'); o2.value = v + (by ? ' (' + by + ')' : '') + ' [' + id + ']'; dl.appendChild(o2); } }
     dl.appendChild(opt);
   }
 }
@@ -1229,7 +1105,7 @@ function openModal(prefillId, mode){
    'f-photo-url','f-photo-cap','photoFileInput',
    'f-bio-text','f-bio-url',
    'f-date-note',
-   'ff-name','ff-name-en','ff-name-he','ff-birth','ff-death','ff-birth-he','ff-death-he',
+   'ff-name','ff-name-ru','ff-name-en','ff-name-he','ff-birth','ff-death','ff-birth-he','ff-death-he',
    'ff-phone','ff-email','ff-social','ff-rel','ff-family','ff-other',
    'f-fix-comment'].forEach(fid => {
     const el = document.getElementById(fid);
@@ -1298,6 +1174,7 @@ function openModal(prefillId, mode){
     // Prefill the editable fields with CURRENT values so user only changes what's wrong
     const setVal = (id, val) => { const el = document.getElementById(id); if(el) el.value = val || ''; };
     setVal('ff-name',      n.name);
+    setVal('ff-name-ru',   n.name_ru);
     setVal('ff-name-en',   n.name_en);
     setVal('ff-name-he',   n.name_he);
     setVal('ff-birth',     n.birth);
@@ -1613,6 +1490,7 @@ document.getElementById('modal-generate').addEventListener('click', async () => 
 
     const fields = [
       { key: 'name',     label: t('fix_name'),       val: getV('ff-name'),     orig: orig.name || '' },
+      { key: 'name_ru', label: t('fix_name') + ' (RU)', val: getV('ff-name-ru'), orig: orig.name_ru || '' },
       { key: 'name_en',  label: t('fix_name') + ' (EN)', val: getV('ff-name-en'), orig: orig.name_en || '' },
       { key: 'name_he',  label: t('fix_name') + ' (HE)', val: getV('ff-name-he'), orig: orig.name_he || '' },
       { key: 'birth',    label: t('fix_birth'),       val: getV('ff-birth'),    orig: orig.birth || '' },
@@ -1865,7 +1743,7 @@ function runDiagnostics(){
   // корректный русский текст (плюс, по желанию, name_en для EN-режима).
   const hebrewOriginNoTranslation = Object.entries(IDX.nodes)
     .filter(([id, n]) => typeof detectScript === 'function' && detectScript(n.name) === 'hebrew'
-                       && !n.name_en && !NAMES[id]);
+                       && !n.name_en && !NAMES[id] && !autoEnglish(n.name));
   hebrewOriginNoTranslation.length === 0
     ? ok(t('diag_no_hebrew_untranslated'))
     : warn(t('diag_hebrew_untranslated'),
@@ -2029,7 +1907,7 @@ function generateVCF() {
     // Skip deceased
     if(n.death && n.death.trim() !== '') continue;
 
-    const name = n.name || '';
+    const name = pname(id) || n.name || '';
     const parts = name.trim().split(/\s+/);
     const lastName  = parts.length > 1 ? parts[parts.length - 1] : '';
     const firstName = parts.length > 1 ? parts.slice(0,-1).join(' ') : parts[0] || '';
@@ -2241,6 +2119,16 @@ document.getElementById('btn-calendar').addEventListener('click', () => {
   const MONTH = {JAN:1,FEB:2,MAR:3,APR:4,MAY:5,JUN:6,JUL:7,AUG:8,SEP:9,OCT:10,NOV:11,DEC:12};
   const NOW_YEAR = new Date().getFullYear();
   const MAX_AGE = 100;
+  const calName  = currentLang==='he' ? 'ימי הולדת של המשפחה' : currentLang==='en' ? 'Family birthdays' : 'Дни рождения семьи';
+  const calAlarm = currentLang==='he' ? 'מחר יום הולדת: ' : currentLang==='en' ? 'Birthday tomorrow: ' : 'Завтра день рождения: ';
+  function calAge(n){
+    if(currentLang==='he') return 'גיל ' + n;
+    if(currentLang==='en') return 'age ' + n;
+    const m10 = n % 10, m100 = n % 100;
+    const w = (m10 === 1 && m100 !== 11) ? 'год'
+            : (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) ? 'года' : 'лет';
+    return n + ' ' + w;
+  }
 
   function pad(n){ return String(n).padStart(2,'0'); }
 
@@ -2253,7 +2141,7 @@ document.getElementById('btn-calendar').addEventListener('click', () => {
     return null;
   }
 
-  const lines = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//' + TREE_CONFIG.familyNameEn + ' Family Tree//RU','CALSCALE:GREGORIAN','X-WR-CALNAME:Дни рождения семьи ' + TREE_CONFIG.familyNameRu,'X-WR-TIMEZONE:Asia/Jerusalem'];
+  const lines = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//' + TREE_CONFIG.familyNameEn + ' Family Tree//RU','CALSCALE:GREGORIAN','X-WR-CALNAME:' + calName + ' ' + (currentLang==='he' ? TREE_CONFIG.familyNameHe : currentLang==='en' ? TREE_CONFIG.familyNameEn : TREE_CONFIG.familyNameRu),'X-WR-TIMEZONE:Asia/Jerusalem'];
 
   let count = 0;
   Object.values(IDX.nodes).forEach(p => {
@@ -2266,7 +2154,7 @@ document.getElementById('btn-calendar').addEventListener('click', () => {
     // Первое будущее событие — в этом или следующем году
     const age = NOW_YEAR - d.year;
     const uid = `birthday-${p.id}@${TREE_CONFIG.calendarUidDomain}`;
-    const summary = `🎂 ${p.name} (${age} лет)`;
+    const summary = `🎂 ${pname(p.id)} (${calAge(age)})`;
     const dtstart = `${NOW_YEAR}${mm}${dd}`;
     lines.push('BEGIN:VEVENT');
     lines.push(`UID:${uid}`);
@@ -2276,12 +2164,12 @@ document.getElementById('btn-calendar').addEventListener('click', () => {
     lines.push(`DTEND;VALUE=DATE:${dtend_str}`);
     lines.push(`RRULE:FREQ=YEARLY`);
     lines.push(`SUMMARY:${summary}`);
-    if(p.rel) lines.push(`DESCRIPTION:${p.rel}`);
+    if(p.rel) lines.push(`DESCRIPTION:${trel(p.rel)}`);
     lines.push(`TRANSP:TRANSPARENT`);
     lines.push(`BEGIN:VALARM`);
     lines.push(`TRIGGER:-P1D`);
     lines.push(`ACTION:DISPLAY`);
-    lines.push(`DESCRIPTION:Завтра день рождения: ${p.name}`);
+    lines.push(`DESCRIPTION:${calAlarm}${pname(p.id)}`);
     lines.push(`END:VALARM`);
     lines.push('END:VEVENT');
     count++;
