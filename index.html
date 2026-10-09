@@ -545,6 +545,7 @@ const TREE_CONFIG = {
   workerUrl:    'https://REPLACE_AFTER_DEPLOY.workers.dev',
   fileSlug:     'family',   // used in filenames: {slug}-birthdays.ics, {slug}-contacts.vcf
   calendarUidDomain: 'family-tree',
+  startPage:    '',   // необязательно: адрес стартовой страницы (например '/'). Пусто = окно пароля внутри дерева
   // Quick-access toolbar shortcuts. Each entry: { id: personId, label: {ru,en,he} }
   // For a brand new tree, leave this array empty — the buttons simply won't
   // render. As the tree grows, the owner can add key figures here.
@@ -2213,6 +2214,8 @@ document.getElementById('btn-login').addEventListener('click', e => {
       const adminOverlayOut = document.getElementById('admin-panel-overlay');
       if(adminOverlayOut) adminOverlayOut.style.display = 'none';
       showToast(currentLang==='he' ? 'יצאת' : currentLang==='en' ? 'Logged out' : 'Вы вышли', false);
+      try { sessionStorage.removeItem('tree_role'); localStorage.removeItem('tree_pwd_saved'); localStorage.removeItem('tree_role_saved'); } catch (e) {}
+      if (TREE_CONFIG.startPage) setTimeout(function () { location.replace(TREE_CONFIG.startPage); }, 500);
     }
     return;
   }
@@ -3129,6 +3132,18 @@ async function loadApProposals(){
 
 async function loadTree() {
   // Проверим сохранённый пароль в sessionStorage
+  if (TREE_CONFIG.startPage && !sessionStorage.getItem('tree_pwd')) {
+    // страница-витрина (демо): пароль мог быть сохранён на устройстве («Запомнить»)
+    try {
+      const sp = localStorage.getItem('tree_pwd_saved');
+      if (sp) {
+        sessionStorage.setItem('tree_pwd', sp);
+        const sr = localStorage.getItem('tree_role_saved');
+        if (sr) sessionStorage.setItem('tree_role', sr);
+      }
+    } catch (e) {}
+    if (!sessionStorage.getItem('tree_pwd')) { location.replace(TREE_CONFIG.startPage); return; }
+  }
   const savedPwd = sessionStorage.getItem('tree_pwd');
   if (savedPwd) {
     showLoader('Загрузка дерева…');
@@ -3138,11 +3153,28 @@ async function loadTree() {
       });
       if (res.ok) {
         const data = await res.json();
+        window._userRole = sessionStorage.getItem('tree_role') || null;
+        if (!window._userRole) {
+          // старая сессия без роли — узнаём роль у сервера
+          try {
+            const lr = await fetch(WORKER_URL + '/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: savedPwd }) });
+            const ld = await lr.json();
+            if (ld && ld.ok) { window._userRole = ld.role; sessionStorage.setItem('tree_role', ld.role); }
+          } catch (e) {}
+        }
         initTree(data, savedPwd);
+        const lb = document.getElementById('btn-login');
+        if (lb && window._userRole) lb.textContent = window._userRole === 'admin' ? '🔓' : '👤';
         return;
       }
       // Пароль устарел — очищаем и проваливаемся в гостевую ветку ниже
       // (не дублируем fallback-логику здесь)
+      if (TREE_CONFIG.startPage) {
+        try { sessionStorage.removeItem('tree_role'); localStorage.removeItem('tree_pwd_saved'); localStorage.removeItem('tree_role_saved'); } catch (e) {}
+        sessionStorage.removeItem('tree_pwd');
+        location.replace(TREE_CONFIG.startPage);
+        return;
+      }
       sessionStorage.removeItem('tree_pwd');
     } catch(e) {
       console.warn('API недоступен, используем встроенные данные', e);
