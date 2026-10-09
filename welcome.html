@@ -145,7 +145,9 @@
     color: var(--ink-soft);
     border: 1.5px solid rgba(58,40,16,.25);
   }
-  .btn-ghost:hover { border-color: var(--ink-soft); }
+    .btn-ghost:hover { border-color: var(--ink-soft); }
+  .demo-note { flex-basis: 100%; text-align: center; font-size: .85rem; color: var(--ink-soft); margin-top: 4px; }
+  .demo-note b { color: var(--wine); }
 
   @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
@@ -325,6 +327,8 @@
     <div class="cta-row">
       <a href="#steps" class="btn btn-primary" data-i="cta-start">Начать настройку →</a>
       <a href="#features" class="btn btn-ghost" data-i="cta-features">Что это умеет</a>
+      <a href="https://family-tree-demo.pages.dev" target="_blank" rel="noopener" class="btn btn-ghost" data-i="cta-demo">Живое демо →</a>
+      <div class="demo-note" data-i="demo-note">Пароль гостя: <b>demo</b> · пароль администратора: <b>demo-admin</b></div>
     </div>
   </div>
 </section>
@@ -427,6 +431,8 @@ const UI = {
     'lede': 'Не нужно быть программистом. Не нужно быть «продвинутым пользователем». Нужно только желание сохранить историю своей семьи — остальное сделает эта страница, шаг за шагом.',
     'cta-start': 'Начать настройку →',
     'cta-features': 'Что это умеет',
+    'cta-demo': 'Живое демо →',
+    'demo-note': 'Пароль гостя: <b>demo</b> · пароль администратора: <b>demo-admin</b>',
     'feat-h2': 'Чем это отличается от подобных сервисов',
     'feat-lede': 'Коротко — о том, чего нет у большинства.',
     'feat1': '<b>Мультиязычность</b> — каждый родственник может читать дерево на удобном ему языке.',
@@ -460,6 +466,8 @@ const UI = {
     'lede': 'No need to be a programmer. No need to be a "power user". All you need is the wish to preserve your family\u2019s story — this page will do the rest, step by step.',
     'cta-start': 'Start setup →',
     'cta-features': 'What it can do',
+    'cta-demo': 'Live demo →',
+    'demo-note': 'Guest password: <b>demo</b> · admin password: <b>demo-admin</b>',
     'feat-h2': 'How this differs from similar services',
     'feat-lede': 'Briefly — what most others don\u2019t have.',
     'feat1': '<b>Multilingual</b> — every relative can read the tree in the language that suits them.',
@@ -493,6 +501,8 @@ const UI = {
     'lede': '\u05dc\u05d0 \u05e6\u05e8\u05d9\u05da \u05dc\u05d4\u05d9\u05d5\u05ea \u05de\u05ea\u05db\u05e0\u05ea\u05d9\u05dd. \u05dc\u05d0 \u05e6\u05e8\u05d9\u05da \u05dc\u05d4\u05d9\u05d5\u05ea "\u05de\u05e9\u05ea\u05de\u05e9 \u05de\u05ea\u05e7\u05d3\u05dd". \u05e6\u05e8\u05d9\u05da \u05e8\u05e7 \u05e8\u05e6\u05d5\u05df \u05dc\u05e9\u05de\u05e8 \u05d0\u05ea \u05e1\u05d9\u05e4\u05d5\u05e8 \u05d4\u05de\u05e9\u05e4\u05d7\u05d4 \u05e9\u05dc\u05db\u05dd — \u05d4\u05e9\u05d0\u05e8 \u05ea\u05e2\u05e9\u05d4 \u05d4\u05d3\u05e3 \u05d4\u05d6\u05d4, \u05e9\u05dc\u05d1 \u05d0\u05d7\u05e8 \u05e9\u05dc\u05d1.',
     'cta-start': '\u05dc\u05d4\u05ea\u05d7\u05d9\u05dc \u05d1\u05d4\u05ea\u05e7\u05e0\u05d4 ←',
     'cta-features': '\u05de\u05d4 \u05d6\u05d4 \u05d9\u05d5\u05d3\u05e2 \u05dc\u05e2\u05e9\u05d5\u05ea',
+    'cta-demo': '\u05d4\u05d3\u05d2\u05de\u05d4 \u05d7\u05d9\u05d4 \u2190',
+    'demo-note': '\u05e1\u05d9\u05e1\u05de\u05ea \u05d0\u05d5\u05e8\u05d7: demo \u00b7 \u05e1\u05d9\u05e1\u05de\u05ea \u05de\u05e0\u05d4\u05dc: demo-admin',
     'feat-h2': '\u05d1\u05de\u05d4 \u05d6\u05d4 \u05e9\u05d5\u05e0\u05d4 \u05de\u05e9\u05d9\u05e8\u05d5\u05ea\u05d9\u05dd \u05d3\u05d5\u05de\u05d9\u05dd',
     'feat-lede': '\u05d1\u05e7\u05e6\u05e8\u05d4 — \u05de\u05d4 \u05e9\u05d0\u05d9\u05df \u05dc\u05e8\u05d5\u05d1.',
     'feat1': '<b>\u05e8\u05d1-\u05dc\u05e9\u05d5\u05e0\u05d9\u05d5\u05ea</b> — \u05db\u05dc \u05e7\u05e8\u05d5\u05d1 \u05de\u05e9\u05e4\u05d7\u05d4 \u05d9\u05db\u05d5\u05dc \u05dc\u05e7\u05e8\u05d5\u05d0 \u05d0\u05ea \u05d4\u05e2\u05e5 \u05d1\u05e9\u05e4\u05d4 \u05d4\u05e0\u05d5\u05d7 \u05dc\u05d5.',
