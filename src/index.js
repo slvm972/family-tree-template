@@ -227,11 +227,14 @@ export default {
       const body = await request.text();
       try { JSON.parse(body); } catch(e) { return err('Невалидный JSON'); }
 
+      // Backup the PREVIOUS tree_data (read before overwrite), not the incoming body:
+      // restoring from a backup must bring back the state that was replaced.
+      const previousRawData = await env.TREE_KV.get('tree_data');
       await env.TREE_KV.put('tree_data', body);
 
       // Save timestamped backup (keep last 10)
       const ts = Date.now();
-      await env.TREE_KV.put('backup_' + ts, body);
+      if(previousRawData) await env.TREE_KV.put('backup_' + ts, previousRawData);
 
       // Trim old backups (keep last 10)
       const list = await env.TREE_KV.list({ prefix: 'backup_' });
