@@ -64,7 +64,7 @@ function cardCol(id, role){
   if(role === 'focal') return {fill:'#1C4060', stroke:'#0C2840'};
   const n = IDX.nodes[id];
   if(!n) return {fill:'#888', stroke:'#555'};
-  const dead = !!(n.death && n.death !== '' && n.death !== 'ум.');
+  const dead = !!(n.death && n.death !== '');
   if(dead) return {fill:'#3A4A55', stroke:'#1A2A35'};
   return n.sex === 'M'
     ? {fill:'#1E4870', stroke:'#122840'}
@@ -633,7 +633,7 @@ function render(focalId){
 
     // birth year + death year + Hebrew dates
     const by = ndata.birth ? (ndata.birth.match(/\d{4}/)||[''])[0] : '';
-    const dy = ndata.death && ndata.death !== 'ум.' ? (ndata.death.match(/\d{4}/)||[''])[0] : '';
+    const dy = ndata.death === 'ум.' ? '?' : (ndata.death ? (ndata.death.match(/\d{4}/)||[''])[0] : '');
     const bhe = ndata.birth_he || '';
     const dhe = ndata.death_he || '';
 
@@ -653,11 +653,11 @@ function render(focalId){
                                'text-anchor':'middle','font-size':'9',
                                'font-family':'Segoe UI,sans-serif',
                                fill:'rgba(255,255,255,.45)','pointer-events':'none'},g);
-      dt.textContent = '† ' + dy;
+      dt.textContent = t('died') + ' ' + dy;
       dateY += 12;
     }
     if(bhe || dhe){
-      const heText = [bhe ? bhe : null, dhe ? '† '+dhe : null].filter(Boolean).join('  ');
+      const heText = [bhe ? bhe : null, dhe ? t('died')+' '+dhe : null].filter(Boolean).join('  ');
       const ht = svgEl('text',{x:nx+CW/2, y:ny+CH-6,
                                'text-anchor':'middle','font-size':'7.5',
                                'font-family':'Segoe UI,Arial,sans-serif',
