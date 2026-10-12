@@ -243,6 +243,7 @@ svg{position:absolute;top:0;left:0;overflow:visible}
   <button class="btn" id="btn-contacts" style="background:rgba(237,216,144,.15);border-color:rgba(237,216,144,.4)" title="Скачать контакты" data-title="title_contacts">📇</button>
   <button class="btn" id="btn-calendar" style="background:rgba(237,216,144,.15);border-color:rgba(237,216,144,.4)" title="Скачать календарь дней рождения" data-title="title_calendar">📅</button>
   <button class="btn" id="btn-login" style="background:rgba(237,216,144,.15);border-color:rgba(237,216,144,.4)" title="Войти" data-title="login_btn">🔑</button>
+  <button class="btn" id="btn-backup" style="background:rgba(237,216,144,.15);border-color:rgba(237,216,144,.4)" title="Скачать резервную копию (JSON)" data-title="tooltip_backup">📦</button>
   <button class="btn" id="btn-admin-panel" style="display:none;background:rgba(237,216,144,.15);border-color:rgba(237,216,144,.4)" title="Управление" data-title="title_admin" data-i="ap_toolbar_btn">🛠 Управление</button>
   <button class="btn" id="btn-diag" style="padding:4px 8px;opacity:.5;font-size:.65rem" title="Диагностика" data-title="title_diag">⚙</button>
   <button class="btn" id="btn-help" style="padding:4px 8px;opacity:.7">?</button>
@@ -2221,6 +2222,34 @@ document.getElementById('btn-login').addEventListener('click', e => {
   }
   // Show login form
   showLoginForm();
+});
+
+// ── Скачать всё дерево одним JSON-файлом (резервная копия) — только администратор ──
+document.getElementById('btn-backup').addEventListener('click', () => {
+  if(!_sessionPassword){
+    document.getElementById('btn-login').click();
+    showToast(t('toast_backup_login_required'), true);
+    return;
+  }
+  if(window._userRole !== 'admin'){
+    showToast(t('toast_backup_admin_only'), true);
+    return;
+  }
+  if(!IDX || !IDX.nodes || !Object.keys(IDX.nodes).length){
+    showToast(t('toast_backup_no_data'), true);
+    return;
+  }
+  const json = JSON.stringify(IDX, null, 2);
+  const blob = new Blob([json], {type: 'application/json;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = (TREE_CONFIG.fileSlug || 'family') + '-backup-' + new Date().toISOString().slice(0,10) + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast(t('toast_backup_done'), false);
 });
 
 document.getElementById('btn-export-gedcom').addEventListener('click', () => {
