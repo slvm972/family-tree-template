@@ -456,17 +456,17 @@ svg{position:absolute;top:0;left:0;overflow:visible}
 
     <!-- Tab: Upload -->
     <div class="ap-panel" data-ap-panel="upload">
-      <h4 data-i="ap_section_import_html" style="font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:#B89030;margin-bottom:6px">Импорт из HTML-файла дерева</h4>
+      <h4 data-i="ap_section_import_html" style="font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:#B89030;margin-bottom:6px">Загрузка дерева из файла (.json или .html)</h4>
       <p data-i="ap_upload_intro" style="font-size:.78rem;color:#7A5828;margin-bottom:10px">
-        Загрузите обновлённый HTML-файл дерева — данные будут извлечены и сохранены на сервере.
+        Загрузите файл дерева (.json), скачанный кнопкой 📦 или исправленный в Claude, — перед заменой вы увидите, что изменится, и сможете отказаться. Принимаются и старые HTML-файлы дерева.
         Предыдущая версия автоматически сохранится как резервная копия.
       </p>
       <div id="ap-upload-drop" style="border:2px dashed rgba(184,144,48,.4);border-radius:6px;padding:20px;text-align:center;cursor:pointer">
         <div style="font-size:1.6rem">📂</div>
-        <div data-i="ap_upload_choose" style="font-weight:600;margin-top:6px;font-size:.82rem;color:#5A3C10">Выберите HTML-файл дерева</div>
+        <div data-i="ap_upload_choose" style="font-weight:600;margin-top:6px;font-size:.82rem;color:#5A3C10">Выберите файл дерева (.json)</div>
         <p data-i="ap_upload_drop_hint" style="font-size:.7rem;color:#999;margin-top:4px">или перетащите файл сюда</p>
       </div>
-      <input type="file" id="ap-upload-input" accept=".html" style="display:none">
+      <input type="file" id="ap-upload-input" accept=".json,.html" style="display:none">
       <div id="ap-upload-status" style="margin-top:10px;font-size:.78rem"></div>
 
       <h4 data-i="ap_section_import_gedcom" style="font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:#B89030;margin:20px 0 6px;padding-top:16px;border-top:1px solid rgba(184,144,48,.2)">Импорт из GEDCOM (.ged)</h4>
@@ -3026,34 +3026,55 @@ async function handleGedcomImport(file){
 
 async function handleApUpload(file){
   const st = document.getElementById('ap-upload-status');
+  const fail = msg => { st.style.color = '#C03030'; st.textContent = '❌ ' + msg; };
   st.style.color = '';
   st.textContent = '⏳ ' + t('login_btn_loading');
+  try { document.getElementById('ap-upload-input').value = ''; } catch(e){}
 
-  const html = await file.text();
-  // Support both old (const IDX = {...}) and new (FALLBACK_DATA = {...}) formats
-  const m = html.match(/const IDX = ({[\s\S]*?});\n/) || html.match(/FALLBACK_DATA = ({[\s\S]*?});\n/);
-  if(!m){
-    st.style.color = '#C03030';
-    st.textContent = '❌ ' + t('ap_no_tree_data_found');
-    return;
-  }
-
+  // 1. Разбор файла: .json (скачан кнопкой 📦 или исправлен в Claude) либо старый HTML-файл дерева
+  let text;
+  try { text = await file.text(); } catch(e){ fail(e.message); return; }
+  const trimmed = text.replace(/^\uFEFF/, '').trim();
   let parsed;
-  try { parsed = JSON.parse(m[1]); }
-  catch(e){
-    st.style.color = '#C03030';
-    st.textContent = '❌ ' + t('ap_data_corrupted_prefix') + e.message;
-    return;
-  }
+  try {
+    if(trimmed.startsWith('{')){
+      parsed = JSON.parse(trimmed);
+    } else {
+      const m = text.match(/const IDX = ({[\s\S]*?});\n/) || text.match(/FALLBACK_DATA = ({[\s\S]*?});\n/);
+      if(!m){ fail(t('ap_no_tree_data_found')); return; }
+      parsed = JSON.parse(m[1]);
+    }
+  } catch(e){ fail(t('ap_data_corrupted_prefix') + e.message); return; }
+  if(!parsed || typeof parsed !== 'object' || !parsed.nodes || typeof parsed.nodes !== 'object'){ fail(t('ap_no_persons_in_file')); return; }
+  const newIds = Object.keys(parsed.nodes);
+  if(newIds.length === 0){ fail(t('ap_upload_empty')); return; }
+  if(!parsed.families || typeof parsed.families !== 'object') parsed.families = {};
 
-  if(!parsed.nodes){
-    st.style.color = '#C03030';
-    st.textContent = '❌ ' + t('ap_no_persons_in_file');
-    return;
-  }
+  // 2. Предпросмотр: сравнение с деревом на сервере, подтверждение
+  let current = { nodes: {}, families: {} };
+  try {
+    const rc = await fetch(WORKER_URL + '/api/tree', { headers: { 'X-Password': _sessionPassword } });
+    if(rc.ok) current = await rc.json();
+    else if(rc.status !== 404){ fail(t('toast_server_error') + ' (' + rc.status + ')'); return; }
+  } catch(e){ fail(t('toast_connection_error_prefix') + e.message); return; }
+  const oldNodes = current.nodes || {};
+  const oldIds = Object.keys(oldNodes);
+  const added   = newIds.filter(id => !(id in oldNodes));
+  const removed = oldIds.filter(id => !(id in parsed.nodes));
+  const changed = newIds.filter(id => (id in oldNodes) && JSON.stringify(oldNodes[id]) !== JSON.stringify(parsed.nodes[id]));
+  const lst = (title, ids, src) => ids.length
+    ? '\n\n' + title + ' (' + ids.length + '):\n' + ids.slice(0, 12).map(id => '  ' + id + ' ' + ((src[id] && src[id].name) || '')).join('\n') + (ids.length > 12 ? '\n  …' : '')
+    : '';
+  const msg = t('ap_upload_confirm')
+    .replace('{oldN}', oldIds.length).replace('{oldF}', Object.keys(current.families || {}).length)
+    .replace('{newN}', newIds.length).replace('{newF}', Object.keys(parsed.families).length)
+    .replace('{add}', added.length).replace('{rem}', removed.length).replace('{chg}', changed.length)
+    + lst(t('ap_upload_label_added'), added, parsed.nodes)
+    + lst(t('ap_upload_label_removed'), removed, oldNodes);
+  if(!confirm(msg)){ st.style.color = ''; st.textContent = t('ap_upload_cancelled'); return; }
 
-  st.textContent = t('ap_uploading_n_persons').replace('{n}', Object.keys(parsed.nodes).length);
-
+  // 3. Замена (сервер сам сохранит ПРЕЖНЕЕ состояние в резервную копию) и пересчёт связей
+  st.textContent = t('ap_uploading_n_persons').replace('{n}', newIds.length);
   try {
     const r = await fetch(WORKER_URL + '/api/tree', {
       method: 'POST',
@@ -3061,14 +3082,15 @@ async function handleApUpload(file){
       body: JSON.stringify(parsed)
     });
     const d = await r.json();
-    if(d.ok){
-      st.style.color = '#2E7D32';
-      st.textContent = t('ap_uploaded_n_persons').replace('{n}', Object.keys(parsed.nodes).length);
-      showToast(t('ap_tree_updated_toast'), false);
-    } else {
-      st.style.color = '#C03030';
-      st.textContent = '❌ ' + (d.error || t('toast_server_error'));
-    }
+    if(!d.ok){ fail(d.error || t('toast_server_error')); return; }
+    st.textContent = '⏳ ' + t('ap_gedcom_rebuilding');
+    const r2 = await fetch(WORKER_URL + '/api/rebuild-cache', { method: 'POST', headers: { 'X-Password': _sessionPassword } });
+    const d2 = await r2.json();
+    if(!d2.ok){ fail(d2.error || t('toast_server_error')); return; }
+    st.style.color = '#2E7D32';
+    st.textContent = t('ap_uploaded_n_persons').replace('{n}', newIds.length);
+    showToast(t('ap_tree_updated_toast'), false);
+    if(typeof loadTree === 'function') await loadTree();
   } catch(e){
     st.style.color = '#C03030';
     st.textContent = t('toast_connection_error_prefix') + e.message;
