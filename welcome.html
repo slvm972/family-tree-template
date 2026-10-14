@@ -304,6 +304,21 @@
     padding: 4px 10px;
     border-radius: 5px;
   }
+  /* ── EXCHANGE: обмен данными (GEDCOM / JSON / ИИ) ── */
+  .exchange { padding: 60px 0 70px; }
+  .exchange h2 { text-align: center; font-size: clamp(1.6rem, 3.5vw, 2.1rem); margin-bottom: 12px; }
+  .exchange .ex-lede { text-align: center; max-width: 560px; margin: 0 auto 32px; color: var(--ink-soft); }
+  .flow { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; margin-bottom: 34px; }
+  .flow-box { background: var(--cream-deep); border: 1px solid rgba(112,24,56,.14); border-radius: 8px; padding: 12px 16px; text-align: center; min-width: 150px; font-size: .9rem; }
+  .flow-box b { display: block; color: var(--ink); }
+  .flow-box small { display: block; margin-top: 2px; font-size: .72rem; color: var(--ink-soft); }
+  .flow-main { background: var(--gold-soft); border-color: var(--gold); }
+  .flow-arrow { text-align: center; color: var(--wine); font-size: 1.4rem; line-height: 1; }
+  .flow-arrow small { display: block; font-size: .68rem; font-weight: 700; letter-spacing: .04em; margin-top: 3px; }
+  .exchange .leaf-grid { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+  .exchange .leaf { background: #fff; }
+  .exchange .leaf .txt { font-size: .9rem; }
+  .exchange .ex-note { text-align: center; margin-top: 22px; font-size: .82rem; color: var(--ink-soft); }
 </style>
 </head>
 <body>
@@ -384,6 +399,35 @@
         сохранить фотографию и рассказ о его жизни.</span>
       </div>
     </div>
+  </div>
+</section>
+
+<section class="exchange" id="exchange">
+  <div class="wrap">
+    <h2 data-i="ex-title">Ваши данные не заперты</h2>
+    <p class="ex-lede" data-i="ex-lede">Перенесите дерево из другого сервиса, сделайте резервную копию или поручите правки ИИ-ассистенту — и вернитесь к своему дереву.</p>
+    <div class="flow">
+      <div class="flow-box" data-i="ex-box1"><b>Другие сервисы</b><small>MyHeritage · Ancestry · Gramps</small></div>
+      <div class="flow-arrow"><span>⇄</span><small>GEDCOM</small></div>
+      <div class="flow-box flow-main" data-i="ex-box2"><b>Ваше дерево</b></div>
+      <div class="flow-arrow"><span>⇄</span><small>JSON</small></div>
+      <div class="flow-box" data-i="ex-box3"><b>ИИ-ассистент</b><small>например, Claude</small></div>
+    </div>
+    <div class="leaf-grid">
+      <div class="leaf">
+        <span class="icon">🔄</span>
+        <span class="txt" data-i="ex-c1"><b>Обмен через GEDCOM</b> — экспорт и импорт в стандартном формате GEDCOM 5.5.1, который понимают MyHeritage, Ancestry, Gramps и большинство генеалогических сервисов. Переезжайте к нам и обратно без перепечатывания. Основные данные переносятся; фотографии и часть дополнительных полей (например, еврейские даты в структурированном виде) этим форматом не передаются.</span>
+      </div>
+      <div class="leaf">
+        <span class="icon">💾</span>
+        <span class="txt" data-i="ex-c2"><b>Резервные копии одним нажатием</b> — кнопка 📦 скачивает всё дерево одним файлом (JSON). Перед каждой заменой данных система сама сохраняет прежнюю версию.</span>
+      </div>
+      <div class="leaf">
+        <span class="icon">🤖</span>
+        <span class="txt" data-i="ex-c3"><b>Правки с помощью ИИ</b> — скачали файл, передали его ИИ-ассистенту (например, Claude) вместе с правками от родственников и загрузили исправленный. Перед заменой вы видите, что изменится, и можете отказаться.</span>
+      </div>
+    </div>
+    <p class="ex-note" data-i="ex-note">Эти действия доступны администратору в разделе «🛠 Управление».</p>
   </div>
 </section>
 
@@ -551,5 +595,16 @@ document.querySelectorAll('.lang-btn').forEach(btn => {
 });
 </script>
 
+<script>
+// Тексты раздела «Обмен данными» (ru, en, he): добавляются в словарь страницы
+(function () {
+  var add = {
+    ru: { 'ex-title': "Ваши данные не заперты", 'ex-lede': "Перенесите дерево из другого сервиса, сделайте резервную копию или поручите правки ИИ-ассистенту — и вернитесь к своему дереву.", 'ex-box1': "<b>Другие сервисы</b><small>MyHeritage · Ancestry · Gramps</small>", 'ex-box2': "<b>Ваше дерево</b>", 'ex-box3': "<b>ИИ-ассистент</b><small>например, Claude</small>", 'ex-c1': "<b>Обмен через GEDCOM</b> — экспорт и импорт в стандартном формате GEDCOM 5.5.1, который понимают MyHeritage, Ancestry, Gramps и большинство генеалогических сервисов. Переезжайте к нам и обратно без перепечатывания. Основные данные переносятся; фотографии и часть дополнительных полей (например, еврейские даты в структурированном виде) этим форматом не передаются.", 'ex-c2': "<b>Резервные копии одним нажатием</b> — кнопка 📦 скачивает всё дерево одним файлом (JSON). Перед каждой заменой данных система сама сохраняет прежнюю версию.", 'ex-c3': "<b>Правки с помощью ИИ</b> — скачали файл, передали его ИИ-ассистенту (например, Claude) вместе с правками от родственников и загрузили исправленный. Перед заменой вы видите, что изменится, и можете отказаться.", 'ex-note': "Эти действия доступны администратору в разделе «🛠 Управление»." },
+    en: { 'ex-title': "Your data is never locked in", 'ex-lede': "Bring a tree over from another service, make a backup, or let an AI assistant make the edits — and come back to your own tree.", 'ex-box1': "<b>Other services</b><small>MyHeritage · Ancestry · Gramps</small>", 'ex-box2': "<b>Your tree</b>", 'ex-box3': "<b>AI assistant</b><small>for example, Claude</small>", 'ex-c1': "<b>Exchange via GEDCOM</b> — export and import in the standard GEDCOM 5.5.1 format understood by MyHeritage, Ancestry, Gramps and most genealogy services. Move to us and back without retyping. The core data is carried over; photos and some additional fields (for example, structured Hebrew dates) are not part of this format.", 'ex-c2': "<b>Backups in one click</b> — the 📦 button downloads the whole tree as a single file (JSON). Before every data replacement the system saves the previous version by itself.", 'ex-c3': "<b>Edits with an AI assistant</b> — download the file, give it to an AI assistant (for example, Claude) together with the changes from relatives, then upload the corrected file. Before replacing, you see what will change and can cancel.", 'ex-note': "These actions are available to the administrator under \"🛠 Management\"." },
+    he: { 'ex-title': "הנתונים שלכם לא נעולים", 'ex-lede': "העבירו עץ משירות אחר, צרו גיבוי, או הטילו את העריכות על עוזר בינה מלאכותית — וחזרו לעץ שלכם.", 'ex-box1': "<b>שירותים אחרים</b><small>MyHeritage · Ancestry · Gramps</small>", 'ex-box2': "<b>העץ שלכם</b>", 'ex-box3': "<b>עוזר בינה מלאכותית</b><small>למשל Claude</small>", 'ex-c1': "<b>החלפת נתונים דרך GEDCOM</b> — ייצוא וייבוא בפורמט GEDCOM 5.5.1 הסטנדרטי, שמבינים MyHeritage, Ancestry, Gramps ורוב שירותי האילן היוחסין. עוברים אלינו ובחזרה בלי להקליד מחדש. הנתונים העיקריים עוברים; תמונות וחלק מהשדות הנוספים (למשל תאריכים עבריים במבנה מסודר) אינם חלק מהפורמט הזה.", 'ex-c2': "<b>גיבויים בלחיצה אחת</b> — הכפתור 📦 מוריד את כל העץ בקובץ אחד (JSON). לפני כל החלפת נתונים המערכת שומרת בעצמה את הגרסה הקודמת.", 'ex-c3': "<b>עריכה בעזרת בינה מלאכותית</b> — מורידים קובץ, מעבירים אותו לעוזר בינה מלאכותית (למשל Claude) יחד עם השינויים מהקרובים, ומעלים את הקובץ המתוקן. לפני ההחלפה רואים מה ישתנה ואפשר לבטל.", 'ex-note': "הפעולות האלה זמינות למנהל בפרק \"🛠 ניהול\"." }
+  };
+  for (var lang in add) { for (var key in add[lang]) { UI[lang][key] = add[lang][key]; } }
+})();
+</script>
 </body>
 </html>
