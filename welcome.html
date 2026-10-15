@@ -591,7 +591,24 @@ function applyLang(lang){
 }
 
 document.querySelectorAll('.lang-btn').forEach(btn => {
-  btn.addEventListener('click', () => applyLang(btn.dataset.lang));
+  btn.addEventListener('click', () => {
+    try { localStorage.setItem('tree_lang', btn.dataset.lang); } catch (e) {}   // запоминаем выбор (общий ключ со страницей дерева)
+    applyLang(btn.dataset.lang);
+  });
+});
+
+// Язык при открытии: сначала запомненный выбор (tree_lang), иначе язык браузера:
+// иврит → עב, русский/украинский → РУС, остальные → ENG.
+// Запускается после разбора страницы (DOMContentLoaded): к этому моменту все блоки с
+// переводами (в том числе добавленные позже отдельными скриптами) уже есть в UI.
+document.addEventListener('DOMContentLoaded', function () {
+  var saved = null;
+  try { saved = localStorage.getItem('tree_lang'); } catch (e) {}
+  var nav = String(navigator.language || navigator.userLanguage || '').toLowerCase();
+  var lang = (saved === 'ru' || saved === 'en' || saved === 'he') ? saved
+           : (nav.indexOf('he') === 0 || nav.indexOf('iw') === 0) ? 'he'
+           : (nav.indexOf('ru') === 0 || nav.indexOf('uk') === 0) ? 'ru' : 'en';
+  if (lang !== 'ru') applyLang(lang);
 });
 </script>
 
