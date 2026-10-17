@@ -30,6 +30,15 @@ async function checkPassword(provided, storedHash) {
   return h === storedHash;
 }
 
+function childFamilyConflict(IDX, cid, targetFamId) {
+  const existingFamId = IDX.child_of && IDX.child_of[cid];
+  if(existingFamId && existingFamId !== targetFamId) {
+    const name = (IDX.nodes[cid] && IDX.nodes[cid].name) || cid;
+    return 'Персона ' + name + ' (' + cid + ') уже состоит в семье ' + existingFamId;
+  }
+  return null;
+}
+
 // ── Route handler ──────────────────────────────────────
 
 export default {
@@ -712,6 +721,7 @@ export default {
       }
       if(p1 && !IDX.nodes[p1]) return err('Персона не найдена: ' + p1, 404);
       if(p2 && !IDX.nodes[p2]) return err('Персона не найдена: ' + p2, 404);
+      for(const cid of children){ const conflict = childFamilyConflict(IDX, cid, null); if(conflict) return err(conflict, 409); }
 
       // Generate next family ID
       const maxF = Math.max(0, ...Object.keys(IDX.families)
@@ -794,6 +804,8 @@ export default {
       if(body.addChild){
         const cid = body.addChild;
         if(!IDX.nodes[cid]) return err('Персона не найдена: ' + cid, 404);
+        const addConflict = childFamilyConflict(IDX, cid, famId);
+        if(addConflict) return err(addConflict, 409);
         if(!fam.children.includes(cid)){
           fam.children.push(cid);
           IDX.child_of[cid] = famId;
