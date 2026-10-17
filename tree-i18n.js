@@ -116,8 +116,55 @@ const UI = {
     lbl_fix_new:'Верное значение / исправление',  ph_fix_new:'Что должно быть вместо этого',
     lbl_comment:'Комментарий (необязательно)',     ph_comment:'Источник, пояснение...',
     rel_labels:{'Отец':'Отец','Мать':'Мать','Сестра':'Сестра','Зять':'Зять','Составитель':'Составитель','Племянник':'Племянник','Племянница':'Племянница','Тётя':'Тётя','Прабабушка':'Прабабушка','Прадедушка':'Прадедушка','Бабушка (по отцу)':'Бабушка (по отцу)','Бабушка (по матери)':'Бабушка (по матери)','Дедушка (по отцу)':'Дедушка (по отцу)','Дедушка (по матери)':'Дедушка (по матери)'},
-    help_title:'Как дополнить дерево?',
-    help_steps:['Нажмите «✏️ Дополнить» и заполните форму','Скопируйте сформированный запрос','Откройте claude.ai','Загрузите этот HTML-файл','Вставьте скопированный текст и отправьте','Скачайте обновлённый файл'],
+    help_title:'Справка по дереву',
+    help_sections:[
+      {h:'Начало работы',items:[
+        'Нажмите на карточку — дерево перестроится вокруг этого человека, а внизу откроется панель с датами и родственниками. «◀ Назад» возвращает на предыдущий шаг.',
+        'Поиск по имени — в верхней строке: начните вводить имя, выберите из списка и нажмите «→».',
+        'Колесо мыши или щипок двумя пальцами — масштаб, перетаскивание — сдвиг.'
+      ]},
+      {h:'Кто что может',items:[
+        '<strong>Без пароля</strong>: только имена, даты и семейные связи. Контакты, страницы в соцсетях, печать и скачивание закрыты.',
+        '<strong>Гость</strong> (пароль для родственников): видит контакты и соцсети, скачивает контакты и календарь дней рождения, печатает и предлагает правки администратору.',
+        '<strong>Администратор</strong>: сохраняет правки сразу, управляет связями, загружает файлы и делает резервные копии.'
+      ]},
+      {h:'Кнопки верхней панели',items:[
+        '<strong>🔑</strong> — вход и выход. Значок показывает роль: 🔓 администратор, 👤 гость.',
+        '<strong>📇 Контакты</strong> — файл .vcf с живыми родственниками, у которых указан телефон, email или страница в соцсети. Откройте его на телефоне или компьютере — люди добавятся в телефонную книгу.',
+        '<strong>📅 Календарь</strong> — файл .ics с днями рождения ныне живых родственников. Добавьте его в календарь телефона (Google, Apple, Outlook): событие повторяется каждый год, напоминание приходит за день. Это файл, а не подписка: после добавления новых людей скачайте его заново.',
+        '<strong>🖨 Печать</strong> — выберите формат A0, A1 или A2 (альбомная ориентация), скачается HTML-файл. Откройте его в браузере, нажмите Ctrl+P (⌘P на Mac) и выберите принтер или «Сохранить как PDF». Нужен вход.',
+        '<strong>📦 Резервная копия</strong> (только администратор) — скачивает всё дерево одним файлом .json. Делайте её перед крупными правками. Файл можно отредактировать (например, в Claude) и загрузить обратно.',
+        '<strong>🛠 Управление</strong> (администратор). Вкладка «Загрузить»: файл дерева .json (или старый .html) либо импорт GEDCOM (.ged); перед заменой показывается, что изменится, и можно отказаться, а прежняя версия сохраняется как копия. Здесь же экспорт GEDCOM. «Копии» — список и скачивание. «Предложения» — правки от гостей.',
+        '<strong>⚙</strong> — диагностика данных (битые связи, даты). <strong>?</strong> — эта справка.'
+      ]},
+      {h:'Личные данные и соцсети',items:[
+        'Телефон, email и ссылка на страницу в соцсетях хранятся в карточке человека и видны только после входа. Без входа вместо них — приглашение войти.',
+        'Значок 🔗 на карточке означает, что страница в соцсетях указана (виден после входа).',
+        'Добавить или изменить их можно в «✏️ Дополнить → Новый человек» или в «🔧 Исправить».',
+        'Правки <strong>частичные</strong>: в «Исправить» форма заполнена текущими значениями, и отправляются только те поля, которые вы изменили, — остальное не затрагивается. А вот загрузка файла .json или GEDCOM заменяет <strong>всё дерево целиком</strong> (с предпросмотром и копией); слияния нет.'
+      ]},
+      {h:'Окна «Дополнить», «Исправить», «Добавить»',items:[
+        '«✏️ Дополнить» (верхняя панель) открывает окно с типами: 👤 Новый человек, 📷 Фото, 📝 Биография, 📅 Дата / место, 🔧 Исправить.',
+        '«🔧 Исправить» и «➕ Добавить» в панели человека открывают то же окно уже для него. «Добавить» создаёт родственника: укажите, кем он приходится выбранному человеку (жена, муж, ребёнок, родитель, брат, сестра), и связь создастся сама.',
+        '<strong>Гость</strong>: после «Сформировать и отправить по email» правка уходит администратору — попадает во вкладку «Предложения» и может быть отправлена письмом (кнопки «Копировать» и «Отправить по email»). В дереве она появится после проверки администратором.',
+        '<strong>Администратор</strong>: «Новый человек», «Фото» (файл или ссылка), «Биография» и «Исправить» сохраняются сразу (кнопка «Сохранить напрямую»). «Дата / место» и изменения семейных связей текстом всегда идут как предложения.',
+        'Предложения показываются списком — примените нужные вручную через те же окна.'
+      ]},
+      {h:'Управление связями (администратор)',items:[
+        '<strong>✂</strong> рядом с родителем — «отвязать только от этого родителя». Ребёнок остаётся привязан ко второму родителю. Значок виден, когда у человека двое родителей.',
+        '<strong>✕</strong> рядом с ребёнком — убрать ребёнка из этой семьи. Он останется в дереве, но без родителей.',
+        '<strong>🗑</strong> рядом с именем — удалить человека. Возможно, только если у него нет детей (сначала переназначьте детей). Перед удалением просят подтверждение, а сервер сохраняет копию.',
+        '<strong>«Браки (управление)»</strong> — список браков человека (с кем и сколько детей). 🗑 удаляет пустой брак; у брака с детьми кнопка неактивна.',
+        'Каждое действие просит подтверждение. В этой версии вернуть связь существующему человеку после ✂ или ✕ нельзя — только загрузкой файла дерева или откатом из копии, поэтому скачайте 📦 заранее.'
+      ]}
+    ],
+        legend_title:'Значки на карточках',
+    legend_spouses:'есть супруг(а), не показанный на экране',
+    legend_parents:'есть родители, не показанные на экране',
+    legend_siblings:'есть братья/сёстры, не показанные на экране',
+    legend_children:'есть дети (для супруга — от других браков), не показанные на экране',
+    legend_social:'указана страница в соцсетях (видно после входа)',
+    legend_tip:'Нажмите на карточку, чтобы раскрыть эту ветку',
     modal_title:'✏️ Дополнить дерево',
     type_person:'👤 Новый человек',type_photo:'📷 Фото',type_bio:'📝 Биография',type_date:'📅 Дата / место',
     lbl_name:'Имя (полное)',lbl_sex:'Пол',sex_f:'Женский',sex_m:'Мужской',
@@ -329,8 +376,55 @@ const UI = {
     lbl_fix_new:'Correct value',            ph_fix_new:'What it should be',
     lbl_comment:'Comment (optional)',       ph_comment:'Source, explanation...',
     rel_labels:{'Отец':'Father','Мать':'Mother','Сестра':'Sister','Зять':'Son-in-law','Составитель':'Compiler','Племянник':'Nephew','Племянница':'Niece','Тётя':'Aunt','Прабабушка':'Great-grandmother','Прадедушка':'Great-grandfather','Бабушка (по отцу)':'Grandmother (paternal)','Бабушка (по матери)':'Grandmother (maternal)','Дедушка (по отцу)':'Grandfather (paternal)','Дедушка (по матери)':'Grandfather (maternal)','Сестра деда':'Grandfather\'s sister','Брат деда':'Grandfather\'s brother','Двоюродная прабабушка':'2nd great-grandmother','Двоюродная родственница':'Distant relative','Троюродный дядя':'3rd cousin once removed','Троюродная тётя':'3rd cousin once removed','Дядя по матери':'Uncle (maternal)','Жена дяди':'Uncle\'s wife','Муж двоюродной прабабушки':'Husband of 2nd great-grandmother'},
-    help_title:'How to add information?',
-    help_steps:['Click "✏️ Add info" and fill the form','Copy the generated request','Open claude.ai','Upload this HTML file','Paste the copied text and send','Download the updated file'],
+    help_title:'Tree guide',
+    help_sections:[
+      {h:'Getting started',items:[
+        'Click a card and the tree rebuilds around that person; a panel with dates and relatives opens at the bottom. “◀ Back” returns to the previous view.',
+        'Search by name is in the top bar: start typing, pick a name from the list and press “→”.',
+        'Mouse wheel or a two-finger pinch zooms; dragging pans.'
+      ]},
+      {h:'Who can do what',items:[
+        '<strong>Without a password</strong>: names, dates and family links only. Contacts, social media pages, printing and downloads are closed.',
+        '<strong>Guest</strong> (the family password): sees contacts and social media, downloads contacts and the birthday calendar, prints, and proposes changes to the administrator.',
+        '<strong>Administrator</strong>: saves changes immediately, manages links, uploads files and makes backups.'
+      ]},
+      {h:'Top bar buttons',items:[
+        '<strong>🔑</strong> — log in / log out. The icon shows your role: 🔓 administrator, 👤 guest.',
+        '<strong>📇 Contacts</strong> — a .vcf file with living relatives who have a phone, email or social media page. Open it on your phone or computer and they are added to your address book.',
+        '<strong>📅 Calendar</strong> — an .ics file with birthdays of living relatives. Add it to your phone calendar (Google, Apple, Outlook): the event repeats every year and a reminder arrives one day before. It is a file, not a subscription: download it again after new people are added.',
+        '<strong>🖨 Print</strong> — choose A0, A1 or A2 (landscape); an HTML file is downloaded. Open it in your browser, press Ctrl+P (⌘P on Mac) and choose a printer or “Save as PDF”. Login required.',
+        '<strong>📦 Backup</strong> (administrator only) — downloads the whole tree as one .json file. Do it before big changes. The file can be edited (for example in Claude) and uploaded back.',
+        '<strong>🛠 Manage</strong> (administrator). “Upload” tab: a tree file .json (or an old .html) or a GEDCOM (.ged) import; before replacing, you see what will change and can cancel, and the previous version is kept as a backup. GEDCOM export is here too. “Backups” — list and download. “Suggestions” — changes from guests.',
+        '<strong>⚙</strong> — data diagnostics (broken links, dates). <strong>?</strong> — this guide.'
+      ]},
+      {h:'Personal data and social media',items:[
+        'Phone, email and a social media link are stored on a person’s card and visible only after login. Without login you see a prompt to log in instead.',
+        'The 🔗 icon on a card means a social media page is on file (visible after login).',
+        'You can add or change them in “✏️ Add info → New person” or in “🔧 Correct”.',
+        'Edits are <strong>partial</strong>: in “Correct” the form is filled with current values and only the fields you changed are sent — the rest is untouched. Uploading a .json or GEDCOM file, however, replaces the <strong>whole tree</strong> (with a preview and a backup); there is no merging.'
+      ]},
+      {h:'Windows: Add info, Correct, Add relative',items:[
+        '“✏️ Add info” (top bar) opens a window with types: 👤 New person, 📷 Photo, 📝 Biography, 📅 Date / place, 🔧 Correct.',
+        '“🔧 Correct” and “➕ Add” in a person’s panel open the same window for that person. “Add” creates a relative: say who they are to the selected person (wife, husband, child, parent, brother, sister) and the link is created automatically.',
+        '<strong>Guest</strong>: after “Generate & send by email” the change goes to the administrator — it appears in the “Suggestions” tab and can be sent by email (buttons “Copy” and “Send by email”). It shows up in the tree after the administrator reviews it.',
+        '<strong>Administrator</strong>: “New person”, “Photo” (file or link), “Biography” and “Correct” are saved immediately (button “Save directly”). “Date / place” and family-link changes written as text always go as suggestions.',
+        'Suggestions are shown as a list — apply the ones you need manually through the same windows.'
+      ]},
+      {h:'Managing links (administrator)',items:[
+        '<strong>✂</strong> next to a parent — “detach from this parent only”. The child stays linked to the other parent. The icon shows when a person has two parents.',
+        '<strong>✕</strong> next to a child — remove the child from this family. They stay in the tree, but without parents.',
+        '<strong>🗑</strong> next to the name — delete a person. Only possible if they have no children (reassign the children first). You are asked to confirm, and the server saves a backup.',
+        '<strong>“Marriages (admin)”</strong> — the person’s marriages (with whom and how many children). 🗑 deletes an empty marriage; for a marriage with children the button is disabled.',
+        'Every action asks for confirmation. In this version an existing person cannot be re-linked after ✂ or ✕ — only by uploading a tree file or restoring a backup, so download 📦 beforehand.'
+      ]}
+    ],
+        legend_title:'Card badges',
+    legend_spouses:'has a spouse not shown on screen',
+    legend_parents:'has parents not shown on screen',
+    legend_siblings:'has siblings not shown on screen',
+    legend_children:'has children (for a spouse, from other marriages) not shown on screen',
+    legend_social:'social media page on file (visible after login)',
+    legend_tip:'Click the card to reveal that branch',
     modal_title:'✏️ Add to tree',
     type_person:'👤 New person',type_photo:'📷 Photo',type_bio:'📝 Biography',type_date:'📅 Date / place',
     lbl_name:'Full name',lbl_sex:'Sex',sex_f:'Female',sex_m:'Male',
@@ -542,8 +636,55 @@ const UI = {
     lbl_fix_new:'ערך נכון',            ph_fix_new:'מה צריך להיות',
     lbl_comment:'הערה (אופציונלי)',    ph_comment:'מקור, הסבר...',
     rel_labels:{'Отец':'אבא','Мать':'אמא','Сестра':'אחות','Зять':'חתן','Составитель':'מחבר','Племянник':'אחיין','Племянница':'אחיינית','Тётя':'דודה','Прабабушка':'סבתא רבה','Прадедушка':'סבא רבה','Бабушка (по отцу)':'סבתא (מצד האב)','Бабушка (по матери)':'סבתא (מצד האם)','Дедушка (по отцу)':'סבא (מצד האב)','Дедушка (по матери)':'סבא (מצד האם)','Сестра деда':'אחות הסבא','Брат деда':'אח הסבא','Двоюродная прабабушка':'סבתא רבה שנייה','Двоюродная родственница':'קרובת משפחה רחוקה','Троюродный дядя':'דוד רחוק','Троюродная тётя':'דודה רחוקה','Дядя по матери':'דוד מצד האם','Жена дяди':'אשת הדוד','Муж двоюродной прабабушки':'בעל סבתא רבה שנייה'},
-    help_title:'כיצד להוסיף מידע?',
-    help_steps:['לחץ "✏️ הוספה" ומלא את הטופס','העתק את הבקשה שנוצרה','פתח את claude.ai','העלה את קובץ ה-HTML','הדבק את הטקסט ושלח','הורד את הקובץ המעודכן'],
+    help_title:'מדריך לעץ',
+    help_sections:[
+      {h:'תחילת עבודה',items:[
+        'לחצו על כרטיס והעץ ייבנה מחדש סביב האדם; בתחתית ייפתח פאנל עם תאריכים וקרובים. «◀ חזרה» מחזיר למסך הקודם.',
+        'החיפוש לפי שם בשורה העליונה: התחילו להקליד, בחרו שם מהרשימה ולחצו «→».',
+        'גלגלת העכבר או צביטה בשתי אצבעות — זום, גרירה — הזזה.'
+      ]},
+      {h:'מי יכול מה',items:[
+        '<strong>בלי סיסמה</strong>: שמות, תאריכים וקשרי משפחה בלבד. פרטי קשר, עמודי רשתות חברתיות, הדפסה והורדות סגורים.',
+        '<strong>אורח</strong> (סיסמת המשפחה): רואה פרטי קשר ורשתות חברתיות, מוריד אנשי קשר ולוח ימי הולדת, מדפיס ומציע שינויים למנהל.',
+        '<strong>מנהל</strong>: שומר שינויים מיד, מנהל קשרים, מעלה קבצים ויוצר גיבויים.'
+      ]},
+      {h:'כפתורי הסרגל העליון',items:[
+        '<strong>🔑</strong> — כניסה ויציאה. הסמל מראה את התפקיד: 🔓 מנהל, 👤 אורח.',
+        '<strong>📇 אנשי קשר</strong> — קובץ vcf עם קרובים בחיים שיש להם טלפון, אימייל או עמוד ברשת חברתית. פתחו אותו בטלפון או במחשב והאנשים יתווספו לספר הטלפונים.',
+        '<strong>📅 לוח שנה</strong> — קובץ ics עם ימי ההולדת של הקרובים החיים. הוסיפו אותו ליומן בטלפון (Google, Apple, Outlook): האירוע חוזר מדי שנה והתזכורת מגיעה יום לפני. זה קובץ ולא מנוי — אחרי הוספת אנשים חדשים הורידו אותו שוב.',
+        '<strong>🖨 הדפסה</strong> — בחרו פורמט A0, A1 או A2 (לרוחב); יורד קובץ HTML. פתחו אותו בדפדפן, לחצו Ctrl+P (‏⌘P ב-Mac) ובחרו מדפסת או «שמירה כ-PDF». נדרשת כניסה.',
+        '<strong>📦 גיבוי</strong> (מנהל בלבד) — מוריד את כל העץ בקובץ json אחד. עשו זאת לפני שינויים גדולים. אפשר לערוך את הקובץ (למשל ב-Claude) ולהעלות אותו בחזרה.',
+        '<strong>🛠 ניהול</strong> (מנהל). לשונית «העלאה»: קובץ עץ json (או html ישן) או ייבוא GEDCOM (ged); לפני ההחלפה מוצג מה ישתנה ואפשר לבטל, והגרסה הקודמת נשמרת כגיבוי. כאן גם ייצוא GEDCOM. «גיבויים» — רשימה והורדה. «הצעות» — שינויים מאורחים.',
+        '<strong>⚙</strong> — אבחון נתונים (קשרים שבורים, תאריכים). <strong>?</strong> — המדריך הזה.'
+      ]},
+      {h:'פרטים אישיים ורשתות חברתיות',items:[
+        'טלפון, אימייל וקישור לעמוד ברשת חברתית נשמרים בכרטיס האדם ונראים רק אחרי כניסה. בלי כניסה מוצגת במקומם הזמנה להתחבר.',
+        'הסמל 🔗 על הכרטיס אומר שעמוד ברשת חברתית מצוין (נראה אחרי כניסה).',
+        'אפשר להוסיף או לשנות אותם ב«✏️ הוספה ← אדם חדש» או ב«🔧 תיקון».',
+        'התיקונים <strong>חלקיים</strong>: ב«תיקון» הטופס מלא בערכים הנוכחיים, ונשלחים רק השדות ששיניתם — השאר לא נוגעים. לעומת זאת, העלאת קובץ json או GEDCOM מחליפה את <strong>כל העץ</strong> (עם תצוגה מקדימה וגיבוי); אין מיזוג.'
+      ]},
+      {h:'החלונות «הוספה», «תיקון», «הוספת קרוב»',items:[
+        '«✏️ הוספה» (בסרגל העליון) פותח חלון עם סוגים: 👤 אדם חדש, 📷 תמונה, 📝 ביוגרפיה, 📅 תאריך / מקום, 🔧 תיקון.',
+        '«🔧 תיקון» ו«➕ הוספה» בפאנל של האדם פותחים את אותו חלון עבורו. «➕ הוספה» יוצר קרוב: בחרו מי הוא ביחס לאדם (אישה, בעל, ילד/ה, הורה, אח, אחות) והקשר ייווצר מעצמו.',
+        '<strong>אורח</strong>: אחרי «צור ושלח במייל» השינוי נשלח למנהל — הוא מופיע בלשונית «הצעות» ואפשר לשלוח אותו גם במייל (כפתורי «העתק» ו«שלח במייל»). בעץ הוא יופיע אחרי בדיקת המנהל.',
+        '<strong>מנהל</strong>: «אדם חדש», «תמונה» (קובץ או קישור), «ביוגרפיה» ו«תיקון» נשמרים מיד (כפתור «שמור ישירות»). «תאריך / מקום» ושינויי קשרי משפחה בטקסט תמיד נשלחים כהצעות.',
+        'ההצעות מוצגות ברשימה — החילו את הנחוצות ידנית דרך אותם חלונות.'
+      ]},
+      {h:'ניהול קשרים (מנהל)',items:[
+        '<strong>✂</strong> ליד הורה — «להסיר רק מהורה זה». הילד נשאר קשור להורה השני. הסמל מופיע כשיש לאדם שני הורים.',
+        '<strong>✕</strong> ליד ילד — להסיר את הילד מהמשפחה הזו. הוא נשאר בעץ, אך ללא הורים.',
+        '<strong>🗑</strong> ליד השם — מחיקת אדם. אפשרית רק אם אין לו ילדים (קודם יש להעביר את הילדים). לפני המחיקה מבקשים אישור והשרת שומר גיבוי.',
+        '<strong>«נישואין (ניהול)»</strong> — רשימת הנישואין של האדם (עם מי וכמה ילדים). 🗑 מוחק נישואין ריקים; בנישואין עם ילדים הכפתור לא פעיל.',
+        'כל פעולה מבקשת אישור. בגרסה זו אי אפשר לחבר מחדש אדם קיים אחרי ✂ או ✕ — רק בהעלאת קובץ עץ או בשחזור מגיבוי, לכן הורידו 📦 מראש.'
+      ]}
+    ],
+        legend_title:'סמלים על הכרטיסים',
+    legend_spouses:'יש בן/בת זוג שלא מוצג על המסך',
+    legend_parents:'יש הורים שלא מוצגים על המסך',
+    legend_siblings:'יש אחים/אחיות שלא מוצגים על המסך',
+    legend_children:'יש ילדים (אצל בן/בת זוג, מנישואים אחרים) שלא מוצגים על המסך',
+    legend_social:'יש עמוד ברשת חברתית (מוצג לאחר כניסה)',
+    legend_tip:'לחצו על הכרטיס כדי לחשוף את הענף',
     modal_title:'✏️ הוספה לעץ',
     type_person:'👤 אדם חדש',type_photo:'📷 תמונה',type_bio:'📝 ביוגרפיה',type_date:'📅 תאריך / מקום',
     lbl_name:'שם מלא',lbl_sex:'מין',sex_f:'נקבה',sex_m:'זכר',
