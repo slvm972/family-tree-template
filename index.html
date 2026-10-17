@@ -668,7 +668,125 @@ function pLink(id){
   </div>`;
 }
 
-// navigate from panel link: update panel + navigate tree
+// ════════════════════════════════════════════════════════
+//  FAMILY LINKS EDITING (admin only): ✂ detach from one parent,
+//  ✕ unlink child from a family, 🗑 delete an empty marriage.
+//  After every change the server rebuilds derived caches
+//  (POST /api/rebuild-cache) and the tree is re-read, focus is kept.
+// ════════════════════════════════════════════════════════
+function famAdmin(){ return !!(_sessionPassword && window._userRole === 'admin' && WORKER_URL); }
+function tfmt(key, vars){
+  let s = t(key);
+  for(const k in (vars || {})) s = s.split('{' + k + '}').join(vars[k]);
+  return s;
+}
+function famPersonName(id){ return IDX.nodes[id] ? pname(id) : id; }
+function famLabel(fam, famId){
+  return [fam.husband ? famPersonName(fam.husband) : null, fam.wife ? famPersonName(fam.wife) : null]
+    .filter(Boolean).join(' + ') || famId;
+}
+async function famApi(method, path, body){
+  const headers = { 'X-Password': _sessionPassword };
+  if(body) headers['Content-Type'] = 'application/json';
+  const res = await fetch(WORKER_URL + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
+  const d = await res.json().catch(() => null);
+  if(!d || !d.ok) throw new Error((d && d.error) || t('toast_server_error'));
+  return d;
+}
+async function afterFamilyEdit(){
+  await famApi('POST', '/api/rebuild-cache');
+  const res = await fetch(WORKER_URL + '/api/tree', { headers: { 'X-Password': _sessionPassword } });
+  if(!res.ok) throw new Error(t('toast_server_error'));
+  IDX = await res.json();
+  buildDatalist();
+  const keep = (currentFocal && IDX.nodes[currentFocal]) ? currentFocal : Object.keys(IDX.nodes)[0];
+  if(keep){ currentFocal = keep; render(keep); }
+}
+
+// Parent line in the "Parents" section; ✂ only when a second parent exists
+function pLinkParent(id, childId, otherParentId){
+  const n = IDX.nodes[id]; if(!n) return '';
+  const yr = pyear(n.birth);
+  const scissors = (!!otherParentId && famAdmin())
+    ? `<span onclick="event.stopPropagation();detachSingleParent('${childId}','${id}','${otherParentId}')"
+         title="${t('fam_detach_tip')}" style="cursor:pointer;opacity:.5;font-size:.75rem;padding:2px 4px"
+         onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.5">✂</span>` : '';
+  return `<div class="p-lnk" style="display:flex;align-items:center;justify-content:space-between;gap:6px">
+    <span onclick="panelNavigate('${id}')" style="cursor:pointer;flex:1">${pname(id)}${yr?` <span style="color:#7A5828;font-size:.64rem">(${yr})</span>`:''}</span>
+    ${scissors}
+  </div>`;
+}
+
+// Child line in the "Children" section; ✕ unlinks from THIS family
+function pLinkChild(id, famId, isAdmin){
+  const n = IDX.nodes[id]; if(!n) return '';
+  const yr = pyear(n.birth);
+  const rm = (isAdmin && famId)
+    ? `<button onclick="event.stopPropagation(); confirmRemoveChild('${famId}','${id}')"
+         title="${t('fam_unlink_tip')}"
+         style="font-size:.62rem;padding:0 5px;background:none;border:none;cursor:pointer;color:#A02020;opacity:.55">✕</button>` : '';
+  return `<div class="p-lnk" style="display:flex;align-items:center;gap:2px" onclick="panelNavigate('${id}')">
+    <span style="flex:1">${pname(id)}${yr?` <span style="color:#7A5828;font-size:.64rem">(${yr})</span>`:''}</span>${rm}
+  </div>`;
+}
+
+async function confirmRemoveChild(famId, childId){
+  if(!famAdmin()) return;
+  const fam = IDX.families[famId]; if(!fam) return;
+  if(!confirm(tfmt('fam_unlink_confirm', { child: famPersonName(childId), label: famLabel(fam, famId) }))) return;
+  try {
+    await famApi('PATCH', '/api/family/' + famId, { removeChild: childId });
+    await afterFamilyEdit();
+    showToast(t('fam_unlinked_toast'), false);
+  } catch(e){ showToast('⚠ ' + e.message, true); }
+}
+
+// Detach a child from ONE parent: move it into a family where keepId is the
+// only parent (existing one is reused, otherwise created). Order matters:
+// remove from the old family first, then add to the new one.
+async function detachSingleParent(childId, removeId, keepId){
+  if(!famAdmin()) return;
+  const oldFamId = IDX.child_of[childId];
+  const oldFam = oldFamId && IDX.families[oldFamId];
+  if(!oldFam){ showToast('⚠ ' + t('fam_err_no_family'), true); return; }
+  if(!confirm(tfmt('fam_detach_confirm', { child: famPersonName(childId), parent: famPersonName(removeId), keep: famPersonName(keepId) }))) return;
+  let removed = false, added = false;
+  try {
+    let target = null;
+    for(const [fid, f] of Object.entries(IDX.families)){
+      const sole = (f.husband === keepId && !f.wife) || (f.wife === keepId && !f.husband);
+      if(sole && !(f.children || []).includes(childId)){ target = fid; break; }
+    }
+    if(!target){
+      const body = oldFam.husband === keepId
+        ? { parent1: keepId, parent2: null, children: [] }
+        : { parent1: null, parent2: keepId, children: [] };
+      target = (await famApi('POST', '/api/family', body)).familyId;
+    }
+    await famApi('PATCH', '/api/family/' + oldFamId, { removeChild: childId });
+    removed = true;
+    await famApi('PATCH', '/api/family/' + target, { addChild: childId });
+    added = true;
+    await afterFamilyEdit();
+    showToast(t('fam_detached_toast'), false);
+  } catch(e){
+    if(removed && !added){ try { await famApi('PATCH', '/api/family/' + oldFamId, { addChild: childId }); } catch(_){} }
+    try { await afterFamilyEdit(); } catch(_){}
+    showToast('⚠ ' + e.message, true);
+  }
+}
+
+async function confirmDeleteFamily(famId){
+  if(!famAdmin()) return;
+  const fam = IDX.families[famId]; if(!fam) return;
+  if(fam.children && fam.children.length > 0){ alert(t('fam_delete_blocked')); return; }
+  if(!confirm(tfmt('fam_delete_confirm', { label: famLabel(fam, famId) }))) return;
+  try {
+    await famApi('DELETE', '/api/family/' + famId);
+    await afterFamilyEdit();
+    showToast(t('fam_deleted_toast'), false);
+  } catch(e){ showToast('⚠ ' + e.message, true); }
+}// navigate from panel link: update panel + navigate tree
 function panelNavigate(id){
   showPanel(id);
   navigateTo(id);
@@ -737,8 +855,9 @@ document.addEventListener('keydown', (e) => {
 function showPanel(id){
   const n = IDX.nodes[id]; if(!n) return;
 
-  const parents=[], spouses=[], children=[];
-  for(const [,f] of Object.entries(IDX.families)){
+  const parents=[], spouses=[], children=[], marriages=[];
+  const childFamOf = {};
+  for(const [famId,f] of Object.entries(IDX.families)){
     if((f.children||[]).includes(id)){
       if(f.husband && IDX.nodes[f.husband]) parents.push(f.husband);
       if(f.wife    && IDX.nodes[f.wife])    parents.push(f.wife);
@@ -746,8 +865,9 @@ function showPanel(id){
     if(f.husband===id || f.wife===id){
       const sp = f.husband===id ? f.wife : f.husband;
       if(sp && IDX.nodes[sp] && !spouses.includes(sp)) spouses.push(sp);
+      marriages.push({ famId, spouseId: (sp && IDX.nodes[sp]) ? sp : null, childCount: (f.children||[]).length });
       (f.children||[]).forEach(c=>{
-        if(IDX.nodes[c]&&!children.includes(c)) children.push(c);
+        if(IDX.nodes[c]&&!children.includes(c)){ children.push(c); childFamOf[c] = famId; }
       });
     }
   }
@@ -821,11 +941,28 @@ function showPanel(id){
 
   // ── Column 2: relatives ──
   let col2 = '';
-  if(parents.length)  col2 += `<div class="p-sec"><h3>${t('parents')}</h3>${parents.map(pLink).join('')}</div>`;
+  const isAdminFam = famAdmin();
+  if(parents.length)  col2 += `<div class="p-sec"><h3>${t('parents')}</h3>${parents.map(pid => pLinkParent(pid, id, parents.find(p => p !== pid) || null)).join('')}</div>`;
   if(spouses.length)  col2 += `<div class="p-sec"><h3>${spouses.length>1?t('spouses'):t('spouse')}</h3>${spouses.map(pLink).join('')}</div>`;
-  if(children.length) col2 += `<div class="p-sec"><h3>${t('children')} (${children.length})</h3>${children.map(pLink).join('')}</div>`;
+  if(children.length) col2 += `<div class="p-sec"><h3>${t('children')} (${children.length})</h3>${children.map(cId => pLinkChild(cId, childFamOf[cId], isAdminFam)).join('')}</div>`;
 
-  document.getElementById('panel-col1').innerHTML = col1;
+  // ── Marriages management (admin only): delete an EMPTY marriage ──
+  if(isAdminFam && marriages.length){
+    col2 += `<div class="p-sec"><h3>${t('fam_marriages_title')}</h3>`;
+    for(const m of marriages){
+      const spouseName = m.spouseId ? pname(m.spouseId) : t('fam_no_spouse');
+      const childNote = m.childCount > 0
+        ? ` <span style="color:#A88040;font-size:.62rem">(${t('fam_children_n')}: ${m.childCount})</span>` : '';
+      const delBtn = m.childCount === 0
+        ? `<button onclick="confirmDeleteFamily('${m.famId}')" title="${t('fam_delete_tip')}" style="font-size:.62rem;padding:1px 6px;background:rgba(192,48,48,.1);
+             border:1px solid rgba(192,48,48,.3);border-radius:3px;cursor:pointer;color:#A02020">🗑</button>`
+        : `<span title="${t('fam_reassign_first')}" style="font-size:.62rem;opacity:.35;cursor:not-allowed">🗑</span>`;
+      col2 += `<div style="display:flex;align-items:center;gap:6px;padding:3px 7px;font-size:.74rem;color:#28180A">
+        <span style="flex:1">${spouseName}${childNote}</span>${delBtn}
+      </div>`;
+    }
+    col2 += `</div>`;
+  }  document.getElementById('panel-col1').innerHTML = col1;
   document.getElementById('panel-col2').innerHTML = col2;
   try {
     const lastQ = sessionStorage.getItem('kin_last_query');
