@@ -922,7 +922,7 @@ function showPanel(id){
       border:1px solid rgba(192,48,48,.3);border-radius:3px;cursor:pointer;color:#A02020;
       white-space:nowrap;flex-shrink:0">🗑 ${currentLang==='he'?'מחק':currentLang==='en'?'Delete':'Удалить'}</button>` : ''}
   </h2>`;
-  if(n.rel) col1 += `<span class="p-rel">${trel(n.rel)}</span>`;
+  if(n.rel) col1 += `<span class="p-rel">${relText(n)}</span>`;
   col1 += `<div class="p-block">`;
   if(b) col1 += `<div><span class="p-lbl">${t('birth')}</span> <strong>${b}</strong>${n.birth_he?` <span class="p-hw" dir="rtl">${n.birth_he}</span>`:''}</div>`;
   if(d) col1 += `<div style="margin-top:3px"><span class="p-lbl">${t('death')}</span> <strong>${d}</strong>${n.death_he?` <span class="p-hw" dir="rtl">${n.death_he}</span>`:''}</div>`;
@@ -1310,6 +1310,37 @@ function trel(s){
   return currentLang==='ru' ? s : s; // fallback: show as-is
 }
 
+// Localized "rel" text for a person: prefers a manually entered EN/HE
+// translation (n.rel_en / n.rel_he), then a generated phrase from «тип имя (год) [Pxx]»,
+// then the rule-based trel() dictionary for common short phrases, and finally the raw Russian text.
+function relText(n){
+  if(!n) return '';
+  if(currentLang !== 'ru'){
+    const manual = n['rel_' + currentLang];
+    if(manual) return manual;
+  }
+  // rel, созданный формой «Новый человек» («тип имя (год) [Pxx]»): собираем фразу на языке
+  // интерфейса, без года и технического тега. Словарные подписи и строки без слова-типа идут дальше.
+  const g = relGeneratedParts(n.rel);
+  if(g){
+    const nm = (IDX && IDX.nodes && IDX.nodes[g.id])
+      ? pname(g.id)
+      : g.name;
+    return t('rel_gen_' + g.kind) + (nm ? ' ' + nm : '');
+  }
+  return trel(n.rel);
+}
+
+// Разбор rel вида «жена Иван Иванов (1950) [P12]» -> {kind:'wife', id:'P12', name:'Иван Иванов'}; иначе null.
+function relGeneratedParts(s){
+  if(!s) return null;
+  const KINDS = { 'жена':'wife', 'муж':'husband', 'ребёнок':'child', 'ребенок':'child',
+                  'родитель':'parent', 'брат':'brother', 'сестра':'sister' };
+  const m = String(s).match(/^(жена|муж|ребёнок|ребенок|родитель|брат|сестра)\s+(.*?)\s*\[?(P\d+)\]?\s*$/i);
+  if(!m) return null;
+  return { kind: KINDS[m[1].toLowerCase()], id: m[3], name: m[2].replace(/\s*\(\s*\d{3,4}\s*\)\s*$/, '').trim() };
+}
+
 // ════════════════════════════════════════════════════════
 //  NAMES DICTIONARY — RU→EN→HE for all 178 persons
 // ════════════════════════════════════════════════════════
@@ -1536,7 +1567,7 @@ function openModal(prefillId, mode){
     if(n.phone)    lines.push(t('lbl_phone')     + ': ' + n.phone);
     if(n.email)    lines.push(t('lbl_email')     + ': ' + n.email);
     if(n.social)   lines.push(t('lbl_social')    + ': ' + n.social);
-    if(n.rel)      lines.push(t('fix_rel')       + ': ' + trel(n.rel));
+    if(n.rel)      lines.push(t('fix_rel') + ': ' + relText(n));
 
     if(card0 && lines.length){
       card0.textContent = lines.join('\n');
@@ -1569,7 +1600,8 @@ function openModal(prefillId, mode){
     setVal('ff-mother', prefillFam ? parentLabel(prefillFam.wife)    : '');
     fixParentsPrefilledFor = prefillId;
 
-    setVal('ff-rel',       trel(n.rel));
+    // исходное значение, а не trel(): иначе сохранение в EN/HE записало бы перевод вместо исходного rel
+    setVal('ff-rel', n.rel);
 
     // Switch to fix tab
     document.querySelectorAll('.mtype').forEach(b => b.classList.remove('active'));
@@ -2449,7 +2481,7 @@ function generateVCF() {
     if(n.email)  lines.push('EMAIL:' + n.email);
     if(n.social) lines.push('URL:' + n.social);
     if(bYear)    lines.push('BDAY:' + bYear + '0101');
-    const note = [n.rel ? trel(n.rel) : '', id].filter(Boolean).join(' · ');
+    const note = [n.rel ? relText(n) : '', id].filter(Boolean).join(' · ');
     if(note)     lines.push('NOTE:' + note);
     lines.push('ORG:' + t('tree_title').replace('🌳 ',''));
     lines.push('CATEGORIES:Family');
@@ -2733,7 +2765,7 @@ document.getElementById('btn-calendar').addEventListener('click', () => {
     lines.push(`DTEND;VALUE=DATE:${dtend_str}`);
     lines.push(`RRULE:FREQ=YEARLY`);
     lines.push(`SUMMARY:${summary}`);
-    if(p.rel) lines.push(`DESCRIPTION:${trel(p.rel)}`);
+    if(p.rel) lines.push(`DESCRIPTION:${relText(p)}`);
     lines.push(`TRANSP:TRANSPARENT`);
     lines.push(`BEGIN:VALARM`);
     lines.push(`TRIGGER:-P1D`);
