@@ -3247,7 +3247,7 @@ async function linkNewPersonToFamily(newId, targetId, relType, newSex){
     } else {
       const fam = IDX.families[famId];
       const slot = !fam.husband ? 'parent1' : !fam.wife ? 'parent2' : null;
-      if(!slot) throw new Error('У этой персоны уже есть оба родителя');
+      if(!slot) throw new Error(t('attach_both_parents'));
       const r = await fetch(WORKER_URL + '/api/family/' + famId, {
         method: 'PATCH', headers,
         body: JSON.stringify({[slot]: newId})
