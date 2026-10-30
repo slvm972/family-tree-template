@@ -267,6 +267,7 @@ body.rtl #help-bubble ul{padding-left:0;padding-right:16px}
   <button class="btn" id="btn-print" style="background:rgba(237,216,144,.15);border-color:rgba(237,216,144,.4)" title="Печать A1" data-title="title_print">🖨</button>
   <button class="btn" id="btn-contacts" style="background:rgba(237,216,144,.15);border-color:rgba(237,216,144,.4)" title="Скачать контакты" data-title="title_contacts">📇</button>
   <button class="btn" id="btn-calendar" style="background:rgba(237,216,144,.15);border-color:rgba(237,216,144,.4)" title="Скачать календарь дней рождения" data-title="title_calendar">📅</button>
+  <button class="btn" id="btn-hebrew-calendar" style="background:rgba(237,216,144,.15);border-color:rgba(237,216,144,.4)" data-title="title_hebrew_calendar">&#128334;</button>
   <button class="btn" id="btn-login" style="background:rgba(237,216,144,.15);border-color:rgba(237,216,144,.4)" title="Войти" data-title="login_btn">🔑</button>
   <button class="btn" id="btn-backup" style="background:rgba(237,216,144,.15);border-color:rgba(237,216,144,.4)" title="Скачать резервную копию (JSON)" data-title="tooltip_backup">📦</button>
   <button class="btn" id="btn-admin-panel" style="display:none;background:rgba(237,216,144,.15);border-color:rgba(237,216,144,.4)" title="Управление" data-title="title_admin" data-i="ap_toolbar_btn">🛠 Управление</button>
@@ -2919,6 +2920,59 @@ document.getElementById('btn-contacts').addEventListener('click', () => {
 })
 
 // ── Calendar (ICS) export ────────────────────────────────────────────────
+// ---- Hebrew-date reminders (.ics, 5 years): birthdays by Hebrew date + yahrzeits chosen on this device ----
+document.getElementById('btn-hebrew-calendar').title = t('title_hebrew_calendar');
+document.getElementById('btn-hebrew-calendar').addEventListener('click', () => {
+  if(!_sessionPassword){
+    document.getElementById('btn-login').click();
+    showToast(t('toast_hebrew_login'), true);
+    return;
+  }
+  if(!window.TreeHebrew || !TreeHebrew.isSupported()){
+    showToast(t('toast_hebrew_unsupported'), true);
+    return;
+  }
+  const sel = getYahrzeitSel();
+  let res;
+  try {
+    res = TreeHebrew.buildHebrewIcs({
+      nodes: IDX.nodes,
+      yahrzeitIds: sel,
+      nowYear: new Date().getFullYear(),
+      years: 5,
+      uidDomain: TREE_CONFIG.calendarUidDomain,
+      prodId: TREE_CONFIG.familyNameEn,
+      nameOf: pname,
+      labels: {
+        calName: t('hebcal_name') + ' ' + (currentLang==='he' ? TREE_CONFIG.familyNameHe : currentLang==='en' ? TREE_CONFIG.familyNameEn : TREE_CONFIG.familyNameRu),
+        yahrzeit: t('hebcal_yahrzeit'),
+        alarmBirth: t('hebcal_alarm_birth'),
+        alarmYahrzeit: t('hebcal_alarm_yahrzeit'),
+        descBirth: t('hebcal_desc_birth'),
+        descDeath: t('hebcal_desc_death')
+      }
+    });
+  } catch(e){
+    showToast('\u26A0 ' + e.message, true);
+    return;
+  }
+  const skippedNote = res.skipped ? t('toast_hebrew_skipped').replace('{m}', res.skipped) : '';
+  if(res.events === 0){
+    showToast(t('toast_hebrew_none') + skippedNote, true);
+    return;
+  }
+  const encoded = btoa(unescape(encodeURIComponent(res.ics)));
+  const a = document.createElement('a');
+  a.href = 'data:text/calendar;base64,' + encoded;
+  a.download = TREE_CONFIG.fileSlug + '-hebrew-reminders.ics';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  let msg = t('toast_hebrew_added').replace('{n}', res.events) + skippedNote;
+  if(sel.length === 0) msg += t('toast_hebrew_no_yahrzeit');
+  showToast(msg, res.skipped > 0);
+});
+
 document.getElementById('btn-calendar').addEventListener('click', () => {
   if(!_sessionPassword){
     document.getElementById('btn-login').click();
