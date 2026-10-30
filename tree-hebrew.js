@@ -22,6 +22,13 @@
  *   anniversary falls. The first event is never earlier than the Hebrew year AFTER rec.year.
  *   The window and the Hebrew dates are computed only through Intl ('en-u-ca-hebrew'); there is no own table.
  *
+ * buildHebrewIcs(opts) -> { ics, events, birthdayEvents, yahrzeitEvents, yahrzeitPersons, skipped, skippedIds, tooOld }
+ *   opts: nodes (IDX.nodes), yahrzeitIds (personal choice), nowYear, years (default 5), uidDomain, prodId,
+ *         nameOf(id), labels { calName, yahrzeit, alarmBirth, alarmYahrzeit, descBirth, descDeath }, rules?, stamp?
+ *   Living persons with birth_he get a birthday event per year; deceased persons get a yahrzeit event ONLY if their
+ *   id is in yahrzeitIds and they have death_he. Unreadable Hebrew dates are counted in "skipped" (no guessing).
+ *   Living persons more than 100 Hebrew years old are left out silently ("tooOld"). No RRULE: one VEVENT per date.
+ *
  * SPECIAL-CASE RULES (agree with the owner of the tree before changing):
  *   ADAR_PLAIN_IN_LEAP   'adar2' | 'adar1'   plain "Adar" in a leap year is kept in Adar II (default)
  *                        (Adar I stays Adar I in a leap year; Adar I and Adar II in a common year -> Adar)
@@ -350,6 +357,87 @@ function createCalendar(startYear, years, overrides) {
   };
 }
 
+// ---- iCalendar (.ics) builder: birthdays by Hebrew date + yahrzeits chosen by the user ----
+var ICON_BIRTHDAY = '\uD83C\uDF82';   // birthday cake
+var ICON_CANDLE = '\uD83D\uDD6F';     // candle (yahrzeit)
+
+function icsEscape(s) {
+  return String(s).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
+}
+function utf8Len(cp) { return cp < 0x80 ? 1 : (cp < 0x800 ? 2 : (cp < 0x10000 ? 3 : 4)); }
+// fold a content line to at most 75 octets (UTF-8), never splitting a character
+function foldLine(line) {
+  var out = '', cur = 0, chars = Array.from(line);
+  for (var i = 0; i < chars.length; i++) {
+    var l = utf8Len(chars[i].codePointAt(0));
+    if (cur + l > 75) { out += '\r\n '; cur = 1; }
+    out += chars[i];
+    cur += l;
+  }
+  return out;
+}
+
+function buildHebrewIcs(opts) {
+  var nodes = opts.nodes || {};
+  var labels = opts.labels || {};
+  var domain = opts.uidDomain || 'family-tree';
+  var cal = createCalendar(opts.nowYear, opts.years || 5, opts.rules);
+  var selected = {};
+  (opts.yahrzeitIds || []).forEach(function (id) { selected[id] = true; });
+  var nameOf = opts.nameOf || function (id) { return (nodes[id] && nodes[id].name) || id; };
+  var stamp = opts.stamp || (new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z');
+  var res = { ics: '', events: 0, birthdayEvents: 0, yahrzeitEvents: 0, yahrzeitPersons: 0, skipped: 0, skippedIds: [], tooOld: 0 };
+  var body = [];
+  var uids = {};
+
+  Object.keys(nodes).forEach(function (id) {
+    var n = nodes[id] || {};
+    var heDeath = n.death_he ? String(n.death_he).trim() : '';
+    var deceased = !!(n.death && String(n.death).trim()) || !!heDeath;
+    var kind, raw;
+    if (deceased) {
+      if (!has(selected, id) || !heDeath) return;   // not chosen, or no Hebrew date of death: nothing to do
+      kind = 'yahrzeit';
+      raw = heDeath;
+    } else {
+      raw = n.birth_he ? String(n.birth_he).trim() : '';
+      if (!raw) return;                              // no Hebrew birth date: not counted, not guessed
+      kind = 'birthday';
+    }
+    var rec = parseHebrewDate(raw);
+    if (!rec) { res.skipped++; res.skippedIds.push(id); return; }
+    if (kind === 'birthday' && cal.hebYearFrom - rec.year > 100) { res.tooOld++; return; }
+    var occ = cal.occurrences(rec);
+    if (!occ.length) return;
+    var name = nameOf(id);
+    var canon = formatHebrewDate(rec) || raw;
+    var summary = (kind === 'birthday')
+      ? (ICON_BIRTHDAY + ' ' + name)
+      : (ICON_CANDLE + ' ' + (labels.yahrzeit || 'Yahrzeit') + ': ' + name);
+    var desc = ((kind === 'birthday') ? (labels.descBirth || 'Hebrew birth date: ') : (labels.descDeath || 'Hebrew date of death: ')) + canon;
+    var alarm = ((kind === 'birthday') ? (labels.alarmBirth || 'Birthday tomorrow: ') : (labels.alarmYahrzeit || 'Yahrzeit tomorrow: ')) + name;
+    if (kind === 'yahrzeit') res.yahrzeitPersons++;
+    occ.forEach(function (o) {
+      var base = 'hebrew-' + id + '-' + kind + '-' + o.ymd.slice(0, 4);
+      var uid = base + '@' + domain;
+      if (has(uids, uid)) uid = base + '-' + o.hebYear + '@' + domain;   // same Hebrew date twice in one Gregorian year
+      uids[uid] = true;
+      body.push('BEGIN:VEVENT', 'UID:' + uid, 'DTSTAMP:' + stamp,
+        'DTSTART;VALUE=DATE:' + o.ymd, 'DTEND;VALUE=DATE:' + toYMD(o.ts + DAY_MS),
+        'SUMMARY:' + icsEscape(summary), 'DESCRIPTION:' + icsEscape(desc), 'TRANSP:TRANSPARENT',
+        'BEGIN:VALARM', 'TRIGGER:-P1D', 'ACTION:DISPLAY', 'DESCRIPTION:' + icsEscape(alarm), 'END:VALARM',
+        'END:VEVENT');
+      if (kind === 'birthday') res.birthdayEvents++; else res.yahrzeitEvents++;
+    });
+  });
+
+  res.events = res.birthdayEvents + res.yahrzeitEvents;
+  var head = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//' + icsEscape(opts.prodId || 'Family Tree') + '//Hebrew reminders//EN',
+    'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', 'X-WR-CALNAME:' + icsEscape(labels.calName || 'Hebrew dates')];
+  res.ics = head.concat(body, ['END:VCALENDAR']).map(foldLine).join('\r\n') + '\r\n';
+  return res;
+}
+
 var api = {
   parseHebrewDate: parseHebrewDate,
   parseDetailed: parseDetailed,
@@ -358,6 +446,7 @@ var api = {
   parseGreg: parseGreg,
   isLeapYear: isLeapYear,
   createCalendar: createCalendar,
+  buildHebrewIcs: buildHebrewIcs,
   toYMD: toYMD,
   isSupported: isSupported,
   DEFAULT_RULES: DEFAULT_RULES

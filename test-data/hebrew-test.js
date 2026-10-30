@@ -115,5 +115,59 @@ eq('yahrzeit: first event in the year after 5781', minHy, 5782);
 eq('unknown month key -> no events', cal.occurrences({ day: 1, monthKey: 'nope', year: 5700 }).length, 0);
 eq('null record -> no events', cal.occurrences(null).length, 0);
 
+// ---- buildHebrewIcs (synthetic persons) ----
+var SHEVAT12 = '\u05D9\u05D1 \u05E9\u05D1\u05D8 \u05EA\u05E9\u05E4\u05F4\u05D0';       // 12 Shevat 5781
+var SHEVAT12_5789 = '\u05D9\u05D1 \u05E9\u05D1\u05D8 \u05EA\u05E9\u05E4\u05F4\u05D8';  // 12 Shevat 5789
+var icsNodes = {
+  P1: { name: 'Alive', birth_he: A13 },
+  P2: { name: 'Gone chosen', death: '1 JAN 2021', death_he: SHEVAT12 },
+  P3: { name: 'Gone not chosen', death: '1 JAN 2021', death_he: SHEVAT12 },
+  P4: { name: 'Garbage birth', birth_he: 'garbage' },
+  P5: { name: 'No Hebrew date' },
+  P6: { name: 'Gone garbage', death: '1 JAN 2021', death_he: 'garbage' },
+  P8: { name: 'Gone no Hebrew date', death: '1 JAN 2021' },
+  P9: { name: 'Gone recently', death: '1 JAN 2029', death_he: SHEVAT12_5789 },
+  P10: { name: 'Too old', birth_he: '\u05D9\u05D2 \u05E0\u05D9\u05E1\u05DF \u05EA\u05F4\u05E8' }
+};
+function icsRun(ids) {
+  return H.buildHebrewIcs({
+    nodes: icsNodes, yahrzeitIds: ids, nowYear: 2026, years: 5, uidDomain: 'test.local', prodId: 'Test, Family',
+    nameOf: function (id) { return 'Name, ' + id; }, stamp: '20260101T000000Z',
+    labels: { yahrzeit: 'Yahrzeit', calName: 'Test cal' }
+  });
+}
+var icsRes = icsRun(['P2', 'P6', 'P8', 'P9', 'P999', 'P1']);
+var icsLines = icsRes.ics.replace(/\r\n /g, '').split('\r\n');
+function icsCount(prefix) { return icsLines.filter(function (l) { return l === prefix; }).length; }
+eq('ics: birthday events (13 Nisan x 5 years)', icsRes.birthdayEvents, 5);
+eq('ics: yahrzeit events (P2 x5, P9 only the year after 5789)', icsRes.yahrzeitEvents, 6);
+eq('ics: persons with yahrzeit events', icsRes.yahrzeitPersons, 2);
+eq('ics: skipped persons (garbage birth_he, garbage death_he)', icsRes.skipped, 2);
+eq('ics: too-old living person is not counted as skipped', icsRes.tooOld, 1);
+eq('ics: total events', icsRes.events, 11);
+eq('ics: VEVENT blocks match', icsCount('BEGIN:VEVENT'), 11);
+eq('ics: one alarm per event', icsCount('TRIGGER:-P1D'), 11);
+eq('ics: starts with BEGIN:VCALENDAR', icsLines[0], 'BEGIN:VCALENDAR');
+check('ics: ends with END:VCALENDAR and CRLF', /END:VCALENDAR\r\n$/.test(icsRes.ics));
+check('ics: no RRULE', icsRes.ics.indexOf('RRULE') < 0);
+var uidLines = icsLines.filter(function (l) { return l.indexOf('UID:') === 0; });
+var uidSet = {};
+uidLines.forEach(function (l) { uidSet[l] = true; });
+eq('ics: all UIDs are unique', Object.keys(uidSet).length, uidLines.length);
+check('ics: DTSTAMP is written', icsLines.indexOf('DTSTAMP:20260101T000000Z') >= 0);
+check('ics: every date is inside 2026-2030', icsLines.filter(function (l) { return l.indexOf('DTSTART;VALUE=DATE:') === 0; }).every(function (l) {
+  var ymd = l.slice(19);
+  return ymd >= '20260101' && ymd <= '20301231';
+}));
+check('ics: comma in a name is escaped', icsRes.ics.replace(/\r\n /g, '').indexOf('SUMMARY:\uD83C\uDF82 Name\\, P1') >= 0);
+check('ics: not-chosen person is absent', icsRes.ics.replace(/\r\n /g, '').indexOf('Name\\, P3') < 0);
+check('ics: yahrzeit text with label', icsRes.ics.replace(/\r\n /g, '').indexOf('SUMMARY:\uD83D\uDD6F Yahrzeit: Name\\, P2') >= 0);
+check('ics: canonical Hebrew date of death in DESCRIPTION', icsRes.ics.replace(/\r\n /g, '').indexOf('DESCRIPTION:Hebrew date of death: ' + H.formatHebrewDate({ day: 12, monthKey: 'shevat', year: 5781 })) >= 0);
+check('ics: every line is at most 75 octets', icsRes.ics.split('\r\n').every(function (l) { return Buffer.byteLength(l, 'utf8') <= 75; }));
+var icsEmpty = icsRun([]);
+eq('ics: empty choice -> no yahrzeit events', icsEmpty.yahrzeitEvents, 0);
+eq('ics: empty choice -> birthdays still there', icsEmpty.birthdayEvents, 5);
+eq('ics: empty choice -> only the broken birthday is skipped', icsEmpty.skipped, 1);
+
 console.log(bad === 0 ? ('HEBREW TEST: all ' + total + ' passed') : ('HEBREW TEST: ' + bad + ' of ' + total + ' FAILED'));
 process.exitCode = bad === 0 ? 0 : 1;
