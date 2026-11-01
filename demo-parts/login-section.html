@@ -1,0 +1,19 @@
+<section class="demo-login" id="demo-login">
+  <div class="wrap">
+    <h2 data-i="demo-title">Попробуйте демо</h2>
+    <p class="demo-lede" data-i="demo-sub">Это демонстрация на вымышленной семье — личных данных здесь нет. Введите пароль, чтобы увидеть, как выглядят вход и дерево. В купленном продукте этой страницы нет: у вас будет ваше дерево и ваши пароли.</p>
+    <form id="demo-form" class="demo-card" autocomplete="off">
+      <label for="demo-pwd" data-i="demo-label">Пароль</label>
+      <input id="demo-pwd" type="password" autocomplete="off" required>
+      <div class="demo-hint">
+        <span data-i="demo-hint">Пароли для демо:</span><br>
+        <button type="button" class="chip" data-fill="demo">demo</button> <span data-i="demo-guest">гость: просмотр, поиск, печать</span><br>
+        <button type="button" class="chip" data-fill="demo-admin">demo-admin</button> <span data-i="demo-admin">администратор: ещё и редактирование, управление</span>
+      </div>
+      <label class="rem"><input id="demo-rem" type="checkbox" checked><span data-i="demo-remember">Запомнить на этом устройстве</span></label>
+      <button class="btn btn-primary" id="demo-go" type="submit" data-i="demo-btn">Войти в демо</button>
+      <div id="demo-err" role="alert"></div>
+      <a id="demo-continue" href="/tree" hidden data-i="demo-continue">Вы уже вошли — открыть дерево →</a>
+    </form>
+  </div>
+</section>

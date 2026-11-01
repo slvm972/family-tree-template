@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Добро пожаловать — ваше семейное дерево</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Nunito+Sans:wght@400;600;700&display=swap');
+
+  :root {
+    --cream:      #F5F0E8;
+    --cream-deep: #EDE4D3;
+    --ink:        #1C1208;
+    --ink-soft:   #3A2810;
+    --gold:       #C09828;
+    --gold-soft:  rgba(192,152,40,.18);
+    --wine:       #701838;
+    --wine-soft:  rgba(112,24,56,.10);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--cream);
+    color: var(--ink-soft);
+    font-family: 'Nunito Sans', -apple-system, sans-serif;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3 { font-family: 'Playfair Display', Georgia, serif; color: var(--ink); }
+
+  a { color: var(--wine); }
+
+  .wrap { max-width: 780px; margin: 0 auto; padding: 0 24px; }
+
+  /* ── HERO ─────────────────────────────────────────── */
+  .hero {
+    padding: 90px 0 70px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero::before {
+    /* faint root-like branching lines behind the hero, echoing the tree */
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--gold-soft) 1px, transparent 1px);
+    background-size: 100% 48px;
+    mask-image: radial-gradient(ellipse 60% 50% at 50% 30%, black, transparent);
+    opacity: .5;
+    pointer-events: none;
+  }
+
+  .hero-eyebrow {
+    display: inline-block;
+    font-size: .78rem;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--wine);
+    font-weight: 700;
+    margin-bottom: 18px;
+    position: relative;
+  }
+
+  .hero h1 {
+    font-size: clamp(2.1rem, 5vw, 3.2rem);
+    font-weight: 700;
+    line-height: 1.15;
+    margin-bottom: 20px;
+    position: relative;
+  }
+
+  .hero h1 em {
+    font-style: italic;
+    color: var(--wine);
+  }
+
+  .hero p.lede {
+    font-size: 1.15rem;
+    color: var(--ink-soft);
+    max-width: 560px;
+    margin: 0 auto 36px;
+    position: relative;
+  }
+
+  /* signature: a small sprouting tree glyph, drawn with CSS, no external art */
+  .sprout {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 28px;
+    position: relative;
+  }
+  .sprout::before {
+    content: '';
+    position: absolute;
+    left: 50%; bottom: 0;
+    width: 3px; height: 40px;
+    background: var(--gold);
+    transform: translateX(-50%);
+    border-radius: 2px;
+  }
+  .sprout::after {
+    content: '🌳';
+    position: absolute;
+    top: -6px; left: 50%;
+    transform: translateX(-50%);
+    font-size: 2.2rem;
+  }
+
+  .cta-row {
+    display: flex;
+    gap: 14px;
+    justify-content: center;
+    flex-wrap: wrap;
+    position: relative;
+  }
+
+  .btn {
+    display: inline-block;
+    padding: 13px 28px;
+    border-radius: 6px;
+    font-family: 'Nunito Sans', sans-serif;
+    font-weight: 700;
+    font-size: .95rem;
+    text-decoration: none;
+    cursor: pointer;
+    border: none;
+    transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .btn:hover { transform: translateY(-1px); }
+  .btn-primary {
+    background: var(--gold);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(192,152,40,.35);
+  }
+  .btn-primary:hover { box-shadow: 0 6px 20px rgba(192,152,40,.45); }
+  .btn-ghost {
+    background: transparent;
+    color: var(--ink-soft);
+    border: 1.5px solid rgba(58,40,16,.25);
+  }
+  .btn-ghost:hover { border-color: var(--ink-soft); }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .btn { transition: none; }
+  }
+
+  /* ── LANGUAGE SWITCHER ────────────────────────────── */
+  .lang-switch {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    display: flex;
+    gap: 4px;
+    background: rgba(245,240,232,.92);
+    border: 1px solid rgba(112,24,56,.15);
+    border-radius: 7px;
+    padding: 4px;
+    z-index: 50;
+    backdrop-filter: blur(4px);
+  }
+  .lang-btn {
+    border: none;
+    background: transparent;
+    padding: 5px 11px;
+    font-family: 'Nunito Sans', sans-serif;
+    font-size: .78rem;
+    font-weight: 700;
+    color: var(--ink-soft);
+    cursor: pointer;
+    border-radius: 5px;
+  }
+  .lang-btn.active { background: var(--gold); color: #fff; }
+
+  body.rtl { direction: rtl; }
+  body.rtl .lang-switch { right: auto; left: 16px; }
+  body.rtl .leaf { flex-direction: row-reverse; text-align: right; }
+  body.rtl .step { padding-left: 0; padding-right: 44px; }
+  body.rtl .step::before { left: auto; right: -44px; }
+  body.rtl .branch { padding-left: 0; padding-right: 44px; }
+  body.rtl .branch::before { left: auto; right: 15px; }
+  body.rtl .step h3 .num { margin-right: 0; margin-left: 6px; }
+
+  /* ── FEATURES ─────────────────────────────────────── */
+  .features {
+    padding: 60px 0 70px;
+    background: var(--cream-deep);
+  }
+
+  .features h2 {
+    text-align: center;
+    font-size: clamp(1.6rem, 3.5vw, 2.1rem);
+    margin-bottom: 12px;
+  }
+
+  .features > .wrap > p.section-lede {
+    text-align: center;
+    max-width: 520px;
+    margin: 0 auto 44px;
+    color: var(--ink-soft);
+  }
+
+  .leaf-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 10px;
+  }
+
+  .leaf {
+    background: var(--cream);
+    border: 1px solid rgba(112,24,56,.12);
+    border-radius: 8px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .leaf .icon { font-size: 1.15rem; flex-shrink: 0; line-height: 1.4; }
+  .leaf .txt { font-size: .87rem; line-height: 1.45; }
+  .leaf .txt b { color: var(--ink); font-weight: 700; }
+
+  /* ── STEPS ────────────────────────────────────────── */
+  .steps-section {
+    padding: 70px 0 90px;
+  }
+
+  .steps-section h2 {
+    text-align: center;
+    font-size: clamp(1.6rem, 3.5vw, 2.1rem);
+    margin-bottom: 12px;
+  }
+
+  .steps-section > .wrap > p.section-lede {
+    text-align: center;
+    max-width: 480px;
+    margin: 0 auto 50px;
+    color: var(--ink-soft);
+  }
+
+  .branch {
+    position: relative;
+    padding-left: 44px;
+  }
+
+  /* the vertical branch line running through all steps */
+  .branch::before {
+    content: '';
+    position: absolute;
+    left: 15px; top: 8px; bottom: 8px;
+    width: 3px;
+    background: linear-gradient(var(--gold), var(--wine));
+    border-radius: 3px;
+  }
+
+  .step {
+    position: relative;
+    padding-bottom: 40px;
+  }
+  .step:last-child { padding-bottom: 0; }
+
+  /* bud marker on the branch for each step */
+  .step::before {
+    content: '';
+    position: absolute;
+    left: -44px; top: 2px;
+    width: 18px; height: 18px;
+    background: var(--cream);
+    border: 3px solid var(--gold);
+    border-radius: 50%;
+    z-index: 1;
+  }
+
+  .step h3 {
+    font-size: 1.1rem;
+    margin-bottom: 6px;
+  }
+  .step h3 .num {
+    color: var(--wine);
+    font-style: italic;
+    font-family: 'Playfair Display', serif;
+    margin-right: 6px;
+  }
+  .step p {
+    font-size: .9rem;
+    color: var(--ink-soft);
+    max-width: 520px;
+  }
+  .step .hint {
+    display: inline-block;
+    margin-top: 8px;
+    font-size: .78rem;
+    background: var(--wine-soft);
+    color: var(--wine);
+    padding: 4px 10px;
+    border-radius: 5px;
+  }
+</style>
+</head>
+<body>
+
+<div class="lang-switch">
+  <button class="lang-btn active" data-lang="ru">РУС</button>
+  <button class="lang-btn" data-lang="en">ENG</button>
+  <button class="lang-btn" data-lang="he">עב</button>
+</div>
+
+<section class="hero">
+  <div class="wrap">
+    <div class="sprout" aria-hidden="true"></div>
+    <span class="hero-eyebrow" data-i="eyebrow">Семейное дерево · для всех, без исключений</span>
+    <h1 data-i="h1">Дерево вашей семьи,<br><em>которое растёт вместе с ней</em></h1>
+    <p class="lede" data-i="lede">
+      Не нужно быть программистом. Не нужно быть «продвинутым пользователем».
+      Нужно только желание сохранить историю своей семьи — остальное сделает
+      эта страница, шаг за шагом.
+    </p>
+    <div class="cta-row">
+      <a href="#steps" class="btn btn-primary" data-i="cta-start">Начать настройку →</a>
+      <a href="#features" class="btn btn-ghost" data-i="cta-features">Что это умеет</a>
+    </div>
+  </div>
+</section>
+
+<section class="features" id="features">
+  <div class="wrap">
+    <h2 data-i="feat-h2">Чем это отличается от подобных сервисов</h2>
+    <p class="section-lede" data-i="feat-lede">Коротко — о том, чего нет у большинства.</p>
+    <div class="leaf-grid">
+      <div class="leaf">
+        <span class="icon">🌍</span>
+        <span class="txt" data-i="feat1"><b>Мультиязычность</b> — каждый родственник может
+        читать дерево на удобном ему языке.</span>
+      </div>
+      <div class="leaf">
+        <span class="icon">✉️</span>
+        <span class="txt" data-i="feat2"><b>Родные предлагают дополнения</b> — заявка
+        приходит вам на почту, вы решаете, применять ли её.</span>
+      </div>
+      <div class="leaf">
+        <span class="icon">♾️</span>
+        <span class="txt" data-i="feat3"><b>Без ограничений по числу людей</b> — дерево
+        растёт вместе с семьёй, сколько бы ни было поколений.</span>
+      </div>
+      <div class="leaf">
+        <span class="icon">📇</span>
+        <span class="txt" data-i="feat4"><b>Контакты — одним файлом</b> — скачайте и
+        добавьте в телефонную книгу вручную, в пару касаний.</span>
+      </div>
+      <div class="leaf">
+        <span class="icon">🔒</span>
+        <span class="txt" data-i="feat5"><b>Конфиденциальность личных данных</b> — телефон
+        и соцсети видны только тем, кто вошёл по паролю.</span>
+      </div>
+      <div class="leaf">
+        <span class="icon">📅</span>
+        <span class="txt" data-i="feat6"><b>Дни рождения — файлом для календаря</b> —
+        добавьте его в свой календарь, и напоминания придут оттуда.</span>
+      </div>
+      <div class="leaf">
+        <span class="icon">🖨️</span>
+        <span class="txt" data-i="feat7"><b>Дерево можно распечатать</b> — как постер
+        для дома.</span>
+      </div>
+      <div class="leaf">
+        <span class="icon">🔍</span>
+        <span class="txt" data-i="feat8"><b>Поиск по имени</b> — быстро находит нужного
+        человека среди всех родственников.</span>
+      </div>
+      <div class="leaf">
+        <span class="icon">📷</span>
+        <span class="txt" data-i="feat9"><b>Фото и истории</b> — у каждого человека можно
+        сохранить фотографию и рассказ о его жизни.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="steps-section" id="steps">
+  <div class="wrap">
+    <h2 data-i="steps-h2">С чего начать</h2>
+    <p class="section-lede" data-i="steps-lede">Четыре шага — и дерево готово принимать вашу семью.</p>
+    <div class="branch">
+      <div class="step">
+        <h3><span class="num" data-i="step1-num">Шаг I</span><span data-i="step1-h">Установите помощника</span></h3>
+        <p data-i="step1-p">Скачайте бесплатную программу Node.js с сайта nodejs.org —
+        она нужна один раз, чтобы запустить настройку.</p>
+        <span class="hint" data-i="step1-hint">Если уже установлена — переходите к шагу II</span>
+      </div>
+      <div class="step">
+        <h3><span class="num" data-i="step2-num">Шаг II</span><span data-i="step2-h">Заведите бесплатный аккаунт</span></h3>
+        <p data-i="step2-p">На сайте cloudflare.com — это надёжное хранилище для вашего
+        дерева, у крупнейших сайтов мира то же самое.</p>
+      </div>
+      <div class="step">
+        <h3><span class="num" data-i="step3-num">Шаг III</span><span data-i="step3-h">Запустите настройку</span></h3>
+        <p data-i="step3-p">Дважды кликните на файл <b>install.bat</b> — программа задаст
+        два простых вопроса про пароли и всё сделает сама.</p>
+      </div>
+      <div class="step">
+        <h3><span class="num" data-i="step4-num">Шаг IV</span><span data-i="step4-h">Пригласите семью</span></h3>
+        <p data-i="step4-p">В конце настройки появится ссылка на ваше дерево. Отправьте
+        её родным вместе с паролем — и начинайте заполнять историю
+        вместе.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+// ── R6.4: Language switching ──────────────────────────
+// UI dictionary is populated in R6.4b. This is the skeleton:
+// t(key) returns translated text, applyLang() walks all
+// [data-i] elements and updates their text content.
+let currentLang = 'ru';
+const UI = {
+  ru: {
+    'eyebrow': 'Семейное дерево · для всех, без исключений',
+    'h1': 'Дерево вашей семьи,<br><em>которое растёт вместе с ней</em>',
+    'lede': 'Не нужно быть программистом. Не нужно быть «продвинутым пользователем». Нужно только желание сохранить историю своей семьи — остальное сделает эта страница, шаг за шагом.',
+    'cta-start': 'Начать настройку →',
+    'cta-features': 'Что это умеет',
+    'feat-h2': 'Чем это отличается от подобных сервисов',
+    'feat-lede': 'Коротко — о том, чего нет у большинства.',
+    'feat1': '<b>Мультиязычность</b> — каждый родственник может читать дерево на удобном ему языке.',
+    'feat2': '<b>Родные предлагают дополнения</b> — заявка приходит вам на почту, вы решаете, применять ли её.',
+    'feat3': '<b>Без ограничений по числу людей</b> — дерево растёт вместе с семьёй, сколько бы ни было поколений.',
+    'feat4': '<b>Контакты — одним файлом</b> — скачайте и добавьте в телефонную книгу вручную, в пару касаний.',
+    'feat5': '<b>Конфиденциальность личных данных</b> — телефон и соцсети видны только тем, кто вошёл по паролю.',
+    'feat6': '<b>Дни рождения — файлом для календаря</b> — добавьте его в свой календарь, и напоминания придут оттуда.',
+    'feat7': '<b>Дерево можно распечатать</b> — как постер для дома.',
+    'feat8': '<b>Поиск по имени</b> — быстро находит нужного человека среди всех родственников.',
+    'feat9': '<b>Фото и истории</b> — у каждого человека можно сохранить фотографию и рассказ о его жизни.',
+    'steps-h2': 'С чего начать',
+    'steps-lede': 'Четыре шага — и дерево готово принимать вашу семью.',
+    'step1-num': 'Шаг I',
+    'step1-h': 'Установите помощника',
+    'step1-p': 'Скачайте бесплатную программу Node.js с сайта nodejs.org — она нужна один раз, чтобы запустить настройку.',
+    'step1-hint': 'Если уже установлена — переходите к шагу II',
+    'step2-num': 'Шаг II',
+    'step2-h': 'Заведите бесплатный аккаунт',
+    'step2-p': 'На сайте cloudflare.com — это надёжное хранилище для вашего дерева, у крупнейших сайтов мира то же самое.',
+    'step3-num': 'Шаг III',
+    'step3-h': 'Запустите настройку',
+    'step3-p': 'Дважды кликните на файл <b>install.bat</b> — программа задаст два простых вопроса про пароли и всё сделает сама.',
+    'step4-num': 'Шаг IV',
+    'step4-h': 'Пригласите семью',
+    'step4-p': 'В конце настройки появится ссылка на ваше дерево. Отправьте её родным вместе с паролем — и начинайте заполнять историю вместе.',
+  },
+  en: {
+    'eyebrow': 'Family tree · for everyone, no exceptions',
+    'h1': 'Your family\u2019s tree,<br><em>growing along with it</em>',
+    'lede': 'No need to be a programmer. No need to be a "power user". All you need is the wish to preserve your family\u2019s story — this page will do the rest, step by step.',
+    'cta-start': 'Start setup →',
+    'cta-features': 'What it can do',
+    'feat-h2': 'How this differs from similar services',
+    'feat-lede': 'Briefly — what most others don\u2019t have.',
+    'feat1': '<b>Multilingual</b> — every relative can read the tree in the language that suits them.',
+    'feat2': '<b>Relatives suggest additions</b> — the request reaches you by email, and you decide whether to apply it.',
+    'feat3': '<b>No limit on the number of people</b> — the tree grows with the family, however many generations there are.',
+    'feat4': '<b>Contacts as one file</b> — download it and add it to your phone book manually, in a couple of taps.',
+    'feat5': '<b>Privacy of personal data</b> — phone numbers and social media are visible only to those who logged in with a password.',
+    'feat6': '<b>Birthdays as a calendar file</b> — add it to your calendar, and reminders will come from there.',
+    'feat7': '<b>The tree can be printed</b> — as a poster for your home.',
+    'feat8': '<b>Search by name</b> — quickly finds the right person among all relatives.',
+    'feat9': '<b>Photos and stories</b> — every person can have a photo and a short story about their life.',
+    'steps-h2': 'Where to start',
+    'steps-lede': 'Four steps — and the tree is ready to welcome your family.',
+    'step1-num': 'Step I',
+    'step1-h': 'Install the helper',
+    'step1-p': 'Download the free Node.js program from nodejs.org — you need it once, to run the setup.',
+    'step1-hint': 'Already installed? Skip to step II',
+    'step2-num': 'Step II',
+    'step2-h': 'Create a free account',
+    'step2-p': 'On cloudflare.com — reliable storage for your tree, the same one the world\u2019s biggest sites use.',
+    'step3-num': 'Step III',
+    'step3-h': 'Run the setup',
+    'step3-p': 'Double-click the <b>install.bat</b> file — the program will ask two simple password questions and do everything itself.',
+    'step4-num': 'Step IV',
+    'step4-h': 'Invite your family',
+    'step4-p': 'At the end of setup a link to your tree will appear. Send it to your relatives along with the password — and start filling in the story together.',
+  },
+  he: {
+    'eyebrow': '\u05e2\u05e5 \u05de\u05e9\u05e4\u05d7\u05d4 · \u05dc\u05db\u05d5\u05dc\u05dd, \u05dc\u05dc\u05d0 \u05d9\u05d5\u05e6\u05d0 \u05de\u05df \u05d4\u05db\u05dc\u05dc',
+    'h1': '\u05e2\u05e5 \u05d4\u05de\u05e9\u05e4\u05d7\u05d4 \u05e9\u05dc\u05db\u05dd,<br><em>\u05e9\u05d2\u05d3\u05dc \u05d9\u05d7\u05d3 \u05d0\u05d9\u05ea\u05d4</em>',
+    'lede': '\u05dc\u05d0 \u05e6\u05e8\u05d9\u05da \u05dc\u05d4\u05d9\u05d5\u05ea \u05de\u05ea\u05db\u05e0\u05ea\u05d9\u05dd. \u05dc\u05d0 \u05e6\u05e8\u05d9\u05da \u05dc\u05d4\u05d9\u05d5\u05ea "\u05de\u05e9\u05ea\u05de\u05e9 \u05de\u05ea\u05e7\u05d3\u05dd". \u05e6\u05e8\u05d9\u05da \u05e8\u05e7 \u05e8\u05e6\u05d5\u05df \u05dc\u05e9\u05de\u05e8 \u05d0\u05ea \u05e1\u05d9\u05e4\u05d5\u05e8 \u05d4\u05de\u05e9\u05e4\u05d7\u05d4 \u05e9\u05dc\u05db\u05dd — \u05d4\u05e9\u05d0\u05e8 \u05ea\u05e2\u05e9\u05d4 \u05d4\u05d3\u05e3 \u05d4\u05d6\u05d4, \u05e9\u05dc\u05d1 \u05d0\u05d7\u05e8 \u05e9\u05dc\u05d1.',
+    'cta-start': '\u05dc\u05d4\u05ea\u05d7\u05d9\u05dc \u05d1\u05d4\u05ea\u05e7\u05e0\u05d4 ←',
+    'cta-features': '\u05de\u05d4 \u05d6\u05d4 \u05d9\u05d5\u05d3\u05e2 \u05dc\u05e2\u05e9\u05d5\u05ea',
+    'feat-h2': '\u05d1\u05de\u05d4 \u05d6\u05d4 \u05e9\u05d5\u05e0\u05d4 \u05de\u05e9\u05d9\u05e8\u05d5\u05ea\u05d9\u05dd \u05d3\u05d5\u05de\u05d9\u05dd',
+    'feat-lede': '\u05d1\u05e7\u05e6\u05e8\u05d4 — \u05de\u05d4 \u05e9\u05d0\u05d9\u05df \u05dc\u05e8\u05d5\u05d1.',
+    'feat1': '<b>\u05e8\u05d1-\u05dc\u05e9\u05d5\u05e0\u05d9\u05d5\u05ea</b> — \u05db\u05dc \u05e7\u05e8\u05d5\u05d1 \u05de\u05e9\u05e4\u05d7\u05d4 \u05d9\u05db\u05d5\u05dc \u05dc\u05e7\u05e8\u05d5\u05d0 \u05d0\u05ea \u05d4\u05e2\u05e5 \u05d1\u05e9\u05e4\u05d4 \u05d4\u05e0\u05d5\u05d7 \u05dc\u05d5.',
+    'feat2': '<b>\u05d1\u05e0\u05d9 \u05d4\u05de\u05e9\u05e4\u05d7\u05d4 \u05de\u05e6\u05d9\u05e2\u05d9\u05dd \u05ea\u05d5\u05e1\u05e4\u05d5\u05ea</b> — \u05d4\u05d1\u05e7\u05e9\u05d4 \u05de\u05d2\u05d9\u05e2\u05d4 \u05d0\u05dc\u05d9\u05db\u05dd \u05d1\u05d0\u05d9\u05de\u05d9\u05d9\u05dc, \u05d5\u05d0\u05ea\u05dd \u05de\u05d7\u05dc\u05d9\u05d8\u05d9\u05dd \u05d0\u05dd \u05dc\u05d0\u05e9\u05e8 \u05dc\u05d4.',
+    'feat3': '<b>\u05dc\u05dc\u05d0 \u05d4\u05d2\u05d1\u05dc\u05d4 \u05d1\u05de\u05e1\u05e4\u05e8 \u05d4\u05d0\u05e0\u05e9\u05d9\u05dd</b> — \u05d4\u05e2\u05e5 \u05d2\u05d3\u05dc \u05d9\u05d7\u05d3 \u05e2\u05dd \u05d4\u05de\u05e9\u05e4\u05d7\u05d4, \u05dc\u05d0 \u05de\u05e9\u05e0\u05d4 \u05db\u05de\u05d4 \u05d3\u05d5\u05e8\u05d5\u05ea.',
+    'feat4': '<b>\u05d0\u05e0\u05e9\u05d9 \u05e7\u05e9\u05e8 \u05d1\u05e7\u05d5\u05d1\u05e5 \u05d0\u05d7\u05d3</b> — \u05d4\u05d5\u05e8\u05d9\u05d3\u05d5 \u05d5\u05d4\u05d5\u05e1\u05d9\u05e4\u05d5 \u05dc\u05e4\u05e0\u05e7\u05e1 \u05d4\u05d8\u05dc\u05e4\u05d5\u05df \u05d1\u05d9\u05d3\u05e0\u05d9\u05ea.',
+    'feat5': '<b>\u05e4\u05e8\u05d8\u05d9\u05d5\u05ea \u05e2\u05dc \u05de\u05d9\u05d3\u05e2 \u05d0\u05d9\u05e9\u05d9</b> — \u05de\u05e1\u05e4\u05e8\u05d9 \u05d8\u05dc\u05e4\u05d5\u05df \u05d5\u05e8\u05e9\u05ea\u05d5\u05ea \u05d7\u05d1\u05e8\u05ea\u05d9\u05d5\u05ea \u05d2\u05dc\u05d5\u05d9\u05d9\u05dd \u05e8\u05e7 \u05dc\u05de\u05d9 \u05e9\u05d4\u05ea\u05d7\u05d1\u05e8 \u05e2\u05dd \u05e1\u05d9\u05e1\u05de\u05d4.',
+    'feat6': '<b>\u05d9\u05de\u05d9 \u05d4\u05d5\u05dc\u05d3\u05ea \u05db\u05e7\u05d5\u05d1\u05e5 \u05dc\u05dc\u05d5\u05d7 \u05e9\u05e0\u05d4</b> — \u05d4\u05d5\u05e1\u05d9\u05e4\u05d5 \u05d0\u05d5\u05ea\u05d5 \u05dc\u05dc\u05d5\u05d7 \u05d4\u05e9\u05e0\u05d4 \u05e9\u05dc\u05db\u05dd, \u05d5\u05d4\u05ea\u05d6\u05db\u05d5\u05e8\u05d5\u05ea \u05d9\u05d2\u05d9\u05e2\u05d5 \u05de\u05e9\u05dd.',
+    'feat7': '<b>\u05d0\u05e4\u05e9\u05e8 \u05dc\u05d4\u05d3\u05e4\u05d9\u05e1 \u05d0\u05ea \u05d4\u05e2\u05e5</b> — \u05db\u05e4\u05d5\u05e1\u05d8\u05e8 \u05dc\u05d1\u05d9\u05ea.',
+    'feat8': '<b>\u05d7\u05d9\u05e4\u05d5\u05e9 \u05dc\u05e4\u05d9 \u05e9\u05dd</b> — \u05de\u05d5\u05e6\u05d0 \u05d1\u05de\u05d4\u05d9\u05e8\u05d5\u05ea \u05d0\u05ea \u05d4\u05d0\u05d3\u05dd \u05d4\u05de\u05d1\u05d5\u05e7\u05e9 \u05d1\u05d9\u05df \u05db\u05dc \u05d1\u05e0\u05d9 \u05d4\u05de\u05e9\u05e4\u05d7\u05d4.',
+    'feat9': '<b>\u05ea\u05de\u05d5\u05e0\u05d5\u05ea \u05d5\u05e1\u05d9\u05e4\u05d5\u05e8\u05d9\u05dd</b> — \u05dc\u05db\u05dc \u05d0\u05d3\u05dd \u05e0\u05d9\u05ea\u05df \u05dc\u05e9\u05de\u05d5\u05e8 \u05ea\u05de\u05d5\u05e0\u05d4 \u05d5\u05e1\u05d9\u05e4\u05d5\u05e8 \u05e2\u05dc \u05d7\u05d9\u05d9\u05d5.',
+    'steps-h2': '\u05de\u05d0\u05d9\u05e4\u05d4 \u05de\u05ea\u05d7\u05d9\u05dc\u05d9\u05dd',
+    'steps-lede': '\u05d0\u05e8\u05d1\u05e2\u05d4 \u05e9\u05dc\u05d1\u05d9\u05dd — \u05d5\u05d4\u05e2\u05e5 \u05de\u05d5\u05db\u05df \u05dc\u05e7\u05d1\u05dc \u05d0\u05ea \u05d4\u05de\u05e9\u05e4\u05d7\u05d4 \u05e9\u05dc\u05db\u05dd.',
+    'step1-num': '\u05e9\u05dc\u05d1 I',
+    'step1-h': '\u05d4\u05ea\u05e7\u05d9\u05e0\u05d5 \u05d0\u05ea \u05d4\u05e2\u05d5\u05d6\u05e8',
+    'step1-p': '\u05d4\u05d5\u05e8\u05d9\u05d3\u05d5 \u05d0\u05ea \u05d4\u05ea\u05d5\u05db\u05e0\u05d4 \u05d4\u05d7\u05d9\u05e0\u05de\u05d9\u05ea Node.js \u05de\u05d0\u05ea\u05e8 nodejs.org — \u05e0\u05d3\u05e8\u05e9 \u05e4\u05e2\u05dd \u05d0\u05d7\u05ea \u05db\u05d3\u05d9 \u05dc\u05d4\u05e4\u05e2\u05d9\u05dc \u05d0\u05ea \u05d4\u05d4\u05ea\u05e7\u05e0\u05d4.',
+    'step1-hint': '\u05db\u05d1\u05e8 \u05de\u05d5\u05ea\u05e7\u05df? \u05e2\u05d1\u05e8\u05d5 \u05dc\u05e9\u05dc\u05d1 II',
+    'step2-num': '\u05e9\u05dc\u05d1 II',
+    'step2-h': '\u05e4\u05ea\u05d7\u05d5 \u05d7\u05e9\u05d1\u05d5\u05df \u05d7\u05d9\u05e0\u05dd',
+    'step2-p': '\u05d1\u05d0\u05ea\u05e8 cloudflare.com — \u05d0\u05d7\u05e1\u05d5\u05df \u05d0\u05de\u05d9\u05df \u05dc\u05e2\u05e5 \u05e9\u05dc\u05db\u05dd, \u05d0\u05d5\u05ea\u05d5 \u05d4\u05d0\u05ea\u05e8 \u05e9\u05d1\u05d5 \u05de\u05e9\u05ea\u05de\u05e9\u05d9\u05dd \u05d4\u05d0\u05ea\u05e8\u05d9\u05dd \u05d4\u05d2\u05d3\u05d5\u05dc\u05d9\u05dd \u05d1\u05e2\u05d5\u05dc\u05dd.',
+    'step3-num': '\u05e9\u05dc\u05d1 III',
+    'step3-h': '\u05d4\u05e4\u05e2\u05d9\u05dc\u05d5 \u05d0\u05ea \u05d4\u05d4\u05ea\u05e7\u05e0\u05d4',
+    'step3-p': '\u05dc\u05d7\u05e6\u05d5 \u05e4\u05e2\u05de\u05d9\u05d9\u05dd \u05e2\u05dc \u05d4\u05e7\u05d5\u05d1\u05e5 <b>install.bat</b> — \u05d4\u05ea\u05d5\u05db\u05e0\u05d4 \u05ea\u05e9\u05d0\u05dc \u05e9\u05ea\u05d9 \u05e9\u05d0\u05dc\u05d5\u05ea \u05e4\u05e9\u05d5\u05d8\u05d5\u05ea \u05e2\u05dc \u05e1\u05d9\u05e1\u05de\u05d0\u05d5\u05ea \u05d5\u05ea\u05e2\u05e9\u05d4 \u05d4\u05db\u05dc \u05dc\u05d1\u05d3\u05d4.',
+    'step4-num': '\u05e9\u05dc\u05d1 IV',
+    'step4-h': '\u05d4\u05d6\u05de\u05d9\u05e0\u05d5 \u05d0\u05ea \u05d4\u05de\u05e9\u05e4\u05d7\u05d4',
+    'step4-p': '\u05d1\u05e1\u05d5\u05e3 \u05d4\u05d4\u05ea\u05e7\u05e0\u05d4 \u05ea\u05d5\u05e4\u05d9\u05e2 \u05e7\u05d9\u05e9\u05d5\u05e8 \u05dc\u05e2\u05e5 \u05e9\u05dc\u05db\u05dd. \u05e9\u05dc\u05d7\u05d5 \u05d0\u05d5\u05ea\u05d5 \u05dc\u05e7\u05e8\u05d5\u05d1\u05d9\u05dd \u05d9\u05d7\u05d3 \u05e2\u05dd \u05d4\u05e1\u05d9\u05e1\u05de\u05d0 — \u05d5\u05ea\u05ea\u05d7\u05d9\u05dc\u05d5 \u05dc\u05de\u05dc\u05d0 \u05d0\u05ea \u05d4\u05e1\u05d9\u05e4\u05d5\u05e8 \u05d9\u05d7\u05d3.',
+  }
+};
+
+function t(key){ return (UI[currentLang]||UI.ru)[key] || UI.ru[key] || key; }
+
+function applyLang(lang){
+  currentLang = lang;
+  document.body.classList.toggle('rtl', lang === 'he');
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.lang === lang);
+  });
+  document.querySelectorAll('[data-i]').forEach(el => {
+    const key = el.dataset.i;
+    if(UI[lang] && UI[lang][key]) el.innerHTML = UI[lang][key];
+  });
+}
+
+document.querySelectorAll('.lang-btn').forEach(btn => {
+  btn.addEventListener('click', () => applyLang(btn.dataset.lang));
+});
+</script>
+
+</body>
+</html>

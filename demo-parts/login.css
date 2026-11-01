@@ -1,0 +1,29 @@
+  /* ── DEMO LOGIN (только в демо-сборке, в репозиторий шаблона не входит) ── */
+  .demo-login { padding: 60px 0 70px; text-align: center; }
+  .demo-login h2 { font-size: clamp(1.6rem, 3.5vw, 2.1rem); margin-bottom: 12px; }
+  .demo-login .demo-lede { max-width: 540px; margin: 0 auto 28px; color: var(--ink-soft); }
+  .demo-card {
+    background: #fff; max-width: 400px; margin: 0 auto; padding: 24px;
+    border-radius: 10px; border: 1px solid rgba(112,24,56,.12);
+    box-shadow: 0 8px 30px rgba(28,18,8,.12);
+    display: flex; flex-direction: column; gap: 12px; text-align: start;
+  }
+  .demo-card label { font-size: .8rem; font-weight: 700; color: var(--wine); }
+  .demo-card input[type="password"], .demo-card input[type="text"] {
+    width: 100%; padding: 11px 13px; border: 1px solid rgba(58,40,16,.3); border-radius: 6px;
+    font: inherit; font-size: 1rem; background: #FFFDF7; color: var(--ink);
+  }
+  .demo-card input:focus, .demo-card button:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
+  .demo-hint { font-size: .82rem; color: var(--ink-soft); line-height: 1.9; }
+  .demo-hint .chip {
+    font: inherit; font-size: .8rem; font-weight: 700; cursor: pointer;
+    background: var(--gold-soft); color: var(--ink); border: 1px dashed var(--gold);
+    border-radius: 5px; padding: 1px 9px;
+  }
+  .demo-hint .chip:hover { background: rgba(192,152,40,.32); }
+  .demo-card label.rem { display: flex; align-items: center; gap: 8px; font-weight: 400; color: var(--ink-soft); cursor: pointer; }
+  .demo-card label.rem input { width: auto; margin: 0; accent-color: var(--gold); }
+  .demo-card .btn { width: 100%; text-align: center; }
+  .demo-card .btn:disabled { opacity: .6; cursor: default; transform: none; }
+  #demo-err { min-height: 1.1em; font-size: .85rem; color: #A03818; }
+  #demo-continue { font-size: .88rem; text-align: center; }

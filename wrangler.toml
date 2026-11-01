@@ -1,0 +1,21 @@
+name = "family-tree-demo-api"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+[[kv_namespaces]]
+binding = "TREE_KV"
+id = "ecba9594dd1d4f268554e07a9694391b"
+
+[vars]
+GUEST_PASSWORD_HASH = "2a97516c354b68848cdbd8f54a226a0a55b21ed138e207ad6c5cbb9c00aa5aea"
+ADMIN_PASSWORD_HASH = "cce7a2cf1ae045989cfc914fb95a41526f167a838b3c7d33745143614abace7c"
+# R5: subscription freeze flag. Set to "false" to freeze the tree
+# (e.g. lapsed support subscription) without deleting any data.
+TREE_ACTIVE = "true"
+FAMILY_NAME_RU = "Демо-семья"
+FAMILY_SLUG = "demo"
+CALENDAR_UID_DOMAIN = "demo.example"
+
+[[r2_buckets]]
+binding = "PHOTOS_BUCKET"
+bucket_name = "family-tree-photos-mv02h9gh"

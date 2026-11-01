@@ -1,0 +1,22 @@
+# .dev.vars.example — тестовые переменные для ЛОКАЛЬНОГО запуска (`npx wrangler dev`).
+#
+# КАК ИСПОЛЬЗОВАТЬ:
+#   1. Скопируйте этот файл в `.dev.vars` (без .example) в той же папке.
+#   2. `.dev.vars` уже в .gitignore — никогда не попадёт в коммит.
+#   3. `npx wrangler dev` подхватит его автоматически и подставит вместо
+#      значений из wrangler.toml — сам wrangler.toml (с плейсхолдерами для
+#      реальных клиентов) трогать не нужно.
+#
+# ⚠ Пароли ниже — ТОЛЬКО для локальной отладки. Не использовать в проде,
+#   не коммитить реальный .dev.vars с боевыми хэшами.
+#
+# Пароль гостя:  dev-guest-2026
+# Пароль админа: dev-admin-2026
+# (хэши — SHA-256 от паролей выше)
+
+GUEST_PASSWORD_HASH = "3e769c23aaf7ec8942a63dfd8de4131358019e9d5cd226837c51b3e28f28404d"
+ADMIN_PASSWORD_HASH = "b9f3c9b488c277a4134ebd865b9ef760bc71f185c5b24cd1471ee6fbdae10da9"
+TREE_ACTIVE = "true"
+FAMILY_NAME_RU = "Тестовая Семья (DEV)"
+FAMILY_SLUG = "test-dev"
+CALENDAR_UID_DOMAIN = "test-dev.local"
