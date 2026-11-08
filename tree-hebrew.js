@@ -377,6 +377,13 @@ function foldLine(line) {
   return out;
 }
 
+// Validity data (all optional, existing callers keep working):
+//   opts.createdStr   text of the creation date, e.g. '31.10.2026'
+//   opts.treeUrl      address of the tree (put into the service event)
+//   labels.createdLine  'Created: {date}, valid until {to}'  -> added to the DESCRIPTION of every event
+//   labels.updateSummary / labels.updateDesc ({url})          -> service event "time to update" on 1 October of the last year;
+//                                                              it is NOT counted in res.events
+// The calendar name always gets the covered years: "<name> (from-to)". res.from / res.to are returned.
 function buildHebrewIcs(opts) {
   var nodes = opts.nodes || {};
   var labels = opts.labels || {};
@@ -386,7 +393,7 @@ function buildHebrewIcs(opts) {
   (opts.yahrzeitIds || []).forEach(function (id) { selected[id] = true; });
   var nameOf = opts.nameOf || function (id) { return (nodes[id] && nodes[id].name) || id; };
   var stamp = opts.stamp || (new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z');
-  var res = { ics: '', events: 0, birthdayEvents: 0, yahrzeitEvents: 0, yahrzeitPersons: 0, skipped: 0, skippedIds: [], tooOld: 0 };
+  var res = { ics: '', from: opts.nowYear, to: opts.nowYear + (opts.years || 5) - 1, events: 0, birthdayEvents: 0, yahrzeitEvents: 0, yahrzeitPersons: 0, skipped: 0, skippedIds: [], tooOld: 0, quietEvents: 0 };
   var body = [];
   var uids = {};
 
@@ -394,15 +401,17 @@ function buildHebrewIcs(opts) {
     var n = nodes[id] || {};
     var heDeath = n.death_he ? String(n.death_he).trim() : '';
     var deceased = !!(n.death && String(n.death).trim()) || !!heDeath;
-    var kind, raw;
+    var kind, raw, bMode = 'full';
     if (deceased) {
       if (!has(selected, id) || !heDeath) return;   // not chosen, or no Hebrew date of death: nothing to do
       kind = 'yahrzeit';
       raw = heDeath;
+      if (opts.yahrzeitMode) { bMode = opts.yahrzeitMode(id) || 'full'; if (bMode === 'skip') return; }
     } else {
       raw = n.birth_he ? String(n.birth_he).trim() : '';
       if (!raw) return;                              // no Hebrew birth date: not counted, not guessed
       kind = 'birthday';
+      if (opts.birthdayMode) { bMode = opts.birthdayMode(id) || 'full'; if (bMode === 'skip') return; }
     }
     var rec = parseHebrewDate(raw);
     if (!rec) { res.skipped++; res.skippedIds.push(id); return; }
@@ -412,10 +421,11 @@ function buildHebrewIcs(opts) {
     var name = nameOf(id);
     var canon = formatHebrewDate(rec) || raw;
     var summary = (kind === 'birthday')
-      ? (ICON_BIRTHDAY + ' ' + name)
+      ? (ICON_BIRTHDAY + ' ' + name + (labels.birthdaySuffix || ''))
       : (ICON_CANDLE + ' ' + (labels.yahrzeit || 'Yahrzeit') + ': ' + name);
     var desc = ((kind === 'birthday') ? (labels.descBirth || 'Hebrew birth date: ') : (labels.descDeath || 'Hebrew date of death: ')) + canon;
     var alarm = ((kind === 'birthday') ? (labels.alarmBirth || 'Birthday tomorrow: ') : (labels.alarmYahrzeit || 'Yahrzeit tomorrow: ')) + name;
+    if (labels.createdLine && opts.createdStr) desc += '\n' + labels.createdLine.replace('{date}', opts.createdStr).replace('{to}', res.to);
     if (kind === 'yahrzeit') res.yahrzeitPersons++;
     occ.forEach(function (o) {
       var base = 'hebrew-' + id + '-' + kind + '-' + o.ymd.slice(0, 4);
@@ -425,17 +435,78 @@ function buildHebrewIcs(opts) {
       body.push('BEGIN:VEVENT', 'UID:' + uid, 'DTSTAMP:' + stamp,
         'DTSTART;VALUE=DATE:' + o.ymd, 'DTEND;VALUE=DATE:' + toYMD(o.ts + DAY_MS),
         'SUMMARY:' + icsEscape(summary), 'DESCRIPTION:' + icsEscape(desc), 'TRANSP:TRANSPARENT',
-        'BEGIN:VALARM', 'TRIGGER:-P1D', 'ACTION:DISPLAY', 'DESCRIPTION:' + icsEscape(alarm), 'END:VALARM',
+        ...((bMode === 'quiet') ? [] : ['BEGIN:VALARM', 'TRIGGER:-P1D', 'ACTION:DISPLAY', 'DESCRIPTION:' + icsEscape(alarm), 'END:VALARM']),
         'END:VEVENT');
       if (kind === 'birthday') res.birthdayEvents++; else res.yahrzeitEvents++;
+      if (bMode === 'quiet') res.quietEvents++;
     });
   });
 
   res.events = res.birthdayEvents + res.yahrzeitEvents;
+  // service event "time to update": last in the file, whole day, 1 October of the last covered year, one alarm
+  if (labels.updateSummary && res.events > 0) {
+    var upDesc = (labels.updateDesc || '').replace('{url}', opts.treeUrl || '');
+    body.push('BEGIN:VEVENT', 'UID:hebrew-update-' + res.from + '-' + res.to + '@' + domain, 'DTSTAMP:' + stamp,
+      'DTSTART;VALUE=DATE:' + res.to + '1001', 'DTEND;VALUE=DATE:' + res.to + '1002',
+      'SUMMARY:' + icsEscape(labels.updateSummary), 'DESCRIPTION:' + icsEscape(upDesc), 'TRANSP:TRANSPARENT',
+      'BEGIN:VALARM', 'TRIGGER:-P1D', 'ACTION:DISPLAY', 'DESCRIPTION:' + icsEscape(labels.updateSummary), 'END:VALARM',
+      'END:VEVENT');
+    res.serviceEvent = true;
+  }
   var head = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//' + icsEscape(opts.prodId || 'Family Tree') + '//Hebrew reminders//EN',
-    'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', 'X-WR-CALNAME:' + icsEscape(labels.calName || 'Hebrew dates')];
+    'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', 'X-WR-CALNAME:' + icsEscape((labels.calName || 'Hebrew dates') + ' (' + res.from + '\u2013' + res.to + ')')];
   res.ics = head.concat(body, ['END:VCALENDAR']).map(foldLine).join('\r\n') + '\r\n';
   return res;
+}
+
+// ---- helpers for the date picker widget (lists of months / days / years) ----
+var MONTH_ORDER_COMMON = ['tishri', 'heshvan', 'kislev', 'tevet', 'shevat', 'adar', 'nisan', 'iyar', 'sivan', 'tamuz', 'av', 'elul'];
+var MONTH_ORDER_LEAP = ['tishri', 'heshvan', 'kislev', 'tevet', 'shevat', 'adar1', 'adar2', 'nisan', 'iyar', 'sivan', 'tamuz', 'av', 'elul'];
+var yearInfoCache = {};
+
+function hebrewYearInfo(year) {
+  if (has(yearInfoCache, year)) return yearInfoCache[year];
+  var gy = year - 3761;
+  var start = null, t;
+  for (t = Date.UTC(gy, 7, 15, 12); t <= Date.UTC(gy, 10, 15, 12); t += DAY_MS) {
+    var h = gregToHebrew(new Date(t));
+    if (h && h.year === year && h.monthKey === 'tishri' && h.day === 1) { start = t; break; }
+  }
+  if (start === null) return null;
+  var lens = {};
+  for (t = start; t - start <= 400 * DAY_MS; t += DAY_MS) {
+    var h2 = gregToHebrew(new Date(t));
+    if (!h2 || h2.year !== year) break;
+    if (!lens[h2.monthKey] || h2.day > lens[h2.monthKey]) lens[h2.monthKey] = h2.day;
+  }
+  var order = isLeapYear(year) ? MONTH_ORDER_LEAP : MONTH_ORDER_COMMON;
+  var info = { year: year, leap: isLeapYear(year), months: order.map(function (k) { return { key: k, days: lens[k] || 0 }; }) };
+  yearInfoCache[year] = info;
+  return info;
+}
+function dayLetters(n) { return toHebrew(numToLetters(n)); }
+function formatHebrewYear(y) { return punctuateYear(toHebrew(numToLetters(y - 5000))); }
+function monthNameHe(key) {
+  if (!has(MONTH_CODE, key)) return '';
+  var s = MONTH_CODE[key].split(' ').map(function (w) { return heWord(w); }).join(' ');
+  return (key === 'adar1' || key === 'adar2') ? s + '\u05F3' : s;
+}
+function cmpOne(rec, act) {
+  if (!act) return 0;
+  if (rec.day !== act.day || rec.year !== act.year) return 0;
+  if (rec.monthKey === act.monthKey) return 1;
+  if (rec.monthKey === 'adar' && (act.monthKey === 'adar1' || act.monthKey === 'adar2')) return 2;
+  return 0;
+}
+function compareHebrewToGreg(rec, dt) {
+  if (!rec || !dt) return null;
+  if (!gregToHebrew(dt)) return 'intl_unknown';
+  var r = [0, -1, 1].map(function (off) { return cmpOne(rec, gregToHebrew(new Date(dt.getTime() + off * DAY_MS))); });
+  if (r[0] === 1) return 'match';
+  if (r[0] === 2) return 'ambiguous_adar';
+  if (r[1] === 1 || r[2] === 1) return 'off1';
+  if (r[1] === 2 || r[2] === 2) return 'ambiguous_adar';
+  return 'big';
 }
 
 var api = {
@@ -447,6 +518,11 @@ var api = {
   isLeapYear: isLeapYear,
   createCalendar: createCalendar,
   buildHebrewIcs: buildHebrewIcs,
+  hebrewYearInfo: hebrewYearInfo,
+  dayLetters: dayLetters,
+  formatHebrewYear: formatHebrewYear,
+  monthNameHe: monthNameHe,
+  compareHebrewToGreg: compareHebrewToGreg,
   toYMD: toYMD,
   isSupported: isSupported,
   DEFAULT_RULES: DEFAULT_RULES
