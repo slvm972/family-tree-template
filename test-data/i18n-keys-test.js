@@ -29,7 +29,8 @@ const ADDED = [
   'hm_kislev', 'hm_tevet', 'hm_shevat', 'hm_adar', 'hm_adar1', 'hm_adar2', 'hm_nisan', 'hm_iyar', 'hm_sivan',
   'hm_tamuz', 'hm_av', 'hm_elul', 'hw_day', 'hw_month', 'hw_year_num', 'hw_year_let', 'hw_fill_greg',
   'hw_sunset_note', 'hw_need_greg', 'hw_warn_mismatch', 'hw_legacy_hint', 'hw_legacy_redo', 'hw_clear',
-  'hw_err_incomplete', 'hw_err_day', 'hw_extra_mark', 'tooltip_hebrew_calendar', 'tooltip_reminders'
+  'hw_err_incomplete', 'hw_err_day', 'hw_extra_mark', 'tooltip_hebrew_calendar', 'tooltip_reminders',
+  'rc_login', 'rc_me_saved', 'calendar_no_dates'
 ];
 
 function skipWs(t, p) {

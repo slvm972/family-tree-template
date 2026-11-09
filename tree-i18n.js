@@ -453,7 +453,10 @@ const UI = {
     hw_err_day:'⚠ {label}: в этом месяце нет такого дня.',
     hw_extra_mark:'(как записано)',
     tooltip_hebrew_calendar:'Скачать календарь еврейских дат (дни рождения и йорцайты)',
-    tooltip_reminders: 'Семейные напоминания'
+    tooltip_reminders: 'Семейные напоминания',
+    rc_login:'\u0412\u043e\u0439\u0434\u0438\u0442\u0435, \u0447\u0442\u043e\u0431\u044b \u043d\u0430\u0441\u0442\u0440\u043e\u0438\u0442\u044c \u043d\u0430\u043f\u043e\u043c\u0438\u043d\u0430\u043d\u0438\u044f',
+    rc_me_saved:'\u2713 \u041a\u0440\u0443\u0433\u0438 \u043d\u0430\u043f\u043e\u043c\u0438\u043d\u0430\u043d\u0438\u0439 \u0442\u0435\u043f\u0435\u0440\u044c \u0441\u0447\u0438\u0442\u0430\u044e\u0442\u0441\u044f \u043e\u0442 \u044d\u0442\u043e\u0433\u043e \u0447\u0435\u043b\u043e\u0432\u0435\u043a\u0430',
+    calendar_no_dates:'⚠ Нет дат рождения для экспорта'
   },
   en: {
     toast_login_required_print:'🔒 Login to print the tree',
@@ -904,7 +907,10 @@ const UI = {
     hw_err_day:'⚠ {label}: this month has no such day.',
     hw_extra_mark:'(as recorded)',
     tooltip_hebrew_calendar:'Download Hebrew-date reminders (birthdays and yahrzeits)',
-    tooltip_reminders: 'Family reminders'
+    tooltip_reminders: 'Family reminders',
+    rc_login:'Log in to set up reminders',
+    rc_me_saved:'\u2713 Reminder circles are now counted from this person',
+    calendar_no_dates:'⚠ No birthdays to export'
   },
   he: {
     toast_login_required_print:'🔒 התחברו כדי להדפיס את העץ',
@@ -1355,6 +1361,9 @@ const UI = {
     hw_err_day:'⚠ {label}: אין יום כזה בחודש הזה.',
     hw_extra_mark:'(כפי שנרשם)',
     tooltip_hebrew_calendar:'הורדת תזכורות לפי התאריך העברי (ימי הולדת ויארצייט)',
-    tooltip_reminders: 'תזכורות משפחתיות'
+    tooltip_reminders: 'תזכורות משפחתיות',
+    rc_login:'\u05d4\u05ea\u05d7\u05d1\u05e8\u05d5 \u05db\u05d3\u05d9 \u05dc\u05d4\u05d2\u05d3\u05d9\u05e8 \u05ea\u05d6\u05db\u05d5\u05e8\u05d5\u05ea',
+    rc_me_saved:'\u2713 \u05de\u05e2\u05d2\u05dc\u05d9 \u05d4\u05ea\u05d6\u05db\u05d5\u05e8\u05d5\u05ea \u05e0\u05e1\u05e4\u05e8\u05d9\u05dd \u05db\u05e2\u05ea \u05de\u05d0\u05d3\u05dd \u05d6\u05d4',
+    calendar_no_dates:'⚠ אין תאריכי לידה לייצוא'
   }
 };
