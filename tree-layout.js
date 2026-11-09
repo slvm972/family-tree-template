@@ -12,6 +12,43 @@ const COUPLE_GAP  = 12;   // gap between focal and spouse
 const SIBLING_GAP = 22;   // gap between siblings / focal+spouse and sibling
 const LEVEL_H     = 168;  // vertical distance between generation rows
 
+// ── Значки скрытых родственников (углы карточки) ──────────
+// Центры значков заданы от левого верхнего угла карточки 150x100.
+const BADGE_R = 7;
+const BADGE_SLOTS = { spouses:[11,11], parents:[139,11], siblings:[11,89], children:[139,89] };
+const BADGE_GLYPH = { spouses:'\u2665', parents:'\u2191', siblings:'\u2194', children:'\u2193' };
+
+// Родственники персоны id, которых нет в текущем layout (visibleSet).
+// Источник истины — IDX.families (как в showPanel); Set убирает дубли семей.
+function computeHiddenRelatives(id, visibleSet){
+  const acc = { parents:new Set(), siblings:new Set(), spouses:new Set(), children:new Set() };
+  for(const f of Object.values(IDX.families)){
+    const kids = f.children || [];
+    if(kids.includes(id)){
+      if(f.husband) acc.parents.add(f.husband);
+      if(f.wife)    acc.parents.add(f.wife);
+      kids.forEach(c => acc.siblings.add(c));
+    }
+    if(f.husband === id || f.wife === id){
+      const sp = f.husband === id ? f.wife : f.husband;
+      if(sp) acc.spouses.add(sp);
+      kids.forEach(c => acc.children.add(c));
+    }
+  }
+  const res = {};
+  for(const k of Object.keys(acc)){
+    res[k] = [...acc[k]].filter(x => x !== id && IDX.nodes[x] && !visibleSet.has(x));
+  }
+  return res;
+}
+
+// Подсказка значка. У карточки супруга скрытые дети — это дети от других браков
+// (общие с фокальной персоной уже нарисованы).
+function badgeHint(kind, n, role){
+  const key = (kind === 'children' && role === 'spouse') ? 'hint_children_other' : 'hint_' + kind;
+  return t(key).replace('{n}', n);
+}
+
 // ── helpers ───────────────────────────────────────────────
 function py(s){ const m = s && s.match(/\d{4}/); return m ? +m[0] : 9999; }
 
@@ -27,7 +64,7 @@ function cardCol(id, role){
   if(role === 'focal') return {fill:'#1C4060', stroke:'#0C2840'};
   const n = IDX.nodes[id];
   if(!n) return {fill:'#888', stroke:'#555'};
-  const dead = !!(n.death && n.death !== '' && n.death !== 'ум.');
+  const dead = !!(n.death && n.death !== '');
   if(dead) return {fill:'#3A4A55', stroke:'#1A2A35'};
   return n.sex === 'M'
     ? {fill:'#1E4870', stroke:'#122840'}
@@ -75,8 +112,17 @@ function placeCouple(husband, wife, anchorX, y, role){
 // ════════════════════════════════════════════════════════
 function getCenteredLayout(focalId){
   const nmap = IDX.nodes;
-  const rel  = IDX.relatives[focalId];
-  const gps  = IDX.grandparents[focalId] || [];
+  const relRaw = IDX.relatives[focalId];
+  // Защита от «серых карточек»: в списках родственников могут остаться id людей,
+  // которых уже нет в IDX.nodes (удалены, кэш не пересчитан). Рисуем только существующих.
+  const rel = relRaw && {
+    ...relRaw,
+    parents:  (relRaw.parents  || []).filter(x => nmap[x]),
+    siblings: (relRaw.siblings || []).filter(x => nmap[x]),
+    spouses:  (relRaw.spouses  || []).filter(x => nmap[x]),
+    children: (relRaw.children || []).filter(x => nmap[x])
+  };
+  // NB: IDX.grandparents намеренно не читаем — см. комментарий у LEVEL −2 ниже.
   const fams = IDX.families;
   if(!rel) {
     console.warn('[getCenteredLayout] IDX.relatives[' + focalId + '] отсутствует — '
@@ -161,14 +207,20 @@ function getCenteredLayout(focalId){
   for(const pn of parentNodes) parentCX[pn.id] = pn.x + CW/2;
 
   // ── LEVEL −2: grandparents ────────────────────────────
-  // For each grandparent family, centre above the parent who is their child
-  // First compute raw positions
+  // Строим НАПРЯМУЮ из IDX.relatives (его поддерживают свежим все
+  // family-эндпоинты при любой правке), а НЕ из IDX.grandparents —
+  // тот кэш пересчитывается только вручную (POST /api/rebuild-cache,
+  // никем не вызывается автоматически) и протухает при любом
+  // создании/переносе семьи выше по цепочке предков. Раньше это
+  // приводило к тихому исчезновению дедов/бабок у части персон.
   const gpRaw = []; // [{nodes: [{id,x,y,role}], left, right}]
-  for(const gp of gps){
-    const parId = rel.parents.find(p => IDX.child_of[p] === gp.family);
-    if(!parId || !(parId in parentCX)) continue;
+  for(const parId of rel.parents){
+    if(!(parId in parentCX)) continue;
+    const parRel = IDX.relatives[parId];
+    if(!parRel || !parRel.parents || !parRel.parents.length) continue;
+    const [gpHusband, gpWife] = parRel.parents;
     const anchor = parentCX[parId];
-    const gpNodes = placeCouple(gp.husband, gp.wife, anchor, -2*LEVEL_H, 'grandparent');
+    const gpNodes = placeCouple(gpHusband, gpWife, anchor, -2*LEVEL_H, 'grandparent');
     if(!gpNodes.length) continue; // both grandparents missing from nodes — nothing to draw
     gpRaw.push({
       nodes: gpNodes,
@@ -236,7 +288,7 @@ function getCenteredLayout(focalId){
         ? (fNode.x + CW/2 + spouseNode.x + CW/2) / 2
         : fNode.x + CW/2;
       const kids = [...(fam.children||[])]
-        .filter(c => !placed.has(c))
+        .filter(c => nmap[c] && !placed.has(c))
         .sort((a,b) => py(nmap[a]?.birth) - py(nmap[b]?.birth));
       if(kids.length) familyGroups.push({ anchorX, kids });
     }
@@ -511,6 +563,8 @@ function render(focalId){
   // ── Layer 2: cards (drawn on top) ─────────────────────
   const cardG = svgEl('g', {id:'cards'}, svg);
 
+  const visibleSet = new Set(layout.nodes.map(x => x.id));
+
   for(const n of layout.nodes){
     const {fill, stroke} = cardCol(n.id, n.role);
     const nx = n.x + offX, ny = n.y + offY;
@@ -569,11 +623,15 @@ function render(focalId){
                              fill:'rgba(255,255,255,.5)','pointer-events':'none'},g);
     rl.textContent = ROLE_LABELS[n.role] || n.role;
 
-    // social media indicator (top-left corner) — only for authenticated users
-    if(ndata.social && _sessionPassword){
-      const si = svgEl('text',{x:nx+8,y:ny+15,'font-size':'11',
-                               'pointer-events':'none'},g);
-      si.textContent = '🔗';
+    // contact icons (phone, e-mail, social link): logged-in users only, living persons only.
+    // Which icons to show is decided by contactIconsFor() in tree-card-icons.js; position by CONTACT_ICONS there.
+    if(_sessionPassword && typeof contactIconsFor === 'function'){
+      const cIcons = contactIconsFor(ndata);
+      for(let ci = 0; ci < cIcons.length; ci++){
+        const cit = svgEl('text',{x:nx+CONTACT_ICONS.x+ci*CONTACT_ICONS.step,y:ny+CONTACT_ICONS.y,
+                                  'font-size':CONTACT_ICONS.size,'pointer-events':'none'},g);
+        cit.textContent = cIcons[ci];
+      }
     }
 
     // name
@@ -588,7 +646,7 @@ function render(focalId){
 
     // birth year + death year + Hebrew dates
     const by = ndata.birth ? (ndata.birth.match(/\d{4}/)||[''])[0] : '';
-    const dy = ndata.death && ndata.death !== 'ум.' ? (ndata.death.match(/\d{4}/)||[''])[0] : '';
+    const dy = ndata.death === 'ум.' ? '?' : (ndata.death ? (ndata.death.match(/\d{4}/)||[''])[0] : '');
     const bhe = ndata.birth_he || '';
     const dhe = ndata.death_he || '';
 
@@ -608,17 +666,36 @@ function render(focalId){
                                'text-anchor':'middle','font-size':'9',
                                'font-family':'Segoe UI,sans-serif',
                                fill:'rgba(255,255,255,.45)','pointer-events':'none'},g);
-      dt.textContent = '† ' + dy;
+      dt.textContent = t('died') + ' ' + dy;
       dateY += 12;
     }
     if(bhe || dhe){
-      const heText = [bhe ? bhe : null, dhe ? '† '+dhe : null].filter(Boolean).join('  ');
+      const heText = [bhe ? bhe : null, dhe ? t('died')+' '+dhe : null].filter(Boolean).join('  ');
       const ht = svgEl('text',{x:nx+CW/2, y:ny+CH-6,
                                'text-anchor':'middle','font-size':'7.5',
                                'font-family':'Segoe UI,Arial,sans-serif',
                                'direction':'rtl',
                                fill:'rgba(237,216,144,.55)','pointer-events':'none'},g);
       ht.textContent = heText;
+    }
+
+    // значки скрытых родственников (по углам карточки)
+    const hidden = computeHiddenRelatives(n.id, visibleSet);
+    for(const kind of Object.keys(BADGE_SLOTS)){
+      const list = hidden[kind];
+      if(!list.length) continue;
+      const [bx, by] = BADGE_SLOTS[kind];
+      const bg = svgEl('g', {}, g);
+      svgEl('circle', {cx:nx+bx, cy:ny+by, r:BADGE_R, fill:'#C09828',
+                       stroke:'#1C1208', 'stroke-width':'0.8'}, bg);
+      const bt = svgEl('text', {x:nx+bx, y:ny+by+3.5, 'text-anchor':'middle',
+                                'font-size':'10', 'font-weight':'bold',
+                                'font-family':'Segoe UI,sans-serif',
+                                fill:'#1C1208', 'pointer-events':'none'}, bg);
+      bt.textContent = BADGE_GLYPH[kind];
+      const ti = document.createElementNS(NS, 'title');
+      ti.textContent = badgeHint(kind, list.length, n.role);
+      bg.appendChild(ti);
     }
   }
 

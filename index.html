@@ -36,9 +36,10 @@ svg { transition: opacity 0.22s ease-out; }
 svg.fading { opacity: 0 !important; }
 
 /* ── BOTTOM INFO PANEL ── */
+:root { --panel-h: 220px; }
 #panel {
   position: fixed; left: 0; right: 0;
-  bottom: -220px; height: 220px;
+  bottom: calc(-1 * var(--panel-h)); height: var(--panel-h);
   background: #FAF7F0;
   border-top: 1px solid rgba(184,144,48,.28);
   box-shadow: 0 -3px 20px rgba(40,24,10,.13);
@@ -49,6 +50,18 @@ svg.fading { opacity: 0 !important; }
 #panel.open { bottom: 32px; }
 #panel::-webkit-scrollbar { height: 3px; }
 #panel::-webkit-scrollbar-thumb { background: rgba(184,144,48,.3); border-radius: 2px; }
+/* resize handle (drag the panel's top edge) */
+#panel-resize {
+  position: absolute; top: 0; left: 0; right: 0; height: 10px;
+  cursor: ns-resize; touch-action: none; z-index: 0;
+}
+#panel-resize::after {
+  content: ''; position: absolute; top: 3px; left: 50%; width: 40px; height: 3px;
+  margin-left: -20px; border-radius: 2px; background: #B89030; opacity: .55;
+}
+#panel-resize:hover::after { opacity: .9; }
+body.panel-resizing { user-select: none; cursor: ns-resize; }
+body.panel-resizing #panel, body.panel-resizing #vp { transition: none !important; }
 
 /* panel inner layout: horizontal flex */
 #panel-inner {
@@ -82,7 +95,7 @@ svg.fading { opacity: 0 !important; }
   line-height: 1.35; padding-right: 20px; margin-bottom: 3px;
 }
 /* viewport shrinks when panel open */
-#vp.panel-open { bottom: 252px; }
+#vp.panel-open { bottom: calc(32px + var(--panel-h)); }
 .p-rel {
   font-size: .6rem; text-transform: uppercase; letter-spacing: .09em;
   color: #B89030; font-weight: 700; margin-bottom: 10px; display: block;
@@ -116,7 +129,7 @@ body.rtl #panel { direction: rtl; }
 body.rtl #panel-col1 { border-right: none; border-left: 1px solid rgba(184,144,48,.18); }
 body.rtl #panel-close { right: auto; left: 11px; }
 body.rtl #modal { direction: rtl; }
-body.rtl #help-bubble { direction: rtl; text-align: right; }
+
 body.rtl #bbar { direction: ltr; } /* keep lang buttons on right */
 body.rtl #info { direction: rtl; text-align: right; }
 @keyframes cardIn {
@@ -204,16 +217,40 @@ svg{position:absolute;top:0;left:0;overflow:visible}
 .mbtn-email:hover{background:#1B5E20}
 .mbtn-close{margin-right:auto;background:none;border:none;color:#aaa;font-size:1.1rem;cursor:pointer;line-height:1;padding:0 4px}
 .mbtn-close:hover{color:#555}
+/* ── Date widget (birth/death: exact / year-only / unknown) ── */
+#modal .datew label.dw-opt{display:flex;align-items:center;gap:6px;margin:3px 0;font-size:.8rem;font-weight:400;
+  text-transform:none;letter-spacing:0;color:#28180A;cursor:pointer}
+#modal .datew input[type=radio]{width:auto;padding:0;margin:0;flex-shrink:0}
+#modal .datew .dw-row{display:flex;gap:6px;margin-top:6px}
+#modal .datew .dw-row select{flex:1 1 0;min-width:0}
+#modal .datew .dw-row input{flex:1.3 1 0;min-width:0}
+#modal .datew .dw-panel{margin-top:4px}
+#modal .datew .dw-legacy-val{background:#EDE4D3;color:#5A3C10}
+#modal .datew .dw-hint{font-size:.7rem;color:#A03818;line-height:1.5;margin-top:4px}
+#modal .datew .dw-restore{margin-top:6px;font-size:.7rem;padding:2px 8px;background:rgba(184,144,48,.12);
+  border:1px solid rgba(184,144,48,.35);border-radius:3px;cursor:pointer;color:#7A5828}
 /* help tooltip */
-#help-bubble{display:none;position:fixed;top:52px;right:14px;width:280px;background:#1C1208;
-             color:#EDD890;font-size:.75rem;padding:12px 14px;border-radius:6px;z-index:600;
-             box-shadow:0 4px 20px rgba(0,0,0,.4);line-height:1.5}
+#help-bubble{display:none;position:fixed;top:52px;right:14px;width:340px;max-width:calc(100vw - 28px);
+  background:#1C1208;color:#EDD890;font-size:.75rem;padding:12px 14px;border-radius:6px;z-index:600;
+  box-shadow:0 4px 20px rgba(0,0,0,.4);line-height:1.5;max-height:calc(100vh - 70px);overflow-y:auto}
 #help-bubble.open{display:block}
-#help-bubble b{display:block;margin-bottom:4px;font-size:.8rem}
-#help-bubble ol{padding-left:16px;margin-top:4px}
-#help-bubble li{margin-bottom:3px}
+#help-bubble .hb-title{font-size:.9rem;font-weight:700;margin-bottom:2px}
+#help-bubble .hb-sec{margin-top:10px}
+#help-bubble .hb-h{font-size:.8rem;font-weight:700;color:#C09828;margin-bottom:3px}
+#help-bubble details.hb-sec>summary{cursor:pointer;margin-bottom:0}
+#help-bubble details.hb-sec[open]>summary{margin-bottom:3px}
+#help-bubble ul{padding-left:16px;margin:0}
+#help-bubble li{margin-bottom:4px}
+#help-bubble strong{color:#FFF3C4}
+#help-bubble .lg-title{padding-top:8px;border-top:1px solid rgba(237,216,144,.25)}
+#help-bubble .lg-row{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+#help-bubble .lg-b{flex:0 0 auto;width:16px;height:16px;border-radius:50%;background:#C09828;color:#1C1208;
+  font-weight:bold;font-size:.7rem;line-height:16px;text-align:center}
+#help-bubble .lg-s{flex:0 0 auto;width:16px;text-align:center;font-size:.8rem}
+#help-bubble .lg-tip{margin-top:6px;opacity:.7}
+body.rtl #help-bubble{direction:rtl;text-align:right}
+body.rtl #help-bubble ul{padding-left:0;padding-right:16px}
 </style>
-<meta name="google-site-verification" content="0mfHbYZJTNf3PHRdvUqMWSLbdMTccwxR9pJKcCPMH_4" />
 </head>
 <body>
 <div id="tb">
@@ -230,7 +267,9 @@ svg{position:absolute;top:0;left:0;overflow:visible}
   <button class="btn" id="btn-print" style="background:rgba(237,216,144,.15);border-color:rgba(237,216,144,.4)" title="Печать A1" data-title="title_print">🖨</button>
   <button class="btn" id="btn-contacts" style="background:rgba(237,216,144,.15);border-color:rgba(237,216,144,.4)" title="Скачать контакты" data-title="title_contacts">📇</button>
   <button class="btn" id="btn-calendar" style="background:rgba(237,216,144,.15);border-color:rgba(237,216,144,.4)" title="Скачать календарь дней рождения" data-title="title_calendar">📅</button>
+  <button class="btn" id="btn-hebrew-calendar" style="background:rgba(237,216,144,.15);border-color:rgba(237,216,144,.4)" data-title="title_hebrew_calendar">&#128334;</button>
   <button class="btn" id="btn-login" style="background:rgba(237,216,144,.15);border-color:rgba(237,216,144,.4)" title="Войти" data-title="login_btn">🔑</button>
+  <button class="btn" id="btn-backup" style="background:rgba(237,216,144,.15);border-color:rgba(237,216,144,.4)" title="Скачать резервную копию (JSON)" data-title="tooltip_backup">📦</button>
   <button class="btn" id="btn-admin-panel" style="display:none;background:rgba(237,216,144,.15);border-color:rgba(237,216,144,.4)" title="Управление" data-title="title_admin" data-i="ap_toolbar_btn">🛠 Управление</button>
   <button class="btn" id="btn-diag" style="padding:4px 8px;opacity:.5;font-size:.65rem" title="Диагностика" data-title="title_diag">⚙</button>
   <button class="btn" id="btn-help" style="padding:4px 8px;opacity:.7">?</button>
@@ -246,6 +285,7 @@ svg{position:absolute;top:0;left:0;overflow:visible}
 </div>
 <!-- ── BOTTOM INFO PANEL ── -->
 <div id="panel" class="open">
+  <div id="panel-resize" role="separator" aria-orientation="horizontal"></div>
   <button id="panel-close">×</button>
   <div id="panel-inner">
     <div id="panel-col1"></div>
@@ -266,6 +306,7 @@ svg{position:absolute;top:0;left:0;overflow:visible}
     <div class="mtype" data-type="bio" data-i="mtype_bio">📝 Биография</div>
     <div class="mtype" data-type="date" data-i="mtype_date">📅 Дата / место</div>
     <div class="mtype" data-type="fix" data-i="mtype_fix">🔧 Исправить</div>
+    <div class="mtype" data-type="attach" data-i="mtype_attach">🔗 Прикрепить</div>
   </div>
 
   <!-- Поля: Новый человек -->
@@ -275,9 +316,13 @@ svg{position:absolute;top:0;left:0;overflow:visible}
     <label data-i="lbl_sex">Пол</label>
     <select id="f-sex"><option value="" data-i="sex_choose">— выбрать —</option><option value="F" data-i="sex_f">Женский</option><option value="M" data-i="sex_m">Мужской</option></select>
     <label data-i="lbl_birth">Дата рождения</label>
-    <input id="f-birth" type="text" data-ph="ph_birth" placeholder="Например: 15 марта 1975">
+    <div id="f-birth" data-dw-kind="birth"></div>
     <label data-i="lbl_death">Дата смерти (если есть)</label>
-    <input id="f-death" type="text" data-ph="ph_death" placeholder="оставьте пустым если жив(а)">
+    <div id="f-death" data-dw-kind="death"></div>
+    <label data-i="lbl_father">Отец</label>
+    <input id="f-father" type="text" list="names-list" data-ph="ph_search" placeholder="Начните вводить имя...">
+    <label data-i="lbl_mother">Мать</label>
+    <input id="f-mother" type="text" list="names-list" data-ph="ph_search" placeholder="Начните вводить имя...">
     <label data-i="lbl_rel_person">Связь с кем</label>
     <input id="f-rel-person" type="text" list="names-list" data-ph="ph_search" placeholder="Начните вводить имя...">
     <label data-i="lbl_rel_type">Тип связи</label>
@@ -346,10 +391,10 @@ svg{position:absolute;top:0;left:0;overflow:visible}
     </div>
 
     <label data-i="fix_birth">Дата рождения</label>
-    <input id="ff-birth" type="text" data-ph="ph_birth" placeholder="Например: 15 марта 1975">
+    <div id="ff-birth" data-dw-kind="birth"></div>
 
     <label data-i="fix_death">Дата смерти</label>
-    <input id="ff-death" type="text" data-ph="ph_death" placeholder="оставьте пустым если жив(а)">
+    <div id="ff-death" data-dw-kind="death"></div>
 
     <label data-i="fix_birth_he">Дата рождения (еврейский календарь)</label>
     <input id="ff-birth-he" type="text" data-ph="ph_birth_he" placeholder="например: יג ניסן תשל״א">
@@ -377,6 +422,12 @@ svg{position:absolute;top:0;left:0;overflow:visible}
     <label data-i="fix_rel">Степень родства</label>
     <input id="ff-rel" type="text" data-ph="ph_rel" placeholder="например: Зять">
 
+    <label data-i="lbl_father" style="margin:10px 0 3px;display:block">Отец</label>
+    <input id="ff-father" type="text" list="names-list" data-ph="ph_search" placeholder="Начните вводить имя...">
+    <label data-i="lbl_mother" style="margin:10px 0 3px;display:block">Мать</label>
+    <input id="ff-mother" type="text" list="names-list" data-ph="ph_search" placeholder="Начните вводить имя...">
+    <p style="font-size:.68rem;color:#7A5828;margin:2px 0 10px;line-height:1.4" data-i="hint_fix_parents">Оставьте пустым, чтобы сделать родителя неизвестным. Не трогайте поле, чтобы оставить как есть.</p>
+
     <label data-i="fix_family">Семейная связь (что изменить)</label>
     <textarea id="ff-family" data-ph="ph_family" placeholder="например: добавить мужа / убрать связь / изменить родителя"></textarea>
 
@@ -387,6 +438,24 @@ svg{position:absolute;top:0;left:0;overflow:visible}
     <input id="f-fix-comment" type="text" data-ph="ph_comment" placeholder="Источник, пояснение...">
   </div>
 
+
+    <!-- Поля: Прикрепить существующего -->
+  <div class="mfields" id="mf-attach">
+    <label data-i="lbl_attach_existing">Кого прикрепить</label>
+    <input id="f-attach-existing" type="text" list="names-list" data-ph="ph_search" placeholder="Начните вводить имя...">
+    <label data-i="lbl_attach_target">К кому</label>
+    <input id="f-attach-target" type="text" list="names-list" data-ph="ph_search" placeholder="Начните вводить имя...">
+    <label data-i="lbl_rel_type">Тип связи</label>
+    <select id="f-attach-type">
+      <option value="" data-i="rel_choose">— выбрать —</option>
+      <option value="жена" data-i="rel_wife">Жена</option>
+      <option value="муж" data-i="rel_husband">Муж</option>
+      <option value="ребёнок" data-i="rel_child">Ребёнок</option>
+      <option value="родитель" data-i="rel_parent">Родитель</option>
+      <option value="брат" data-i="rel_brother">Брат</option>
+      <option value="сестра" data-i="rel_sister">Сестра</option>
+    </select>
+  </div>
 
   <datalist id="names-list"></datalist>
 
@@ -404,17 +473,7 @@ svg{position:absolute;top:0;left:0;overflow:visible}
 </div>
 
 <!-- ── HELP BUBBLE ── -->
-<div id="help-bubble">
-  <b>Как дополнить дерево?</b>
-  <ol>
-    <li>Нажмите «✏️ Дополнить» и заполните форму</li>
-    <li>Скопируйте сформированный запрос</li>
-    <li>Откройте <b>claude.ai</b></li>
-    <li>Загрузите этот HTML-файл</li>
-    <li>Вставьте скопированный текст и отправьте</li>
-    <li>Скачайте обновлённый файл</li>
-  </ol>
-</div>
+<div id="help-bubble"></div>
 
 <!-- ── DIAGNOSTIC PANEL ── -->
 <div id="diag-overlay">
@@ -442,17 +501,17 @@ svg{position:absolute;top:0;left:0;overflow:visible}
 
     <!-- Tab: Upload -->
     <div class="ap-panel" data-ap-panel="upload">
-      <h4 data-i="ap_section_import_html" style="font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:#B89030;margin-bottom:6px">Импорт из HTML-файла дерева</h4>
+      <h4 data-i="ap_section_import_html" style="font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:#B89030;margin-bottom:6px">Загрузка дерева из файла (.json или .html)</h4>
       <p data-i="ap_upload_intro" style="font-size:.78rem;color:#7A5828;margin-bottom:10px">
-        Загрузите обновлённый HTML-файл дерева — данные будут извлечены и сохранены на сервере.
+        Загрузите файл дерева (.json), скачанный кнопкой 📦 или исправленный в Claude, — перед заменой вы увидите, что изменится, и сможете отказаться. Принимаются и старые HTML-файлы дерева.
         Предыдущая версия автоматически сохранится как резервная копия.
       </p>
       <div id="ap-upload-drop" style="border:2px dashed rgba(184,144,48,.4);border-radius:6px;padding:20px;text-align:center;cursor:pointer">
         <div style="font-size:1.6rem">📂</div>
-        <div data-i="ap_upload_choose" style="font-weight:600;margin-top:6px;font-size:.82rem;color:#5A3C10">Выберите HTML-файл дерева</div>
+        <div data-i="ap_upload_choose" style="font-weight:600;margin-top:6px;font-size:.82rem;color:#5A3C10">Выберите файл дерева (.json)</div>
         <p data-i="ap_upload_drop_hint" style="font-size:.7rem;color:#999;margin-top:4px">или перетащите файл сюда</p>
       </div>
-      <input type="file" id="ap-upload-input" accept=".html" style="display:none">
+      <input type="file" id="ap-upload-input" accept=".json,.html" style="display:none">
       <div id="ap-upload-status" style="margin-top:10px;font-size:.78rem"></div>
 
       <h4 data-i="ap_section_import_gedcom" style="font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:#B89030;margin:20px 0 6px;padding-top:16px;border-top:1px solid rgba(184,144,48,.2)">Импорт из GEDCOM (.ged)</h4>
@@ -525,13 +584,14 @@ svg{position:absolute;top:0;left:0;overflow:visible}
 //  setting up their own tree from this template.
 // ════════════════════════════════════════════════════════
 const TREE_CONFIG = {
-  familyNameRu: 'Демо-семья',
-  familyNameEn: 'Demo Family',
-  familyNameHe: 'משפחת הדגמה',
-  ownerEmail:   'slvm972@gmail.com',
-  workerUrl:    'https://family-tree-demo-api.slvm972.workers.dev',
-  fileSlug:     'demo',   // used in filenames: {slug}-birthdays.ics, {slug}-contacts.vcf
-  calendarUidDomain: 'demo.example',
+  familyNameRu: 'Ваша семья',
+  familyNameEn: 'Your Family',
+  familyNameHe: 'המשפחה שלכם',
+  ownerEmail:   'CHANGE_ME@example.com',
+  workerUrl:    'https://REPLACE_AFTER_DEPLOY.workers.dev',
+  fileSlug:     'family',   // used in filenames: {slug}-birthdays.ics, {slug}-contacts.vcf
+  calendarUidDomain: 'family-tree',
+  startPage:    '',   // необязательно: адрес стартовой страницы (например '/'). Пусто = окно пароля внутри дерева
   // Quick-access toolbar shortcuts. Each entry: { id: personId, label: {ru,en,he} }
   // For a brand new tree, leave this array empty — the buttons simply won't
   // render. As the tree grows, the owner can add key figures here.
@@ -555,7 +615,11 @@ if (typeof location !== 'undefined' &&
 let IDX = null;
 const FALLBACK_DATA = {"nodes":{},"families":{},"child_of":{},"parent_in":{},"relatives":{},"grandparents":{}};
 </script>
+<script src="tree-card-icons.js"></script>
 <script src="tree-layout.js"></script>
+<script src="tree-kinship.js"></script>
+<script src="tree-hebrew.js"></script>
+<script src="tree-reminders.js"></script>
 <script>
 
 // ════════════════════════════════════════════════════════
@@ -654,17 +718,213 @@ function pLink(id){
   </div>`;
 }
 
-// navigate from panel link: update panel + navigate tree
+// ════════════════════════════════════════════════════════
+//  FAMILY LINKS EDITING (admin only): ✂ detach from one parent,
+//  ✕ unlink child from a family, 🗑 delete an empty marriage.
+//  After every change the server rebuilds derived caches
+//  (POST /api/rebuild-cache) and the tree is re-read, focus is kept.
+// ════════════════════════════════════════════════════════
+function famAdmin(){ return !!(_sessionPassword && window._userRole === 'admin' && WORKER_URL); }
+function tfmt(key, vars){
+  let s = t(key);
+  for(const k in (vars || {})) s = s.split('{' + k + '}').join(vars[k]);
+  return s;
+}
+function famPersonName(id){ return IDX.nodes[id] ? pname(id) : id; }
+function famLabel(fam, famId){
+  return [fam.husband ? famPersonName(fam.husband) : null, fam.wife ? famPersonName(fam.wife) : null]
+    .filter(Boolean).join(' + ') || famId;
+}
+async function famApi(method, path, body){
+  const headers = { 'X-Password': _sessionPassword };
+  if(body) headers['Content-Type'] = 'application/json';
+  const res = await fetch(WORKER_URL + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
+  const d = await res.json().catch(() => null);
+  if(!d || !d.ok) throw new Error((d && d.error) || t('toast_server_error'));
+  return d;
+}
+async function afterFamilyEdit(){
+  await famApi('POST', '/api/rebuild-cache');
+  const res = await fetch(WORKER_URL + '/api/tree', { headers: { 'X-Password': _sessionPassword } });
+  if(!res.ok) throw new Error(t('toast_server_error'));
+  IDX = await res.json();
+  buildDatalist();
+  const keep = (currentFocal && IDX.nodes[currentFocal]) ? currentFocal : Object.keys(IDX.nodes)[0];
+  if(keep){ currentFocal = keep; render(keep); }
+}
+
+// Parent line in the "Parents" section; ✂ only when a second parent exists
+function pLinkParent(id, childId, otherParentId){
+  const n = IDX.nodes[id]; if(!n) return '';
+  const yr = pyear(n.birth);
+  const scissors = (!!otherParentId && famAdmin())
+    ? `<span onclick="event.stopPropagation();detachSingleParent('${childId}','${id}','${otherParentId}')"
+         title="${t('fam_detach_tip')}" style="cursor:pointer;opacity:.5;font-size:.75rem;padding:2px 4px"
+         onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.5">✂</span>` : '';
+  return `<div class="p-lnk" style="display:flex;align-items:center;justify-content:space-between;gap:6px">
+    <span onclick="panelNavigate('${id}')" style="cursor:pointer;flex:1">${pname(id)}${yr?` <span style="color:#7A5828;font-size:.64rem">(${yr})</span>`:''}</span>
+    ${scissors}
+  </div>`;
+}
+
+// Child line in the "Children" section; ✕ unlinks from THIS family
+function pLinkChild(id, famId, isAdmin){
+  const n = IDX.nodes[id]; if(!n) return '';
+  const yr = pyear(n.birth);
+  const rm = (isAdmin && famId)
+    ? `<button onclick="event.stopPropagation(); confirmRemoveChild('${famId}','${id}')"
+         title="${t('fam_unlink_tip')}"
+         style="font-size:.62rem;padding:0 5px;background:none;border:none;cursor:pointer;color:#A02020;opacity:.55">✕</button>` : '';
+  return `<div class="p-lnk" style="display:flex;align-items:center;gap:2px" onclick="panelNavigate('${id}')">
+    <span style="flex:1">${pname(id)}${yr?` <span style="color:#7A5828;font-size:.64rem">(${yr})</span>`:''}</span>${rm}
+  </div>`;
+}
+
+async function confirmRemoveChild(famId, childId){
+  if(!famAdmin()) return;
+  const fam = IDX.families[famId]; if(!fam) return;
+  if(!confirm(tfmt('fam_unlink_confirm', { child: famPersonName(childId), label: famLabel(fam, famId) }))) return;
+  try {
+    await famApi('PATCH', '/api/family/' + famId, { removeChild: childId });
+    await afterFamilyEdit();
+    showToast(t('fam_unlinked_toast'), false);
+  } catch(e){ showToast('⚠ ' + e.message, true); }
+}
+
+// Detach a child from ONE parent: move it into a family where keepId is the
+// only parent (existing one is reused, otherwise created). Order matters:
+// remove from the old family first, then add to the new one.
+async function detachSingleParent(childId, removeId, keepId){
+  if(!famAdmin()) return;
+  const oldFamId = IDX.child_of[childId];
+  const oldFam = oldFamId && IDX.families[oldFamId];
+  if(!oldFam){ showToast('⚠ ' + t('fam_err_no_family'), true); return; }
+  if(!confirm(tfmt('fam_detach_confirm', { child: famPersonName(childId), parent: famPersonName(removeId), keep: famPersonName(keepId) }))) return;
+  let removed = false, added = false;
+  try {
+    let target = null;
+    for(const [fid, f] of Object.entries(IDX.families)){
+      const sole = (f.husband === keepId && !f.wife) || (f.wife === keepId && !f.husband);
+      if(sole && !(f.children || []).includes(childId)){ target = fid; break; }
+    }
+    if(!target){
+      const body = oldFam.husband === keepId
+        ? { parent1: keepId, parent2: null, children: [] }
+        : { parent1: null, parent2: keepId, children: [] };
+      target = (await famApi('POST', '/api/family', body)).familyId;
+    }
+    await famApi('PATCH', '/api/family/' + oldFamId, { removeChild: childId });
+    removed = true;
+    await famApi('PATCH', '/api/family/' + target, { addChild: childId });
+    added = true;
+    await afterFamilyEdit();
+    showToast(t('fam_detached_toast'), false);
+  } catch(e){
+    if(removed && !added){ try { await famApi('PATCH', '/api/family/' + oldFamId, { addChild: childId }); } catch(_){} }
+    try { await afterFamilyEdit(); } catch(_){}
+    showToast('⚠ ' + e.message, true);
+  }
+}
+
+async function confirmDeleteFamily(famId){
+  if(!famAdmin()) return;
+  const fam = IDX.families[famId]; if(!fam) return;
+  if(fam.children && fam.children.length > 0){ alert(t('fam_delete_blocked')); return; }
+  if(!confirm(tfmt('fam_delete_confirm', { label: famLabel(fam, famId) }))) return;
+  try {
+    await famApi('DELETE', '/api/family/' + famId);
+    await afterFamilyEdit();
+    showToast(t('fam_deleted_toast'), false);
+  } catch(e){ showToast('⚠ ' + e.message, true); }
+}// navigate from panel link: update panel + navigate tree
 function panelNavigate(id){
   showPanel(id);
   navigateTo(id);
 }
 
+/** Resolve a typed name / "Name (year) [Pid]" from the datalist to a person id. */
+function resolvePersonQuery(q) {
+  if (!q || !IDX || !IDX.nodes) return null;
+  q = q.trim();
+  if (!q) return null;
+  if (IDX.nodes[q]) return q;
+  const m = q.match(/\[(P\d+)\]\s*$/i);
+  if (m && IDX.nodes[m[1]]) return m[1];
+  const lower = q.toLowerCase();
+  for (const [id, n] of Object.entries(IDX.nodes)) {
+    if ((n.name || '').toLowerCase() === lower) return id;
+  }
+  for (const [id, n] of Object.entries(IDX.nodes)) {
+    if ((n.name || '').toLowerCase().startsWith(lower)) return id;
+  }
+  for (const [id, n] of Object.entries(IDX.nodes)) {
+    if ((n.name || '').toLowerCase().includes(lower)) return id;
+  }
+  return null;
+}
+
+/**
+ * Panel action: how the viewed person (idB) relates to the person in #kin-other (idA).
+ */
+function panelCheckKinship(idB) {
+  const input = document.getElementById('kin-other');
+  const out = document.getElementById('kin-result');
+  if (!out) return;
+  const q = input ? input.value : '';
+  const idA = resolvePersonQuery(q);
+  if (!idA) {
+    out.style.color = '#A03818';
+    out.textContent = currentLang === 'he' ? 'לא נמצא אדם כזה'
+                    : currentLang === 'en' ? 'Person not found'
+                    : 'Человек не найден — выберите из списка';
+    return;
+  }
+  if (typeof TreeKinship === 'undefined' || !TreeKinship.explainKinship) {
+    out.style.color = '#A03818';
+    out.textContent = 'tree-kinship.js not loaded';
+    return;
+  }
+  // X (открытая персона) — <term> для Y (введённая): X = idB, Y = idA
+  const r = TreeKinship.explainKinship(IDX, idB, idA, currentLang || 'ru', pname);
+  out.style.color = r.found ? '#28180A' : '#A03818';
+  out.textContent = r.message;
+  try { sessionStorage.setItem('kin_last_query', q); } catch (e) {}
+}
+
+// Kinship panel: Enter in #kin-other triggers check
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter') return;
+  const el = document.getElementById('kin-other');
+  if (!el || document.activeElement !== el) return;
+  e.preventDefault();
+  const idB = el.getAttribute('data-panel-id');
+  if (idB) panelCheckKinship(idB);
+});
+
+
+// ---- Yahrzeit reminders: personal choice, stored only in this browser (localStorage, never sent to the server) ----
+function yzKey(){ return 'yahrzeit_sel_' + (TREE_CONFIG.fileSlug || 'family'); }
+function rawYahrzeitSel(){
+  try {
+    const arr = JSON.parse(localStorage.getItem(yzKey()) || '[]');
+    return Array.isArray(arr) ? arr.filter(x => typeof x === 'string') : [];
+  } catch(e){ return []; }
+}
+function getYahrzeitSel(){ return rawYahrzeitSel().filter(x => IDX && IDX.nodes && IDX.nodes[x]); }
+function setYahrzeitSel(ids){ try { localStorage.setItem(yzKey(), JSON.stringify(ids)); } catch(e){} }
+function toggleYahrzeit(id, on){
+  const cur = rawYahrzeitSel().filter(x => x !== id);
+  if(on) cur.push(id);
+  setYahrzeitSel(cur);
+}
+function dropYahrzeit(id){ setYahrzeitSel(rawYahrzeitSel().filter(x => x !== id)); }
+
 function showPanel(id){
   const n = IDX.nodes[id]; if(!n) return;
 
-  const parents=[], spouses=[], children=[];
-  for(const [,f] of Object.entries(IDX.families)){
+  const parents=[], spouses=[], children=[], marriages=[];
+  const childFamOf = {};
+  for(const [famId,f] of Object.entries(IDX.families)){
     if((f.children||[]).includes(id)){
       if(f.husband && IDX.nodes[f.husband]) parents.push(f.husband);
       if(f.wife    && IDX.nodes[f.wife])    parents.push(f.wife);
@@ -672,8 +932,9 @@ function showPanel(id){
     if(f.husband===id || f.wife===id){
       const sp = f.husband===id ? f.wife : f.husband;
       if(sp && IDX.nodes[sp] && !spouses.includes(sp)) spouses.push(sp);
+      marriages.push({ famId, spouseId: (sp && IDX.nodes[sp]) ? sp : null, childCount: (f.children||[]).length });
       (f.children||[]).forEach(c=>{
-        if(IDX.nodes[c]&&!children.includes(c)) children.push(c);
+        if(IDX.nodes[c]&&!children.includes(c)){ children.push(c); childFamOf[c] = famId; }
       });
     }
   }
@@ -698,7 +959,7 @@ function showPanel(id){
       border:1px solid rgba(192,48,48,.3);border-radius:3px;cursor:pointer;color:#A02020;
       white-space:nowrap;flex-shrink:0">🗑 ${currentLang==='he'?'מחק':currentLang==='en'?'Delete':'Удалить'}</button>` : ''}
   </h2>`;
-  if(n.rel) col1 += `<span class="p-rel">${trel(n.rel)}</span>`;
+  if(n.rel) col1 += `<span class="p-rel">${relText(n)}</span>`;
   col1 += `<div class="p-block">`;
   if(b) col1 += `<div><span class="p-lbl">${t('birth')}</span> <strong>${b}</strong>${n.birth_he?` <span class="p-hw" dir="rtl">${n.birth_he}</span>`:''}</div>`;
   if(d) col1 += `<div style="margin-top:3px"><span class="p-lbl">${t('death')}</span> <strong>${d}</strong>${n.death_he?` <span class="p-hw" dir="rtl">${n.death_he}</span>`:''}</div>`;
@@ -707,6 +968,12 @@ function showPanel(id){
   if(!b&&!d&&!n.bp&&!n.dp) col1 += `<em style="color:#7A5828;font-size:.72rem">${t('no_dates')}</em>`;
   col1 += `</div>`;
   if(n.missing&&n.missing.length) col1 += `<p class="p-warn">${t('missing')} ${n.missing.join(', ')}</p>`;
+  // Yahrzeit reminder: personal choice (any logged-in role), kept only in this browser
+  if(_sessionPassword && n.death_he && String(n.death_he).trim()){
+    const yzOn = getYahrzeitSel().indexOf(id) >= 0;
+    col1 += `<label style="display:block;margin-top:8px;font-size:.72rem;color:#5A3C10;cursor:pointer">
+      <input type="checkbox" ${yzOn ? 'checked' : ''} onchange="toggleYahrzeit('${id}', this.checked)"> ${t('yahrzeit_remind')}</label>`;
+  }
   // Contacts: only shown to authenticated users (guest or admin)
   const isAuth = !!(_sessionPassword);
   const hasContacts = n.phone || n.email || n.social;
@@ -724,14 +991,57 @@ function showPanel(id){
   }
   if(!isFocal) col1 += `<button class="p-nav-btn" onclick="navigateTo('${id}')">${t('show_tree')}</button>`;
 
+  // ── Kinship checker ──
+  col1 += `<div class="p-sec" id="kin-block" style="margin-top:10px">
+    <h3>${currentLang==='he'?'קרבה משפחתית':currentLang==='en'?'Relationship':'Кем приходится'}</h3>
+    <div style="font-size:.68rem;color:#7A5828;margin-bottom:4px">
+      ${currentLang==='he'?'ביחס ל:':currentLang==='en'?'Relative to:':'Относительно:'}
+    </div>
+    <div style="display:flex;gap:4px;align-items:center">
+      <input id="kin-other" type="text" list="names-list" autocomplete="off"
+        data-panel-id="${id}"
+        placeholder="${currentLang==='he'?'הקלד שם...':currentLang==='en'?'Type a name...':'Введите имя...'}"
+        style="flex:1;min-width:0;padding:4px 7px;border:1px solid rgba(184,144,48,.35);border-radius:3px;
+               font-size:.72rem;font-family:inherit;background:#FFFDF7;color:#28180A">
+      <button type="button" onclick="panelCheckKinship('${id}')"
+        style="flex-shrink:0;padding:4px 8px;font-size:.68rem;background:#1E4870;color:#fff;border:none;
+               border-radius:3px;cursor:pointer;font-family:inherit">
+        ${currentLang==='he'?'בדוק':currentLang==='en'?'Check':'Показать'}
+      </button>
+    </div>
+    <div id="kin-result" style="margin-top:6px;font-size:.72rem;line-height:1.55;color:#28180A;white-space:pre-wrap"></div>
+  </div>`;
+
   // ── Column 2: relatives ──
   let col2 = '';
-  if(parents.length)  col2 += `<div class="p-sec"><h3>${t('parents')}</h3>${parents.map(pLink).join('')}</div>`;
+  const isAdminFam = famAdmin();
+  if(parents.length)  col2 += `<div class="p-sec"><h3>${t('parents')}</h3>${parents.map(pid => pLinkParent(pid, id, parents.find(p => p !== pid) || null)).join('')}</div>`;
   if(spouses.length)  col2 += `<div class="p-sec"><h3>${spouses.length>1?t('spouses'):t('spouse')}</h3>${spouses.map(pLink).join('')}</div>`;
-  if(children.length) col2 += `<div class="p-sec"><h3>${t('children')} (${children.length})</h3>${children.map(pLink).join('')}</div>`;
+  if(children.length) col2 += `<div class="p-sec"><h3>${t('children')} (${children.length})</h3>${children.map(cId => pLinkChild(cId, childFamOf[cId], isAdminFam)).join('')}</div>`;
 
-  document.getElementById('panel-col1').innerHTML = col1;
+  // ── Marriages management (admin only): delete an EMPTY marriage ──
+  if(isAdminFam && marriages.length){
+    col2 += `<div class="p-sec"><h3>${t('fam_marriages_title')}</h3>`;
+    for(const m of marriages){
+      const spouseName = m.spouseId ? pname(m.spouseId) : t('fam_no_spouse');
+      const childNote = m.childCount > 0
+        ? ` <span style="color:#A88040;font-size:.62rem">(${t('fam_children_n')}: ${m.childCount})</span>` : '';
+      const delBtn = m.childCount === 0
+        ? `<button onclick="confirmDeleteFamily('${m.famId}')" title="${t('fam_delete_tip')}" style="font-size:.62rem;padding:1px 6px;background:rgba(192,48,48,.1);
+             border:1px solid rgba(192,48,48,.3);border-radius:3px;cursor:pointer;color:#A02020">🗑</button>`
+        : `<span title="${t('fam_reassign_first')}" style="font-size:.62rem;opacity:.35;cursor:not-allowed">🗑</span>`;
+      col2 += `<div style="display:flex;align-items:center;gap:6px;padding:3px 7px;font-size:.74rem;color:#28180A">
+        <span style="flex:1">${spouseName}${childNote}</span>${delBtn}
+      </div>`;
+    }
+    col2 += `</div>`;
+  }  document.getElementById('panel-col1').innerHTML = col1;
   document.getElementById('panel-col2').innerHTML = col2;
+  try {
+    const lastQ = sessionStorage.getItem('kin_last_query');
+    const kinInput = document.getElementById('kin-other');
+    if (lastQ && kinInput) kinInput.value = lastQ;
+  } catch (e) {}
   document.getElementById('panel').classList.add('open');
   document.getElementById('vp').classList.add('panel-open');
 }
@@ -742,6 +1052,73 @@ function closePanel(){
 }
 
 document.getElementById('panel-close').addEventListener('click', closePanel);
+
+// ── Panel resize: перетаскивание верхней границы #panel (мышь + палец) ──
+(function initPanelResize(){
+  const DEFAULT_H = 220, MIN_H = 120, MAX_FRAC = 0.7, KEY = 'treePanelH';
+  const root   = document.documentElement;
+  const panel  = document.getElementById('panel');
+  const handle = document.getElementById('panel-resize');
+  if(!panel || !handle) return;
+
+  const maxH   = () => Math.max(MIN_H, Math.floor(window.innerHeight * MAX_FRAC));
+  const clamp  = h => Math.min(maxH(), Math.max(MIN_H, h));
+  const curH   = () => panel.getBoundingClientRect().height;
+  function setH(h){ root.style.setProperty('--panel-h', Math.round(clamp(h)) + 'px'); }
+  function save(){ try { localStorage.setItem(KEY, String(Math.round(curH()))); } catch(e){} }
+  function reset(){
+    root.style.removeProperty('--panel-h');           // вернуться к значению из CSS (220px)
+    try { localStorage.removeItem(KEY); } catch(e){}
+    afterChange();
+  }
+  // карта не масштабируется и не двигается: меняется только видимая область #vp;
+  // resize нужен лишь чтобы пересчитались индикаторы прокрутки
+  function afterChange(){ window.dispatchEvent(new Event('resize')); }
+
+  // применить сохранённое значение при загрузке
+  try {
+    const saved = parseFloat(localStorage.getItem(KEY));
+    if(isFinite(saved)) setH(saved);
+  } catch(e){}
+
+  let dragging = false, moved = false, startY = 0, startH = 0, lastDown = 0;
+
+  handle.addEventListener('pointerdown', e => {
+    if(e.pointerType === 'mouse' && e.button !== 0) return;
+    const now = Date.now();
+    if(now - lastDown < 320){ lastDown = 0; reset(); e.preventDefault(); return; } // двойной клик/тап
+    lastDown = now;
+    dragging = true; moved = false;
+    startY = e.clientY;
+    startH = curH();
+    document.body.classList.add('panel-resizing');
+    try { handle.setPointerCapture(e.pointerId); } catch(err){}
+    e.preventDefault();
+  });
+  handle.addEventListener('pointermove', e => {
+    if(!dragging) return;
+    if(Math.abs(startY - e.clientY) > 3) moved = true;
+    setH(startH + (startY - e.clientY));              // тянем вверх → выше
+  });
+  function end(e){
+    if(!dragging) return;
+    dragging = false;
+    if(moved) lastDown = 0;                            // перетаскивание — не часть двойного клика
+    document.body.classList.remove('panel-resizing');
+    try { handle.releasePointerCapture(e.pointerId); } catch(err){}
+    save();
+    afterChange();
+  }
+  handle.addEventListener('pointerup', end);
+  handle.addEventListener('pointercancel', end);
+
+  // при изменении размера окна — зажать текущее значение в новые пределы
+  window.addEventListener('resize', () => {
+    if(dragging) return;
+    const h = curH(), c = clamp(h);
+    if(Math.abs(h - c) > 0.5) setH(c);
+  });
+})();
 
 // ── hook showPanel into card clicks ───────────────────────
 // Patch: when a non-focal card is clicked, also show its panel
@@ -976,6 +1353,37 @@ function trel(s){
   return currentLang==='ru' ? s : s; // fallback: show as-is
 }
 
+// Localized "rel" text for a person: prefers a manually entered EN/HE
+// translation (n.rel_en / n.rel_he), then a generated phrase from «тип имя (год) [Pxx]»,
+// then the rule-based trel() dictionary for common short phrases, and finally the raw Russian text.
+function relText(n){
+  if(!n) return '';
+  if(currentLang !== 'ru'){
+    const manual = n['rel_' + currentLang];
+    if(manual) return manual;
+  }
+  // rel, созданный формой «Новый человек» («тип имя (год) [Pxx]»): собираем фразу на языке
+  // интерфейса, без года и технического тега. Словарные подписи и строки без слова-типа идут дальше.
+  const g = relGeneratedParts(n.rel);
+  if(g){
+    const nm = (IDX && IDX.nodes && IDX.nodes[g.id])
+      ? pname(g.id)
+      : g.name;
+    return t('rel_gen_' + g.kind) + (nm ? ' ' + nm : '');
+  }
+  return trel(n.rel);
+}
+
+// Разбор rel вида «жена Иван Иванов (1950) [P12]» -> {kind:'wife', id:'P12', name:'Иван Иванов'}; иначе null.
+function relGeneratedParts(s){
+  if(!s) return null;
+  const KINDS = { 'жена':'wife', 'муж':'husband', 'ребёнок':'child', 'ребенок':'child',
+                  'родитель':'parent', 'брат':'brother', 'сестра':'sister' };
+  const m = String(s).match(/^(жена|муж|ребёнок|ребенок|родитель|брат|сестра)\s+(.*?)\s*\[?(P\d+)\]?\s*$/i);
+  if(!m) return null;
+  return { kind: KINDS[m[1].toLowerCase()], id: m[3], name: m[2].replace(/\s*\(\s*\d{3,4}\s*\)\s*$/, '').trim() };
+}
+
 // ════════════════════════════════════════════════════════
 //  NAMES DICTIONARY — RU→EN→HE for all 178 persons
 // ════════════════════════════════════════════════════════
@@ -991,6 +1399,30 @@ function pname(id) {
 }
 
 // Apply language to all static UI elements and re-render
+function buildHelpBubble(lang){
+  const hb = document.getElementById('help-bubble');
+  if(!hb) return;
+  const M = UI[lang] || UI.ru;
+  const L = k => M[k] || UI.ru[k] || k;
+  const sections = M.help_sections || UI.ru.help_sections || [];
+  let html = '<div class="hb-title">' + L('help_title') + '</div>';
+  for(const s of sections){
+    html += '<details class="hb-sec"' + (s === sections[0] ? ' open' : '') + '><summary class="hb-h">' + s.h + '</summary><ul>' +
+            s.items.map(x => '<li>' + x + '</li>').join('') + '</ul></details>';
+  }
+  const rows = [['\u2665','legend_spouses'],['\u2191','legend_parents'],
+                ['\u2194','legend_siblings'],['\u2193','legend_children']];
+  html += '<div class="hb-sec lg-title"><div class="hb-h">' + L('legend_title') + '</div>';
+  for(const [glyph, key] of rows){
+    html += '<div class="lg-row"><span class="lg-b">' + glyph + '</span><span>' + L(key) + '</span></div>';
+  }
+  html += '<div class="lg-row"><span class="lg-s">\uD83D\uDD17</span><span>' + L('legend_social') + '</span></div>';
+  html += '<div class="lg-tip">' + L('legend_tip') + '</div></div>';
+  hb.innerHTML = html;
+  // клики внутри справки не должны закрывать её (document-обработчик закрывает по любому клику)
+  if(!hb._stopBound){ hb.addEventListener('click', e => e.stopPropagation()); hb._stopBound = true; }
+}
+
 window.applyLang = function(lang){
   currentLang = lang;
   const M = UI[lang] || UI.ru;
@@ -1026,11 +1458,14 @@ window.applyLang = function(lang){
     const v = M[opt.dataset.i]; if(v) opt.textContent = v;
   });
 
+  // 7b. Date widgets: month names, labels, placeholders
+  if(typeof dateWidgetRefreshLabels === 'function') dateWidgetRefreshLabels();
+
   // 8. Help bubble
   const hb = document.getElementById('help-bubble');
   if(hb){
-    const steps = M.help_steps || UI.ru.help_steps;
-    hb.innerHTML = '<b>'+(M.help_title||'')+'</b><ol>'+steps.map(s=>'<li>'+s+'</li>').join('')+'</ol>';
+    buildHelpBubble(lang);
+    
   }
 
   // 9. Rebuild names autocomplete in current language
@@ -1049,9 +1484,16 @@ window.applyLang = function(lang){
 // ════════════════════════════════════════════════════════
 
 (function detectLang(){
-  const nav = (navigator.language || navigator.userLanguage || 'ru').toLowerCase();
-  if(nav.startsWith('he') || nav.startsWith('iw')) currentLang = 'he';
-  else if(!nav.startsWith('ru') && !nav.startsWith('uk')) currentLang = 'en';
+  // Язык, выбранный кнопками РУС/ENG/עב, запоминается (ключ tree_lang, общий для всех страниц сайта);
+  // если его нет — язык браузера: иврит → he, русский/украинский → ru, остальные → en.
+  let saved = null;
+  try { saved = localStorage.getItem('tree_lang'); } catch(e) {}
+  if(saved === 'ru' || saved === 'en' || saved === 'he') currentLang = saved;
+  else {
+    const nav = (navigator.language || navigator.userLanguage || 'ru').toLowerCase();
+    if(nav.startsWith('he') || nav.startsWith('iw')) currentLang = 'he';
+    else if(!nav.startsWith('ru') && !nav.startsWith('uk')) currentLang = 'en';
+  }
   document.querySelectorAll('.lbtn').forEach(b => {
     b.classList.toggle('active', b.dataset.lang === currentLang);
   });
@@ -1061,6 +1503,7 @@ window.applyLang = function(lang){
 document.querySelectorAll('.lbtn').forEach(btn => {
   btn.addEventListener('click', () => {
     currentLang = btn.dataset.lang;
+    try { localStorage.setItem('tree_lang', currentLang); } catch(e) {}
     document.querySelectorAll('.lbtn').forEach(b => b.classList.toggle('active', b.dataset.lang === currentLang));
     document.body.classList.toggle('rtl', currentLang === 'he');
     renderBookmarks();
@@ -1095,8 +1538,162 @@ function buildDatalist(){
 }
 // buildDatalist() called after IDX loads in initTree()
 
+// ════════════════════════════════════════════════════════
+//  DATE WIDGET — birth/death: «точная дата» / «только год» / «неизвестно»
+//  Допустимые значения строки (и только они — для НОВОГО ввода):
+//    "Д MON ГГГГ" (день без ведущего нуля) | "ГГГГ" | "" (пустая строка)
+//    | "ум." (только для смерти: умер(ла), дата неизвестна).
+//  Любая другая уже существующая запись показывается в «служебном»
+//  состоянии (legacy): read-only, пока пользователь явно не выберет
+//  один из вариантов. Серверный контракт не меняется — наружу
+//  уходит та же строка (dateWidgetRead().value).
+// ════════════════════════════════════════════════════════
+const DW_MONTHS  = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+const DW_YEAR_MIN = 1700;
+const DW_FULL_RE = /^([1-9]|[12]\d|3[01]) (JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC) (\d{4})$/;
+const DW_YEAR_RE = /^\d{4}$/;
+function dwYearMax(){ return new Date().getFullYear(); }
+
+function buildDateWidget(id){
+  const host = document.getElementById(id);
+  if(!host) return;
+  const kind = host.dataset.dwKind === 'death' ? 'death' : 'birth';
+  const grp  = 'dw-mode-' + id;
+  const dayOpts = '<option value="" data-i="date_day"></option>' +
+    Array.from({length:31}, (_, i) => `<option value="${i+1}">${i+1}</option>`).join('');
+  const monOpts = '<option value="" data-i="date_month"></option>' +
+    DW_MONTHS.map(m => `<option value="${m}" data-dw-month="${m}"></option>`).join('');
+  host.classList.add('datew');
+  host.innerHTML = `
+    <label class="dw-opt"><input type="radio" name="${grp}" value="full"><span data-i="date_mode_full"></span></label>
+    <label class="dw-opt"><input type="radio" name="${grp}" value="year"><span data-i="date_mode_year"></span></label>
+    <label class="dw-opt"><input type="radio" name="${grp}" value="unknown"><span data-i="date_mode_unknown_${kind}"></span></label>
+    ${kind === 'death' ? `<label class="dw-opt"><input type="radio" name="${grp}" value="deceased"><span data-i="date_mode_deceased"></span></label>` : ''}
+    <div class="dw-panel dw-p-legacy" style="display:none">
+      <input type="text" class="dw-legacy-val" readonly>
+      <div class="dw-hint" data-i="date_legacy_hint"></div>
+    </div>
+    <div class="dw-panel dw-p-full dw-row" style="display:none">
+      <select class="dw-day">${dayOpts}</select>
+      <select class="dw-month">${monOpts}</select>
+      <input type="number" class="dw-year-full" min="${DW_YEAR_MIN}" max="${dwYearMax()}" step="1" data-ph="date_year_ph">
+    </div>
+    <div class="dw-panel dw-p-year" style="display:none">
+      <input type="number" class="dw-year-only" min="${DW_YEAR_MIN}" max="${dwYearMax()}" step="1" data-ph="date_year_ph">
+    </div>
+    <button type="button" class="dw-restore" style="display:none" data-i="date_restore_legacy"></button>`;
+  host._dw = { kind, initialRaw: '', legacyRaw: null, mode: 'unknown' };
+
+  host.querySelectorAll('input[type=radio]').forEach(r =>
+    r.addEventListener('change', () => { if(r.checked) dwSetMode(host, r.value); }));
+  host.querySelector('.dw-restore').addEventListener('click', () => dwSetMode(host, 'legacy'));
+  dateWidgetRefreshLabels(host);
+}
+
+function dwSetMode(host, mode){
+  host._dw.mode = mode;
+  host.querySelectorAll('input[type=radio]').forEach(r => { r.checked = (r.value === mode); });
+  host.querySelector('.dw-p-legacy').style.display = mode === 'legacy' ? '' : 'none';
+  host.querySelector('.dw-p-full').style.display   = mode === 'full'   ? '' : 'none';
+  host.querySelector('.dw-p-year').style.display   = mode === 'year'   ? '' : 'none';
+  host.querySelector('.dw-restore').style.display  =
+    (host._dw.legacyRaw !== null && mode !== 'legacy') ? '' : 'none';
+}
+
+// Заполнить виджет существующим значением birth/death (parseIntoWidget).
+function dateWidgetSet(id, rawValue){
+  const host = document.getElementById(id);
+  if(!host || !host._dw) return;
+  const raw = (rawValue === undefined || rawValue === null) ? '' : String(rawValue);
+  host.querySelector('.dw-day').value = '';
+  host.querySelector('.dw-month').value = '';
+  host.querySelector('.dw-year-full').value = '';
+  host.querySelector('.dw-year-only').value = '';
+  host.querySelector('.dw-legacy-val').value = '';
+  host._dw.initialRaw = raw;
+  host._dw.legacyRaw = null;
+
+  let m;
+  if(raw === 'ум.' && host._dw.kind === 'death'){
+    dwSetMode(host, 'deceased');
+  } else if(raw === ''){
+    dwSetMode(host, 'unknown');
+  } else if(DW_YEAR_RE.test(raw)){
+    host.querySelector('.dw-year-only').value = raw;
+    dwSetMode(host, 'year');
+  } else if((m = raw.match(DW_FULL_RE))){
+    host.querySelector('.dw-day').value = m[1];
+    host.querySelector('.dw-month').value = m[2];
+    host.querySelector('.dw-year-full').value = m[3];
+    dwSetMode(host, 'full');
+  } else {
+    // устаревший/нестандартный формат ("OCT 1970", "ум.", "27 августа 1972"…)
+    host._dw.legacyRaw = raw;
+    host.querySelector('.dw-legacy-val').value = raw;
+    dwSetMode(host, 'legacy');
+  }
+}
+
+// Собрать виджет обратно в строку (widgetToString) + валидация.
+// Возвращает {ok:true, value} или {ok:false, error}.
+function dateWidgetRead(id){
+  const host = document.getElementById(id);
+  if(!host || !host._dw) return {ok:true, value:''};
+  const st = host._dw;
+  const label = st.kind === 'death' ? t('fix_death') : t('fix_birth');
+  const fail = (key) => ({ ok:false,
+    error: '⚠ ' + label + ': ' + t(key).replace('{min}', DW_YEAR_MIN).replace('{max}', dwYearMax()) });
+  const yearOk = (y, value) =>
+    value === st.initialRaw || (+y >= DW_YEAR_MIN && +y <= dwYearMax());
+
+  if(st.mode === 'legacy')  return { ok:true, value: st.legacyRaw };   // as-is: не меняет существующее
+  if(st.mode === 'unknown') return { ok:true, value: '' };
+  if(st.mode === 'deceased') return { ok:true, value: 'ум.' };
+
+  if(st.mode === 'year'){
+    const y = host.querySelector('.dw-year-only').value.trim();
+    if(!DW_YEAR_RE.test(y)) return fail('date_err_incomplete');
+    if(!yearOk(y, y)) return fail('date_err_year_range');
+    return { ok:true, value: y };
+  }
+
+  // full
+  const d  = host.querySelector('.dw-day').value;
+  const mo = host.querySelector('.dw-month').value;
+  const y  = host.querySelector('.dw-year-full').value.trim();
+  if(!d || !mo || !DW_YEAR_RE.test(y)) return fail('date_err_incomplete');
+  const value = d + ' ' + mo + ' ' + y;
+  if(!yearOk(y, value)) return fail('date_err_year_range');
+  const maxDay = new Date(+y, DW_MONTHS.indexOf(mo) + 1, 0).getDate();
+  if(+d > maxDay) return fail('date_err_bad_day');
+  return { ok:true, value };
+}
+
+// Подписи месяцев — из существующего tm(); остальные строки переводит applyLang через data-i/data-ph.
+function dateWidgetRefreshLabels(host){
+  const hosts = host ? [host] : document.querySelectorAll('.datew');
+  hosts.forEach(h => {
+    h.querySelectorAll('option[data-dw-month]').forEach(o => { o.textContent = tm(o.dataset.dwMonth); });
+    h.querySelectorAll('[data-i]').forEach(el => { const v = t(el.dataset.i); if(v) el.textContent = v; });
+    h.querySelectorAll('[data-ph]').forEach(el => { el.placeholder = t(el.dataset.ph); });
+  });
+}
+
+function initDateWidgets(){
+  ['f-birth','f-death','ff-birth','ff-death'].forEach(buildDateWidget);
+  ['f-birth','f-death','ff-birth','ff-death'].forEach(id => dateWidgetSet(id, ''));
+}
+initDateWidgets();
+
+let fixDatesPrefilledFor = null; // для кого поля дат в «Исправить» заполнены автоматически (очистка даты возможна только тогда)
 // Open / close modal
+// Для какого человека поля «Отец»/«Мать» в «Исправить» были заполнены автоматически (null = не заполнялись)
+let fixParentsPrefilledFor = null;
 function openModal(prefillId, mode){
+  fixDatesPrefilledFor = null;
+  // Date widgets back to «unknown» (prefilled below in 'fix' mode)
+  ['f-birth','f-death','ff-birth','ff-death'].forEach(wid => dateWidgetSet(wid, ''));
+  fixParentsPrefilledFor = null;
   mode = mode || 'fix';
   document.getElementById('modal-overlay').classList.add('open');
   document.getElementById('prompt-out').style.display = 'none';
@@ -1104,13 +1701,13 @@ function openModal(prefillId, mode){
   document.getElementById('prompt-out').textContent = '';
 
   // ── Reset all form fields to blank ──────────────────
-  ['f-name','f-birth','f-death','f-phone','f-email','f-social',
+  ['f-name','f-phone','f-email','f-social',
    'f-photo-url','f-photo-cap','photoFileInput',
    'f-bio-text','f-bio-url',
-   'f-date-note',
-   'ff-name','ff-name-ru','ff-name-en','ff-name-he','ff-birth','ff-death','ff-birth-he','ff-death-he',
-   'ff-phone','ff-email','ff-social','ff-rel','ff-family','ff-other',
-   'f-fix-comment'].forEach(fid => {
+      'f-date-note','f-father','f-mother',
+   'ff-name','ff-name-ru','ff-name-en','ff-name-he','ff-birth-he','ff-death-he',
+     'ff-phone','ff-email','ff-social','ff-rel','ff-father','ff-mother','ff-family','ff-other',
+   'f-fix-comment','f-attach-existing','f-attach-target','f-attach-type'].forEach(fid => {
     const el = document.getElementById(fid);
     if(el) el.value = '';
   });
@@ -1167,7 +1764,7 @@ function openModal(prefillId, mode){
     if(n.phone)    lines.push(t('lbl_phone')     + ': ' + n.phone);
     if(n.email)    lines.push(t('lbl_email')     + ': ' + n.email);
     if(n.social)   lines.push(t('lbl_social')    + ': ' + n.social);
-    if(n.rel)      lines.push(t('fix_rel')       + ': ' + trel(n.rel));
+    if(n.rel)      lines.push(t('fix_rel') + ': ' + relText(n));
 
     if(card0 && lines.length){
       card0.textContent = lines.join('\n');
@@ -1180,14 +1777,29 @@ function openModal(prefillId, mode){
     setVal('ff-name-ru',   n.name_ru);
     setVal('ff-name-en',   n.name_en);
     setVal('ff-name-he',   n.name_he);
-    setVal('ff-birth',     n.birth);
-    setVal('ff-death',     n.death);
+    dateWidgetSet('ff-birth', n.birth);
+    fixDatesPrefilledFor = prefillId;
+    dateWidgetSet('ff-death', n.death);
     setVal('ff-birth-he',  n.birth_he);
     setVal('ff-death-he',  n.death_he);
     setVal('ff-phone',     n.phone);
     setVal('ff-email',     n.email);
     setVal('ff-social',    n.social);
-    setVal('ff-rel',       trel(n.rel));
+    // Отец/Мать не хранятся в IDX.nodes — берём из текущей family-записи
+    // ребёнка (IDX.child_of → IDX.families), а не из relatives (кэш).
+    const parentLabel = (pid) => {
+      if(!pid || !IDX.nodes[pid]) return '';
+      const pyr = IDX.nodes[pid].birth ? (IDX.nodes[pid].birth.match(/\d{4}/)||[''])[0] : '';
+      return pname(pid) + (pyr ? ' (' + pyr + ')' : '') + ' [' + pid + ']';
+    };
+    const prefillFamId = IDX.child_of[prefillId];
+    const prefillFam   = prefillFamId ? IDX.families[prefillFamId] : null;
+    setVal('ff-father', prefillFam ? parentLabel(prefillFam.husband) : '');
+    setVal('ff-mother', prefillFam ? parentLabel(prefillFam.wife)    : '');
+    fixParentsPrefilledFor = prefillId;
+
+    // исходное значение, а не trel(): иначе сохранение в EN/HE записало бы перевод вместо исходного rel
+    setVal('ff-rel', n.rel);
 
     // Switch to fix tab
     document.querySelectorAll('.mtype').forEach(b => b.classList.remove('active'));
@@ -1233,7 +1845,7 @@ function updateGenerateButtonLabel(){
   const btn = document.getElementById('modal-generate');
   if(!btn) return;
   const isAdmin = !!(_sessionPassword && window._userRole === 'admin' && WORKER_URL);
-  const directTypes = ['person','fix','photo','bio']; // types with direct API save (date excluded — free-text notes go via email for human review)
+  const directTypes = ['person','fix','photo','bio','attach']; // types with direct API save (date excluded — free-text notes go via email for human review)
   if(isAdmin && directTypes.includes(currentType)){
     btn.innerHTML = currentLang==='he' ? '💾 שמור ישירות'
                   : currentLang==='en' ? '💾 Save directly'
@@ -1253,17 +1865,39 @@ document.getElementById('modal-generate').addEventListener('click', async () => 
     const isAdminDirect = !!(_sessionPassword && window._userRole === 'admin' && WORKER_URL);
     const name  = document.getElementById('f-name').value.trim();
     const sex   = document.getElementById('f-sex').value === 'F' ? 'Женский' : 'Мужской';
-    const birth = document.getElementById('f-birth').value.trim();
-    const death = document.getElementById('f-death').value.trim();
+    const birthR = dateWidgetRead('f-birth');
+    const deathR = dateWidgetRead('f-death');
+    if(!birthR.ok){ showToast(birthR.error, true); return; }
+    if(!deathR.ok){ showToast(deathR.error, true); return; }
+    const birth = birthR.value;
+    const death = deathR.value;
     const relP  = document.getElementById('f-rel-person').value.trim();
     const relT  = document.getElementById('f-rel-type').value;
+    const fatherLabel = document.getElementById('f-father').value.trim();
+    const motherLabel = document.getElementById('f-mother').value.trim();
     if(!name){ alert(t('alert_name')); return; }
+    // Отец/Мать вместе с типом связи «ребёнок/брат/сестра» дали бы две родительские семьи — не создаём
+    if((fatherLabel || motherLabel) && (relT === 'ребёнок' || relT === 'брат' || relT === 'сестра')){
+      showToast(currentLang==='he' ? '⚠ בסוג קשר "ילד/ה", "אח" או "אחות" אין למלא אבא ואמא: ההורים נקבעים לפי האדם שנבחר'
+              : currentLang==='en' ? '⚠ For relationship "child", "brother" or "sister" leave Father/Mother empty: the parents come from the selected person'
+              : '⚠ Для типа связи «ребёнок», «брат» или «сестра» поля «Отец» и «Мать» не заполняйте: родители определяются выбранным человеком', true);
+      return;
+    }
 
     if(isAdminDirect){
       const phoneV  = document.getElementById('f-phone').value.trim();
       const emailV  = document.getElementById('f-email').value.trim();
       const socialV = document.getElementById('f-social').value.trim();
       let computedGen = null;
+      // gen нового человека: если указан отец и/или мать — максимальный gen родителей + 1
+      // (приоритетнее «Связь с кем»); иначе прежняя схема ниже
+      const parentGenEarly = (() => {
+        const ids = [fatherLabel, motherLabel].map(l => { const mm = l.match(/\[(P\d+)\]\s*$/); return mm ? mm[1] : null; });
+        const gens = ids
+          .map(pid => pid && IDX.nodes[pid] && typeof IDX.nodes[pid].gen === 'number' ? IDX.nodes[pid].gen : null)
+          .filter(g => g !== null);
+        return gens.length ? Math.max(...gens) + 1 : null;
+      })();
       const relIdMatchEarly = relP.match(/\[(P\d+)\]\s*$/);
       const relTargetIdEarly = relIdMatchEarly ? relIdMatchEarly[1] : null;
       const relatedNode = relTargetIdEarly ? IDX.nodes[relTargetIdEarly] : null;
@@ -1277,7 +1911,7 @@ document.getElementById('modal-generate').addEventListener('click', async () => 
         sex: document.getElementById('f-sex').value || '',
         birth, death,
         rel: relP ? (relT + ' ' + relP) : '',
-        ...(computedGen !== null ? {gen: computedGen} : {}),
+        ...(parentGenEarly !== null ? {gen: parentGenEarly} : (computedGen !== null ? {gen: computedGen} : {})),
         ...(phoneV  ? {phone:phoneV}   : {}),
         ...(emailV  ? {email:emailV}   : {}),
         ...(socialV ? {social:socialV} : {}),
@@ -1308,7 +1942,22 @@ document.getElementById('modal-generate').addEventListener('click', async () => 
             }
           }
 
-          if(typeof loadTree === 'function') await loadTree();
+          const fatherMatch = fatherLabel.match(/\[(P\d+)\]\s*$/);
+          const motherMatch = motherLabel.match(/\[(P\d+)\]\s*$/);
+          const fatherId = fatherMatch ? fatherMatch[1] : null;
+          const motherId = motherMatch ? motherMatch[1] : null;
+          if(fatherLabel && !fatherId) showToast('⚠ Поле «Отец» проигнорировано — выберите персону из списка', true);
+          if(motherLabel && !motherId) showToast('⚠ Поле «Мать» проигнорировано — выберите персону из списка', true);
+          if(fatherId || motherId){
+            try {
+              await attachParentsToNewPerson(newId, fatherId, motherId);
+            } catch(parentErr){
+              console.warn('[parents] Parent link failed (person still created):', parentErr.message);
+              showToast('✓ Персона создана, но родителей не удалось привязать автоматически', true);
+            }
+            try { await afterFamilyEdit(); }
+            catch(_){ if(typeof loadTree === 'function') await loadTree(); }
+          } else if(typeof loadTree === 'function') await loadTree();
           document.getElementById('modal-overlay').classList.remove('open');
           showToast(t('toast_added_prefix') + name, false);
         } else {
@@ -1330,6 +1979,8 @@ document.getElementById('modal-generate').addEventListener('click', async () => 
     if(birth) text += 'Дата рождения: ' + birth + '\n';
     if(death) text += 'Дата смерти: ' + death + '\n';
     if(relP)  text += 'Связь: ' + relT + ' ' + relP + '\n';
+    if(fatherLabel) text += 'Отец: ' + fatherLabel + '\n';
+    if(motherLabel) text += 'Мать: ' + motherLabel + '\n';
     const phone = document.getElementById('f-phone').value.trim();
     const email = document.getElementById('f-email').value.trim();
     const social = document.getElementById('f-social').value.trim();
@@ -1480,6 +2131,44 @@ document.getElementById('modal-generate').addEventListener('click', async () => 
     text += 'Персона: ' + person + '\n';
     text += 'Уточнение: ' + note + '\n';
 
+  } else if(currentType === 'attach'){
+    const existingLabel = document.getElementById('f-attach-existing').value.trim();
+    const targetLabel   = document.getElementById('f-attach-target').value.trim();
+    const relT          = document.getElementById('f-attach-type').value;
+    if(!existingLabel || !targetLabel || !relT){ alert(t('alert_person')); return; }
+
+    const exM = existingLabel.match(/\[(P\d+)\]\s*$/);
+    const tgM = targetLabel.match(/\[(P\d+)\]\s*$/);
+    if(!exM || !tgM){ alert(t('alert_person')); return; }
+    const existingId = exM[1], targetId = tgM[1];
+
+    const isAdminDirect = !!(_sessionPassword && window._userRole === 'admin' && WORKER_URL);
+
+    if(isAdminDirect){
+      const btn = document.getElementById('modal-generate');
+      const origTxt = btn.textContent;
+      btn.textContent = '⏳ Сохраняю...';
+      btn.disabled = true;
+      try {
+        await linkExistingPersonToFamily(existingId, targetId, relT);
+        await afterFamilyEdit();
+        document.getElementById('modal-overlay').classList.remove('open');
+        showToast(t('toast_attach_done'), false);
+      } catch(e){
+        showToast('⚠ ' + e.message, true);
+      } finally {
+        btn.textContent = origTxt;
+        btn.disabled = false;
+      }
+      return;
+    }
+
+    text  = t('prompt_fix_header');
+    text += 'Тип: Прикрепить существующую персону\n';
+    text += 'Кого: ' + existingLabel + '\n';
+    text += 'К кому: ' + targetLabel + '\n';
+    text += 'Связь: ' + relT + '\n';
+
   } else if(currentType === 'fix'){
     const person  = document.getElementById('f-fix-person').value.trim();
     if(!person){ alert(t('alert_person')); return; }
@@ -1489,15 +2178,50 @@ document.getElementById('modal-generate').addEventListener('click', async () => 
     const origId  = idMatch ? idMatch[1] : null;
     const orig    = origId && IDX.nodes[origId] ? IDX.nodes[origId] : {};
 
+    // ── Отец/Мать: структурная часть, не поле IDX.nodes[id] ──
+    // Учитываем ТОЛЬКО если поля были заполнены автоматически (openModal) для ЭТОГО ЖЕ человека.
+    // Иначе (человека вписали вручную / сменили) родителей не трогаем вообще.
+    const parentsActive = !!origId && fixParentsPrefilledFor === origId;
+    const origFamId   = parentsActive ? (IDX.child_of[origId] || null) : null;
+    const origFam     = origFamId ? IDX.families[origFamId] : null;
+    const oldFatherId = origFam ? (origFam.husband || null) : null;
+    const oldMotherId = origFam ? (origFam.wife    || null) : null;
+
+    const parseParentField = (elId) => {
+      const el = document.getElementById(elId);
+      const val = el ? el.value.trim() : '';
+      if(!val) return null;
+      const m = val.match(/\[(P\d+)\]\s*$/);
+      if(m && IDX.nodes[m[1]]) return m[1];
+      const lower = val.toLowerCase();
+      const found = Object.entries(IDX.nodes).find(([, nn]) => (nn.name||'').toLowerCase() === lower);
+      return found ? found[0] : 'INVALID';
+    };
+    const newFatherId = parentsActive ? parseParentField('ff-father') : oldFatherId;
+    const newMotherId = parentsActive ? parseParentField('ff-mother') : oldMotherId;
+
+    if(newFatherId === 'INVALID' || newMotherId === 'INVALID'){
+      showToast(currentLang==='he' ? '⚠ אב/אם לא נמצאו — יש לבחור מרשימת ההשלמה'
+              : currentLang==='en' ? '⚠ Father/mother not found — please pick from the autocomplete list'
+              : '⚠ Отец/мать не найдены — выберите точно из автокомплита', true);
+      return;
+    }
+    const parentsChanged = parentsActive && ((newFatherId !== oldFatherId) || (newMotherId !== oldMotherId));
+
     const getV = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+
+    const birthFixR = dateWidgetRead('ff-birth');
+    const deathFixR = dateWidgetRead('ff-death');
+    if(!birthFixR.ok){ showToast(birthFixR.error, true); return; }
+    if(!deathFixR.ok){ showToast(deathFixR.error, true); return; }
 
     const fields = [
       { key: 'name',     label: t('fix_name'),       val: getV('ff-name'),     orig: orig.name || '' },
       { key: 'name_ru', label: t('fix_name') + ' (RU)', val: getV('ff-name-ru'), orig: orig.name_ru || '' },
       { key: 'name_en',  label: t('fix_name') + ' (EN)', val: getV('ff-name-en'), orig: orig.name_en || '' },
       { key: 'name_he',  label: t('fix_name') + ' (HE)', val: getV('ff-name-he'), orig: orig.name_he || '' },
-      { key: 'birth',    label: t('fix_birth'),       val: getV('ff-birth'),    orig: orig.birth || '' },
-      { key: 'death',    label: t('fix_death'),       val: getV('ff-death'),    orig: orig.death || '' },
+      { key: 'birth',    label: t('fix_birth'),       val: birthFixR.value,    orig: orig.birth || '' },
+      { key: 'death',    label: t('fix_death'),       val: deathFixR.value,    orig: orig.death || '' },
       { key: 'birth_he', label: t('fix_birth_he'),    val: getV('ff-birth-he'), orig: orig.birth_he || '' },
       { key: 'death_he', label: t('fix_death_he'),    val: getV('ff-death-he'), orig: orig.death_he || '' },
       { key: 'phone',    label: t('lbl_phone'),       val: getV('ff-phone'),    orig: orig.phone || '' },
@@ -1515,9 +2239,15 @@ document.getElementById('modal-generate').addEventListener('click', async () => 
     const comment    = getV('f-fix-comment');
 
     // Only include fields that changed (value differs from original) or were filled when no original existed
-    const changed = fields.filter(f => f.val && f.val !== f.orig);
+    // Новое непустое значение, ИЛИ явная очистка даты (было значение, стало «Неизвестно»).
+    // Очистка — только для birth/death и только если поля дат были заполнены автоматически
+    // для этого же человека (иначе пустой виджет не значит «стереть»); остальные поля не очищаются.
+    const changed = fields.filter(f =>
+      (f.val && f.val !== f.orig) ||
+      (!f.val && f.orig && (f.key === 'birth' || f.key === 'death') && fixDatesPrefilledFor === origId)
+    );
 
-    if(!changed.length && !familyNote && !otherNote){
+    if(!changed.length && !familyNote && !otherNote && !parentsChanged){
       alert(t('alert_fix_empty') || 'Укажите хотя бы одно изменение');
       return;
     }
@@ -1526,8 +2256,43 @@ document.getElementById('modal-generate').addEventListener('click', async () => 
     // If admin logged in AND specific person ID known AND
     // no structural changes (family/other) → save directly, skip email
     if(_sessionPassword && window._userRole === 'admin' && origId && !familyNote && !otherNote && WORKER_URL){
+      // Отец/Мать — структурная операция, отдельная от PATCH персоны. Выполняется ПЕРВОЙ:
+      // если она упадёт, остальное не сохраняем.
+      if(parentsChanged){
+        if((oldFatherId && !newFatherId) || (oldMotherId && !newMotherId)){
+          const nmChild = pname(origId);
+          const cmsg = currentLang==='he' ? `לסמן את ההורה כלא ידוע עבור ${nmChild}? הקשר להורה זה יוסר.`
+                     : currentLang==='en' ? `Mark the parent as unknown for ${nmChild}? The link to this parent will be removed.`
+                     : `Сделать родителя неизвестным для ${nmChild}? Связь с этим родителем будет удалена.`;
+          if(!confirm(cmsg)) return;
+        }
+        const btnP = document.getElementById('modal-generate');
+        const origTextP = btnP.textContent;
+        btnP.textContent = '⏳ ' + (currentLang==='he' ? 'מעדכן הורים...' : currentLang==='en' ? 'Updating parents...' : 'Обновляю родителей...');
+        btnP.disabled = true;
+        try {
+          await reassignParentsForFix(origId, origFamId, newFatherId, newMotherId);
+          await afterFamilyEdit();
+        } catch(e){
+          showToast('⚠ ' + e.message, true);
+          btnP.textContent = origTextP;
+          btnP.disabled = false;
+          return;
+        }
+        btnP.textContent = origTextP;
+        btnP.disabled = false;
+      }
+
       const patch = {};
-      for(const f of changed) patch[f.key] = f.val;
+      for(const f of changed) patch[f.key] = f.val || null;
+      if(Object.keys(patch).length === 0){
+        document.getElementById('modal-overlay').classList.remove('open');
+        if(typeof showPanel === 'function') showPanel(origId);
+        showToast(currentLang==='he' ? '✓ ההורים עודכנו'
+                : currentLang==='en' ? '✓ Parents updated'
+                : '✓ Родители обновлены', false);
+        return;
+      }
 
       const btn = document.getElementById('modal-generate');
       const origText = btn.textContent;
@@ -1573,7 +2338,11 @@ document.getElementById('modal-generate').addEventListener('click', async () => 
     text += 'Тип: Исправление данных\n';
     text += 'Персона: ' + person + '\n';
     for(const f of changed){
-      text += f.label + ': ' + f.val + (f.orig ? ' (было: ' + f.orig + ')' : '') + '\n';
+      text += f.label + ': ' + (f.val || '— (удалить)') + (f.orig ? ' (было: ' + f.orig + ')' : '') + '\n';
+    }
+    if(parentsChanged){
+      if(newFatherId !== oldFatherId) text += t('lbl_father') + ': ' + (getV('ff-father') || '—') + (oldFatherId && IDX.nodes[oldFatherId] ? ' (было: ' + pname(oldFatherId) + ')' : '') + '\n';
+      if(newMotherId !== oldMotherId) text += t('lbl_mother') + ': ' + (getV('ff-mother') || '—') + (oldMotherId && IDX.nodes[oldMotherId] ? ' (было: ' + pname(oldMotherId) + ')' : '') + '\n';
     }
     if(familyNote) text += t('fix_family') + ': ' + familyNote + '\n';
     if(otherNote)  text += t('fix_other')  + ': ' + otherNote  + '\n';
@@ -1641,6 +2410,7 @@ let helpOpen = false;
 document.getElementById('btn-help').addEventListener('click', (e) => {
   e.stopPropagation();
   helpOpen = !helpOpen;
+  if(helpOpen) buildHelpBubble(currentLang);
   document.getElementById('help-bubble').classList.toggle('open', helpOpen);
 });
 document.addEventListener('click', () => {
@@ -1924,7 +2694,7 @@ function generateVCF() {
     if(n.email)  lines.push('EMAIL:' + n.email);
     if(n.social) lines.push('URL:' + n.social);
     if(bYear)    lines.push('BDAY:' + bYear + '0101');
-    const note = [n.rel ? trel(n.rel) : '', id].filter(Boolean).join(' · ');
+    const note = [n.rel ? relText(n) : '', id].filter(Boolean).join(' · ');
     if(note)     lines.push('NOTE:' + note);
     lines.push('ORG:' + t('tree_title').replace('🌳 ',''));
     lines.push('CATEGORIES:Family');
@@ -2028,6 +2798,16 @@ function showToast(msg, isWarning){
   t._hideTimer = setTimeout(() => { t.style.opacity = '0'; }, 4000);
 }
 
+// Подсказка кнопки входа зависит от состояния: «Войти» до входа, «Выйти» после.
+// data-title обновляется вместе с title, поэтому смена языка (applyLang) тоже её переводит.
+function updateLoginButton(){
+  const b = document.getElementById('btn-login');
+  if(!b) return;
+  const logged = !!(_sessionPassword && window._userRole);
+  b.dataset.title = logged ? 'tooltip_logout' : 'login_btn';
+  b.title = t(b.dataset.title);
+}
+
 document.getElementById('btn-login').addEventListener('click', e => {
   e.stopPropagation();
   // If already logged in — show logout popup
@@ -2041,6 +2821,7 @@ document.getElementById('btn-login').addEventListener('click', e => {
       window._userRole = null;
       sessionStorage.removeItem('tree_pwd');
       document.getElementById('btn-login').textContent = '🔑';
+      updateLoginButton();
       const editBtnOut = document.getElementById('btn-edit');
       if(editBtnOut) editBtnOut.style.display = 'none';
       const adminBtnOut = document.getElementById('btn-admin-panel');
@@ -2048,11 +2829,41 @@ document.getElementById('btn-login').addEventListener('click', e => {
       const adminOverlayOut = document.getElementById('admin-panel-overlay');
       if(adminOverlayOut) adminOverlayOut.style.display = 'none';
       showToast(currentLang==='he' ? 'יצאת' : currentLang==='en' ? 'Logged out' : 'Вы вышли', false);
+      try { sessionStorage.removeItem('tree_role'); localStorage.removeItem('tree_pwd_saved'); localStorage.removeItem('tree_role_saved'); } catch (e) {}
+      if (TREE_CONFIG.startPage) setTimeout(function () { location.replace(TREE_CONFIG.startPage); }, 500);
     }
     return;
   }
   // Show login form
   showLoginForm();
+});
+
+// ── Скачать всё дерево одним JSON-файлом (резервная копия) — только администратор ──
+document.getElementById('btn-backup').addEventListener('click', () => {
+  if(!_sessionPassword){
+    document.getElementById('btn-login').click();
+    showToast(t('toast_backup_login_required'), true);
+    return;
+  }
+  if(window._userRole !== 'admin'){
+    showToast(t('toast_backup_admin_only'), true);
+    return;
+  }
+  if(!IDX || !IDX.nodes || !Object.keys(IDX.nodes).length){
+    showToast(t('toast_backup_no_data'), true);
+    return;
+  }
+  const json = JSON.stringify(IDX, null, 2);
+  const blob = new Blob([json], {type: 'application/json;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = (TREE_CONFIG.fileSlug || 'family') + '-backup-' + new Date().toISOString().slice(0,10) + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast(t('toast_backup_done'), false);
 });
 
 document.getElementById('btn-export-gedcom').addEventListener('click', () => {
@@ -2113,6 +2924,59 @@ document.getElementById('btn-contacts').addEventListener('click', () => {
 })
 
 // ── Calendar (ICS) export ────────────────────────────────────────────────
+// ---- Hebrew-date reminders (.ics, 5 years): birthdays by Hebrew date + yahrzeits chosen on this device ----
+document.getElementById('btn-hebrew-calendar').title = t('title_hebrew_calendar');
+document.getElementById('btn-hebrew-calendar').addEventListener('click', () => {
+  if(!_sessionPassword){
+    document.getElementById('btn-login').click();
+    showToast(t('toast_hebrew_login'), true);
+    return;
+  }
+  if(!window.TreeHebrew || !TreeHebrew.isSupported()){
+    showToast(t('toast_hebrew_unsupported'), true);
+    return;
+  }
+  const sel = getYahrzeitSel();
+  let res;
+  try {
+    res = TreeHebrew.buildHebrewIcs({
+      nodes: IDX.nodes,
+      yahrzeitIds: sel,
+      nowYear: new Date().getFullYear(),
+      years: 5,
+      uidDomain: TREE_CONFIG.calendarUidDomain,
+      prodId: TREE_CONFIG.familyNameEn,
+      nameOf: pname,
+      labels: {
+        calName: t('hebcal_name') + ' ' + (currentLang==='he' ? TREE_CONFIG.familyNameHe : currentLang==='en' ? TREE_CONFIG.familyNameEn : TREE_CONFIG.familyNameRu),
+        yahrzeit: t('hebcal_yahrzeit'),
+        alarmBirth: t('hebcal_alarm_birth'),
+        alarmYahrzeit: t('hebcal_alarm_yahrzeit'),
+        descBirth: t('hebcal_desc_birth'),
+        descDeath: t('hebcal_desc_death')
+      }
+    });
+  } catch(e){
+    showToast('\u26A0 ' + e.message, true);
+    return;
+  }
+  const skippedNote = res.skipped ? t('toast_hebrew_skipped').replace('{m}', res.skipped) : '';
+  if(res.events === 0){
+    showToast(t('toast_hebrew_none') + skippedNote, true);
+    return;
+  }
+  const encoded = btoa(unescape(encodeURIComponent(res.ics)));
+  const a = document.createElement('a');
+  a.href = 'data:text/calendar;base64,' + encoded;
+  a.download = TREE_CONFIG.fileSlug + '-hebrew-reminders.ics';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  let msg = t('toast_hebrew_added').replace('{n}', res.events) + skippedNote;
+  if(sel.length === 0) msg += t('toast_hebrew_no_yahrzeit');
+  showToast(msg, res.skipped > 0);
+});
+
 document.getElementById('btn-calendar').addEventListener('click', () => {
   if(!_sessionPassword){
     document.getElementById('btn-login').click();
@@ -2167,7 +3031,7 @@ document.getElementById('btn-calendar').addEventListener('click', () => {
     lines.push(`DTEND;VALUE=DATE:${dtend_str}`);
     lines.push(`RRULE:FREQ=YEARLY`);
     lines.push(`SUMMARY:${summary}`);
-    if(p.rel) lines.push(`DESCRIPTION:${trel(p.rel)}`);
+    if(p.rel) lines.push(`DESCRIPTION:${relText(p)}`);
     lines.push(`TRANSP:TRANSPARENT`);
     lines.push(`BEGIN:VALARM`);
     lines.push(`TRIGGER:-P1D`);
@@ -2295,6 +3159,7 @@ function showLoginForm(errorMsg) {
         sessionStorage.setItem('tree_role', loginData.role);
         const loginBtn = document.getElementById('btn-login');
         if(loginBtn) loginBtn.textContent = loginData.role === 'admin' ? '🔓' : '👤';
+        updateLoginButton();
         const editBtn2 = document.getElementById('btn-edit');
         if(editBtn2) editBtn2.style.display = '';
         const adminBtn2 = document.getElementById('btn-admin-panel');
@@ -2376,6 +3241,7 @@ async function confirmDeletePerson(id){
         delete IDX.relatives[id];
         delete IDX.child_of[id];
         delete IDX.parent_in[id];
+        dropYahrzeit(id);
         for(const [, r2] of Object.entries(IDX.relatives)){
           r2.siblings = (r2.siblings||[]).filter(s=>s!==id);
           r2.spouses  = (r2.spouses ||[]).filter(s=>s!==id);
@@ -2464,7 +3330,7 @@ async function linkNewPersonToFamily(newId, targetId, relType, newSex){
     } else {
       const fam = IDX.families[famId];
       const slot = !fam.husband ? 'parent1' : !fam.wife ? 'parent2' : null;
-      if(!slot) throw new Error('У этой персоны уже есть оба родителя');
+      if(!slot) throw new Error(t('attach_both_parents'));
       const r = await fetch(WORKER_URL + '/api/family/' + famId, {
         method: 'PATCH', headers,
         body: JSON.stringify({[slot]: newId})
@@ -2491,6 +3357,216 @@ async function linkNewPersonToFamily(newId, targetId, relType, newSex){
     }
   }
   // else: relType empty or unrecognized — silently skip linking
+}
+
+async function linkExistingPersonToFamily(existingId, targetId, relType){
+  const existingNode = IDX.nodes[existingId];
+  const targetNode    = IDX.nodes[targetId];
+  if(!existingNode) throw new Error('Существующая персона не найдена: ' + existingId);
+  if(!targetNode)   throw new Error('Целевая персона не найдена: ' + targetId);
+  if(existingId === targetId) throw new Error('Нельзя прикрепить персону к самой себе');
+
+  const headers = {'Content-Type':'application/json','X-Password':_sessionPassword};
+
+  if(relType === 'жена' || relType === 'муж'){
+    const famIds = IDX.parent_in[targetId] || [];
+    let reusedFamId = null;
+    for(const fid of famIds){
+      const fam = IDX.families[fid];
+      if(!fam) continue;
+      const needsHusband = !fam.husband && existingNode.sex !== 'F';
+      const needsWife    = !fam.wife    && existingNode.sex !== 'M';
+      if(needsHusband || needsWife){ reusedFamId = fid; break; }
+    }
+    if(reusedFamId){
+      const r = await fetch(WORKER_URL + '/api/family/' + reusedFamId, {
+        method: 'PATCH', headers, body: JSON.stringify({addParent: existingId})
+      });
+      const d = await r.json();
+      if(!d.ok) throw new Error(d.error || 'Не удалось прикрепить супруга к существующей семье');
+    } else {
+      const isHusband = relType === 'муж' || existingNode.sex === 'M';
+      const p1 = isHusband ? existingId : targetId;
+      const p2 = isHusband ? targetId : existingId;
+      const r = await fetch(WORKER_URL + '/api/family', {
+        method: 'POST', headers, body: JSON.stringify({parent1:p1, parent2:p2, children:[]})
+      });
+      const d = await r.json();
+      if(!d.ok) throw new Error(d.error || 'Не удалось создать семью');
+    }
+  } else if(relType === 'ребёнок'){
+    const famIds = IDX.parent_in[targetId] || [];
+    let famId = famIds[0];
+    if(!famId){
+      const isFemale = targetNode.sex === 'F';
+      const r = await fetch(WORKER_URL + '/api/family', {
+        method: 'POST', headers,
+        body: JSON.stringify(isFemale ? {parent1:null,parent2:targetId,children:[]} : {parent1:targetId,parent2:null,children:[]})
+      });
+      const d = await r.json();
+      if(!d.ok) throw new Error(d.error || 'Не удалось создать семью');
+      famId = d.familyId;
+    }
+    const r = await fetch(WORKER_URL + '/api/family/' + famId, {
+      method: 'PATCH', headers, body: JSON.stringify({addChild: existingId})
+    });
+    const d = await r.json();
+    if(!d.ok) throw new Error(d.error || 'Не удалось прикрепить ребёнка к семье');
+  } else if(relType === 'родитель'){
+    const famId = IDX.child_of[targetId];
+    if(!famId){
+      // Если у прикрепляемого родителя уже есть семья, где известны ОБА
+      // супруга (полноценная пара) — переиспользуем её вместо создания
+      // новой. Иначе при последовательном прикреплении сначала отца, потом
+      // матери получаются два независимых семейных дубля с теми же людьми
+      // (именно так уже возникал баг с расколотой семьёй).
+      const reusableFamId = (IDX.parent_in[existingId] || [])
+        .find(fid => { const f = IDX.families[fid]; return f && f.husband && f.wife; });
+
+      if(reusableFamId){
+        const r = await fetch(WORKER_URL + '/api/family/' + reusableFamId, {
+          method: 'PATCH', headers, body: JSON.stringify({addChild: targetId})
+        });
+        const d = await r.json();
+        if(!d.ok) throw new Error(d.error || 'Не удалось прикрепить к существующей семье родителя');
+      } else {
+        const isFemale = existingNode.sex === 'F';
+        const r = await fetch(WORKER_URL + '/api/family', {
+          method: 'POST', headers,
+          body: JSON.stringify(isFemale ? {parent1:null,parent2:existingId,children:[targetId]} : {parent1:existingId,parent2:null,children:[targetId]})
+        });
+        const d = await r.json();
+        if(!d.ok) throw new Error(d.error || 'Не удалось создать семью');
+      }
+    } else {
+      const famCur = IDX.families[famId];
+      if(famCur && famCur.husband && famCur.wife) throw new Error(t('attach_both_parents'));
+      const r = await fetch(WORKER_URL + '/api/family/' + famId, {
+        method: 'PATCH', headers, body: JSON.stringify({addParent: existingId})
+      });
+      const d = await r.json();
+      if(!d.ok) throw new Error(d.error || 'Не удалось прикрепить родителя');
+    }
+  // FIX-GUARD:SIBLING-BRANCH-INTENTIONAL (2 of 2, in linkExistingPersonToFamily) —
+  // twin of the branch in linkNewPersonToFamily(). Both intentional.
+  } else if(relType === 'брат' || relType === 'сестра'){
+    const targetFamId   = IDX.child_of[targetId];
+    const existingFamId = IDX.child_of[existingId];
+
+    // Блокируем только реальный конфликт: у обеих персон УЖЕ есть родительские
+    // семьи, и это РАЗНЫЕ семьи — тут автообъединение рискованно.
+    // F3: сообщение локализовано (RU/EN/HE), как остальные тексты интерфейса —
+    // запрос к серверу в этом случае не отправляется вообще.
+    if(existingFamId && targetFamId && existingFamId !== targetFamId){
+      throw new Error(currentLang==='he'
+        ? `לשני האנשים האלה כבר יש הורים/משפחות שונות (${existingFamId} ו-${targetFamId}); יש לתקן קודם את הקשר דרך "תיקון" → "קשר משפחתי"`
+        : currentLang==='en'
+        ? `These people already have different parent families (${existingFamId} and ${targetFamId}); merging two different families automatically is not supported — fix the link first via "Correct" → "Family link"`
+        : `У этих людей уже указаны разные родители/семьи (${existingFamId} и ${targetFamId}); сначала исправьте связи через «Исправить» → «Семейная связь»`);
+    }
+
+    if(existingFamId && existingFamId === targetFamId){
+      // F3: раньше здесь был тихий no-op — пользователь видел «✓ Связь
+      // установлена», хотя ничего не менялось. Теперь явное сообщение,
+      // чтобы не вводить в заблуждение (запрос к серверу по-прежнему не идёт).
+      throw new Error(currentLang==='he' ? 'הם כבר מקושרים כאח/אחות'
+        : currentLang==='en' ? 'They are already linked as siblings'
+        : 'Они уже связаны как брат/сестра');
+    } else {
+      const useFamId   = targetFamId || existingFamId; // какая семья уже есть (если есть)
+      const missingId  = targetFamId ? existingId : targetId; // кого в неё добавить
+
+      if(!useFamId){
+        const r = await fetch(WORKER_URL + '/api/family', {
+          method: 'POST', headers,
+          body: JSON.stringify({parent1:null, parent2:null, children:[targetId, existingId]})
+        });
+        const d = await r.json();
+        if(!d.ok) throw new Error(d.error || 'Не удалось создать семью');
+      } else {
+        const r = await fetch(WORKER_URL + '/api/family/' + useFamId, {
+          method: 'PATCH', headers, body: JSON.stringify({addChild: missingId})
+        });
+        const d = await r.json();
+        if(!d.ok) throw new Error(d.error || 'Не удалось добавить брата/сестру в семью');
+      }
+    }
+  } else throw new Error('Неизвестный тип связи: ' + relType);
+}
+
+// Привязать НОВОГО человека к существующим отцу/матери (поля «Отец»/«Мать» в «Новый человек»)
+async function attachParentsToNewPerson(newId, fatherId, motherId){
+  const headers = {'Content-Type':'application/json','X-Password':_sessionPassword};
+  if(fatherId && motherId){
+    const famIds = (IDX.parent_in[fatherId]||[]).filter(fid => (IDX.parent_in[motherId]||[]).includes(fid));
+    let famId = famIds[0];
+    if(famId){
+      const r = await fetch(WORKER_URL + '/api/family/' + famId, {
+        method:'PATCH', headers, body: JSON.stringify({addChild: newId})
+      });
+      const d = await r.json();
+      if(!d.ok) throw new Error(d.error || 'Не удалось добавить ребёнка в существующий брак родителей');
+    } else {
+      const r = await fetch(WORKER_URL + '/api/family', {
+        method:'POST', headers, body: JSON.stringify({parent1:fatherId, parent2:motherId, children:[newId]})
+      });
+      const d = await r.json();
+      if(!d.ok) throw new Error(d.error || 'Не удалось создать семью с обоими родителями');
+    }
+  } else if(fatherId || motherId){
+    const pid = fatherId || motherId;
+    const pNode = IDX.nodes[pid];
+    const isFemale = pNode && pNode.sex === 'F';
+    const r = await fetch(WORKER_URL + '/api/family', {
+      method:'POST', headers,
+      body: JSON.stringify(isFemale ? {parent1:null, parent2:pid, children:[newId]} : {parent1:pid, parent2:null, children:[newId]})
+    });
+    const d = await r.json();
+    if(!d.ok) throw new Error(d.error || 'Не удалось привязать родителя');
+  }
+}
+
+// Сменить родителей СУЩЕСТВУЮЩЕГО человека («Исправить»). Перечитывание IDX делает вызывающий код (afterFamilyEdit).
+async function reassignParentsForFix(childId, oldFamId, fatherId, motherId){
+  const headers = {'Content-Type':'application/json','X-Password':_sessionPassword};
+  const bothUnknown = !fatherId && !motherId;
+
+  let targetFamId = null;
+  if(!bothUnknown){
+    targetFamId = Object.entries(IDX.families).find(([, f]) =>
+      (f.husband || null) === fatherId && (f.wife || null) === motherId
+    )?.[0];
+
+    if(!targetFamId){
+      const createRes = await fetch(WORKER_URL + '/api/family', {
+        method: 'POST', headers,
+        body: JSON.stringify({ parent1: fatherId, parent2: motherId, children: [] })
+      });
+      const createData = await createRes.json();
+      if(!createData.ok) throw new Error(createData.error || 'Не удалось создать семью для новых родителей');
+      targetFamId = createData.familyId;
+    }
+  }
+
+  if(targetFamId && targetFamId === oldFamId) return; // фактически не изменилось
+
+  if(oldFamId){
+    const rmRes = await fetch(WORKER_URL + '/api/family/' + oldFamId, {
+      method: 'PATCH', headers,
+      body: JSON.stringify({ removeChild: childId })
+    });
+    const rmData = await rmRes.json();
+    if(!rmData.ok) throw new Error(rmData.error || 'Не удалось отвязать от прежней семьи');
+  }
+
+  if(targetFamId){
+    const addRes = await fetch(WORKER_URL + '/api/family/' + targetFamId, {
+      method: 'PATCH', headers,
+      body: JSON.stringify({ addChild: childId })
+    });
+    const addData = await addRes.json();
+    if(!addData.ok) throw new Error(addData.error || 'Не удалось привязать к новой семье');
+  }
 }
 
 // Инициализировать дерево с данными из API
@@ -2829,34 +3905,55 @@ async function handleGedcomImport(file){
 
 async function handleApUpload(file){
   const st = document.getElementById('ap-upload-status');
+  const fail = msg => { st.style.color = '#C03030'; st.textContent = '❌ ' + msg; };
   st.style.color = '';
   st.textContent = '⏳ ' + t('login_btn_loading');
+  try { document.getElementById('ap-upload-input').value = ''; } catch(e){}
 
-  const html = await file.text();
-  // Support both old (const IDX = {...}) and new (FALLBACK_DATA = {...}) formats
-  const m = html.match(/const IDX = ({[\s\S]*?});\n/) || html.match(/FALLBACK_DATA = ({[\s\S]*?});\n/);
-  if(!m){
-    st.style.color = '#C03030';
-    st.textContent = '❌ ' + t('ap_no_tree_data_found');
-    return;
-  }
-
+  // 1. Разбор файла: .json (скачан кнопкой 📦 или исправлен в Claude) либо старый HTML-файл дерева
+  let text;
+  try { text = await file.text(); } catch(e){ fail(e.message); return; }
+  const trimmed = text.replace(/^\uFEFF/, '').trim();
   let parsed;
-  try { parsed = JSON.parse(m[1]); }
-  catch(e){
-    st.style.color = '#C03030';
-    st.textContent = '❌ ' + t('ap_data_corrupted_prefix') + e.message;
-    return;
-  }
+  try {
+    if(trimmed.startsWith('{')){
+      parsed = JSON.parse(trimmed);
+    } else {
+      const m = text.match(/const IDX = ({[\s\S]*?});\n/) || text.match(/FALLBACK_DATA = ({[\s\S]*?});\n/);
+      if(!m){ fail(t('ap_no_tree_data_found')); return; }
+      parsed = JSON.parse(m[1]);
+    }
+  } catch(e){ fail(t('ap_data_corrupted_prefix') + e.message); return; }
+  if(!parsed || typeof parsed !== 'object' || !parsed.nodes || typeof parsed.nodes !== 'object'){ fail(t('ap_no_persons_in_file')); return; }
+  const newIds = Object.keys(parsed.nodes);
+  if(newIds.length === 0){ fail(t('ap_upload_empty')); return; }
+  if(!parsed.families || typeof parsed.families !== 'object') parsed.families = {};
 
-  if(!parsed.nodes){
-    st.style.color = '#C03030';
-    st.textContent = '❌ ' + t('ap_no_persons_in_file');
-    return;
-  }
+  // 2. Предпросмотр: сравнение с деревом на сервере, подтверждение
+  let current = { nodes: {}, families: {} };
+  try {
+    const rc = await fetch(WORKER_URL + '/api/tree', { headers: { 'X-Password': _sessionPassword } });
+    if(rc.ok) current = await rc.json();
+    else if(rc.status !== 404){ fail(t('toast_server_error') + ' (' + rc.status + ')'); return; }
+  } catch(e){ fail(t('toast_connection_error_prefix') + e.message); return; }
+  const oldNodes = current.nodes || {};
+  const oldIds = Object.keys(oldNodes);
+  const added   = newIds.filter(id => !(id in oldNodes));
+  const removed = oldIds.filter(id => !(id in parsed.nodes));
+  const changed = newIds.filter(id => (id in oldNodes) && JSON.stringify(oldNodes[id]) !== JSON.stringify(parsed.nodes[id]));
+  const lst = (title, ids, src) => ids.length
+    ? '\n\n' + title + ' (' + ids.length + '):\n' + ids.slice(0, 12).map(id => '  ' + id + ' ' + ((src[id] && src[id].name) || '')).join('\n') + (ids.length > 12 ? '\n  …' : '')
+    : '';
+  const msg = t('ap_upload_confirm')
+    .replace('{oldN}', oldIds.length).replace('{oldF}', Object.keys(current.families || {}).length)
+    .replace('{newN}', newIds.length).replace('{newF}', Object.keys(parsed.families).length)
+    .replace('{add}', added.length).replace('{rem}', removed.length).replace('{chg}', changed.length)
+    + lst(t('ap_upload_label_added'), added, parsed.nodes)
+    + lst(t('ap_upload_label_removed'), removed, oldNodes);
+  if(!confirm(msg)){ st.style.color = ''; st.textContent = t('ap_upload_cancelled'); return; }
 
-  st.textContent = t('ap_uploading_n_persons').replace('{n}', Object.keys(parsed.nodes).length);
-
+  // 3. Замена (сервер сам сохранит ПРЕЖНЕЕ состояние в резервную копию) и пересчёт связей
+  st.textContent = t('ap_uploading_n_persons').replace('{n}', newIds.length);
   try {
     const r = await fetch(WORKER_URL + '/api/tree', {
       method: 'POST',
@@ -2864,14 +3961,15 @@ async function handleApUpload(file){
       body: JSON.stringify(parsed)
     });
     const d = await r.json();
-    if(d.ok){
-      st.style.color = '#2E7D32';
-      st.textContent = t('ap_uploaded_n_persons').replace('{n}', Object.keys(parsed.nodes).length);
-      showToast(t('ap_tree_updated_toast'), false);
-    } else {
-      st.style.color = '#C03030';
-      st.textContent = '❌ ' + (d.error || t('toast_server_error'));
-    }
+    if(!d.ok){ fail(d.error || t('toast_server_error')); return; }
+    st.textContent = '⏳ ' + t('ap_gedcom_rebuilding');
+    const r2 = await fetch(WORKER_URL + '/api/rebuild-cache', { method: 'POST', headers: { 'X-Password': _sessionPassword } });
+    const d2 = await r2.json();
+    if(!d2.ok){ fail(d2.error || t('toast_server_error')); return; }
+    st.style.color = '#2E7D32';
+    st.textContent = t('ap_uploaded_n_persons').replace('{n}', newIds.length);
+    showToast(t('ap_tree_updated_toast'), false);
+    if(typeof loadTree === 'function') await loadTree();
   } catch(e){
     st.style.color = '#C03030';
     st.textContent = t('toast_connection_error_prefix') + e.message;
@@ -2964,20 +4062,50 @@ async function loadApProposals(){
 
 async function loadTree() {
   // Проверим сохранённый пароль в sessionStorage
+  if (TREE_CONFIG.startPage && !sessionStorage.getItem('tree_pwd')) {
+    // страница-витрина (демо): пароль мог быть сохранён на устройстве («Запомнить»)
+    try {
+      const sp = localStorage.getItem('tree_pwd_saved');
+      if (sp) {
+        sessionStorage.setItem('tree_pwd', sp);
+        const sr = localStorage.getItem('tree_role_saved');
+        if (sr) sessionStorage.setItem('tree_role', sr);
+      }
+    } catch (e) {}
+    if (!sessionStorage.getItem('tree_pwd')) { location.replace(TREE_CONFIG.startPage); return; }
+  }
   const savedPwd = sessionStorage.getItem('tree_pwd');
   if (savedPwd) {
-    showLoader('Загрузка дерева…');
+    showLoader(t('loading_tree'));
     try {
       const res = await fetch(WORKER_URL + '/api/tree', {
         headers: { 'X-Password': savedPwd }
       });
       if (res.ok) {
         const data = await res.json();
+        window._userRole = sessionStorage.getItem('tree_role') || null;
+        if (!window._userRole) {
+          // старая сессия без роли — узнаём роль у сервера
+          try {
+            const lr = await fetch(WORKER_URL + '/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: savedPwd }) });
+            const ld = await lr.json();
+            if (ld && ld.ok) { window._userRole = ld.role; sessionStorage.setItem('tree_role', ld.role); }
+          } catch (e) {}
+        }
         initTree(data, savedPwd);
+        const lb = document.getElementById('btn-login');
+        if (lb && window._userRole) lb.textContent = window._userRole === 'admin' ? '🔓' : '👤';
+        updateLoginButton();
         return;
       }
       // Пароль устарел — очищаем и проваливаемся в гостевую ветку ниже
       // (не дублируем fallback-логику здесь)
+      if (TREE_CONFIG.startPage) {
+        try { sessionStorage.removeItem('tree_role'); localStorage.removeItem('tree_pwd_saved'); localStorage.removeItem('tree_role_saved'); } catch (e) {}
+        sessionStorage.removeItem('tree_pwd');
+        location.replace(TREE_CONFIG.startPage);
+        return;
+      }
       sessionStorage.removeItem('tree_pwd');
     } catch(e) {
       console.warn('API недоступен, используем встроенные данные', e);
@@ -2993,7 +4121,7 @@ async function loadTree() {
   // FALLBACK_DATA. Пустой nodes в успешном ответе — не ошибка (новое
   // дерево клиента), поэтому не откатываемся на FALLBACK_DATA в этом
   // случае.
-  showLoader('Загрузка дерева…');
+  showLoader(t('loading_tree'));
   try {
     const res = await fetch(WORKER_URL + '/api/tree/public');
     if (res.ok) {
