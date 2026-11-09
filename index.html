@@ -250,6 +250,47 @@ svg{position:absolute;top:0;left:0;overflow:visible}
 #help-bubble .lg-tip{margin-top:6px;opacity:.7}
 body.rtl #help-bubble{direction:rtl;text-align:right}
 body.rtl #help-bubble ul{padding-left:0;padding-right:16px}
+#rc-overlay{display:none;position:fixed;inset:0;background:rgba(20,12,4,.7);z-index:650;align-items:center;justify-content:center}
+#rc-overlay.open{display:flex}
+#rc-box{background:#fff;border-radius:6px;padding:18px 22px;max-width:520px;width:94vw;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.5)}
+#rc-box h3{font-size:.95rem;font-weight:600;color:#1C1208;margin-bottom:8px}
+.rc-intro{font-size:.74rem;color:#555;line-height:1.5;margin-bottom:6px}
+.rc-helplink{display:inline-block;font-size:.72rem;color:#7A5828;text-decoration:underline;margin-bottom:6px;cursor:pointer}
+#help-bubble.over{z-index:700}
+.rc-lbl{display:block;font-size:.72rem;font-weight:600;color:#7A5828;margin:10px 0 3px}
+#rc-box input,#rc-box select{width:100%;padding:6px 9px;border:1px solid rgba(184,144,48,.4);border-radius:4px;font-family:inherit;font-size:.8rem;background:#FFFDF7;color:#28180A}
+#rc-count{margin-top:12px;font-size:.84rem;font-weight:600;color:#1C1208;line-height:1.45}
+#rc-heb{font-size:.74rem;color:#555;margin-bottom:6px}
+#rc-box details{margin-top:8px;font-size:.76rem}
+#rc-box summary{cursor:pointer;color:#5A3C10;font-weight:600}
+.rc-list{max-height:170px;overflow-y:auto;margin-top:4px;border:1px solid rgba(184,144,48,.25);border-radius:4px;padding:4px 8px;color:#28180A}
+.rc-row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:2px 0;font-size:.74rem}
+.rc-row .rc-m{color:#7A5828;font-size:.68rem;white-space:nowrap}
+.rc-row .rc-x{cursor:pointer;color:#A02020;border:none;background:none;font-size:.9rem;line-height:1}
+.rc-btns{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:14px}
+body.rtl #rc-box{direction:rtl;text-align:right}
+#rc-box{max-width:660px}
+#rc-box input[type=checkbox],#rc-box input[type=radio]{width:auto;padding:0}
+#rc-box h4{font-size:.88rem;color:#5A3C10;margin:0 0 6px}
+#rc-box h5{font-size:.78rem;color:#28180A;margin:12px 0 4px}
+.rc-block{border-top:1px solid rgba(184,144,48,.35);margin-top:14px;padding-top:10px}
+.rc-warn{font-size:.78rem;line-height:1.45;padding:7px 10px;border-radius:4px;background:#FFF1C9;border:1px solid #D9B24C;color:#5A3C10;margin-bottom:6px}
+.rc-warn.ok{background:#E6F2E1;border-color:#8DB67B;color:#2D5A1E}
+.rc-legacy{font-size:.76rem;line-height:1.45;padding:7px 10px;border-radius:4px;background:#EAF1FA;border:1px solid #9DB8D6;color:#1E3F66;margin-bottom:8px}
+.rc-hint{font-size:.72rem;color:#666;line-height:1.45;margin:3px 0 6px}
+.rc-sent{font-size:.8rem;color:#28180A;line-height:1.7;margin-top:8px}
+.rc-sent select{width:auto;max-width:100%}
+.rc-ex{font-size:.72rem;color:#7A5828;line-height:1.45;margin:2px 0 4px}
+.rc-chk{display:block;font-size:.8rem;color:#28180A;margin-top:8px;cursor:pointer}
+.rc-sub{margin:4px 0 0 22px;font-size:.76rem;color:#28180A}
+.rc-sub label{margin-right:12px;cursor:pointer;white-space:nowrap}
+.rc-file{border:1px solid rgba(184,144,48,.35);border-radius:5px;padding:8px 10px;margin-top:8px;background:#FBF8F0}
+.rc-file b{font-size:.82rem;color:#1C1208}
+.rc-add{display:flex;gap:6px;margin-top:6px}
+.rc-add input{flex:1}
+.rc-notif{font-size:.72rem;color:#5A3C10;line-height:1.5;margin-top:10px;padding:7px 10px;background:#F6EFDD;border-radius:4px}
+body.rtl .rc-sub{margin:4px 22px 0 0}
+body.rtl .rc-sub label{margin-right:0;margin-left:12px}
 </style>
 </head>
 <body>
@@ -267,6 +308,7 @@ body.rtl #help-bubble ul{padding-left:0;padding-right:16px}
   <button class="btn" id="btn-print" style="background:rgba(237,216,144,.15);border-color:rgba(237,216,144,.4)" title="Печать A1" data-title="title_print">🖨</button>
   <button class="btn" id="btn-contacts" style="background:rgba(237,216,144,.15);border-color:rgba(237,216,144,.4)" title="Скачать контакты" data-title="title_contacts">📇</button>
   <button class="btn" id="btn-calendar" style="background:rgba(237,216,144,.15);border-color:rgba(237,216,144,.4)" title="Скачать календарь дней рождения" data-title="title_calendar">📅</button>
+  <button class="btn" id="btn-reminders" style="background:rgba(237,216,144,.15);border-color:rgba(237,216,144,.4)" data-title="tooltip_reminders">&#128276;</button>
   <button class="btn" id="btn-hebrew-calendar" style="background:rgba(237,216,144,.15);border-color:rgba(237,216,144,.4)" data-title="title_hebrew_calendar">&#128334;</button>
   <button class="btn" id="btn-login" style="background:rgba(237,216,144,.15);border-color:rgba(237,216,144,.4)" title="Войти" data-title="login_btn">🔑</button>
   <button class="btn" id="btn-backup" style="background:rgba(237,216,144,.15);border-color:rgba(237,216,144,.4)" title="Скачать резервную копию (JSON)" data-title="tooltip_backup">📦</button>
@@ -556,6 +598,76 @@ body.rtl #help-bubble ul{padding-left:0;padding-right:16px}
 </div>
 
 <!-- ── PRINT PREVIEW ── -->
+<div id="rc-overlay">
+  <div id="rc-box">
+    <h3 id="rc-title"></h3>
+    <div class="rc-intro" id="rc-intro"></div>
+    <a href="#" id="rc-help" class="rc-helplink"></a>
+    <div class="rc-legacy" id="rc-legacy" style="display:none"></div>
+
+    <div class="rc-block">
+      <h4 id="rc-b1"></h4>
+      <div class="rc-warn" id="rc-warn"></div>
+      <label class="rc-lbl" id="rc-me-lbl" for="rc-me"></label>
+      <input id="rc-me" type="text" list="names-list" autocomplete="off">
+      <div class="rc-hint" id="rc-me-hint"></div>
+      <h5 id="rc-radius-h"></h5>
+      <div class="rc-sent"><span id="rc-p1a"></span> <select id="rc-near"></select> <span id="rc-p1b"></span></div>
+      <div class="rc-ex" id="rc-near-ex"></div>
+      <div class="rc-sent"><span id="rc-p2a"></span> <select id="rc-far"></select> <span id="rc-p2b"></span></div>
+      <div class="rc-ex" id="rc-far-ex"></div>
+      <div class="rc-sent" id="rc-p3"></div>
+      <div id="rc-count"></div>
+      <details><summary id="rc-who-sum"></summary><div class="rc-list" id="rc-who-list"></div></details>
+      <h5 id="rc-people-h"></h5>
+      <div class="rc-hint" id="rc-people-p"></div>
+      <div class="rc-hint" id="rc-people-note"></div>
+      <div class="rc-list" id="rc-people-list"></div>
+      <div class="rc-add"><input id="rc-add-in" type="text" list="names-list" autocomplete="off"><button type="button" class="pbtn pbtn-cancel" id="rc-add-btn"></button></div>
+    </div>
+
+    <div class="rc-block">
+      <h4 id="rc-b2"></h4>
+      <div class="rc-hint" id="rc-b2-p"></div>
+      <label class="rc-chk"><input type="checkbox" id="rc-ev-birth"> <span id="rc-ev-birth-t"></span></label>
+      <div class="rc-sub"><span id="rc-cal-lbl"></span>
+        <label><input type="radio" name="rc-cal" value="greg"> <span id="rc-cal-greg"></span></label>
+        <label><input type="radio" name="rc-cal" value="he"> <span id="rc-cal-he"></span></label>
+        <label><input type="radio" name="rc-cal" value="both"> <span id="rc-cal-both"></span></label>
+      </div>
+      <div class="rc-hint" id="rc-cal-hint"></div>
+      <label class="rc-chk"><input type="checkbox" id="rc-ev-deathhe"> <span id="rc-ev-deathhe-t"></span></label>
+      <div class="rc-hint" id="rc-ev-deathhe-h"></div>
+      <label class="rc-chk"><input type="checkbox" id="rc-ev-deathgreg"> <span id="rc-ev-deathgreg-t"></span></label>
+      <div class="rc-hint" id="rc-ev-deathgreg-h"></div>
+      <div class="rc-warn" id="rc-miss" style="display:none"></div>
+      <details id="rc-miss-d" style="display:none"><summary id="rc-miss-sum"></summary><div class="rc-list" id="rc-miss-list"></div></details>
+    </div>
+
+    <div class="rc-block">
+      <h4 id="rc-b3"></h4>
+      <div class="rc-file"><b id="rc-f1-t"></b>
+        <div class="rc-hint" id="rc-f1-d"></div>
+        <div id="rc-f1-s" style="font-size:.76rem"></div>
+        <div style="margin-top:6px"><button type="button" class="pbtn pbtn-primary" id="rc-dl1"></button></div>
+      </div>
+      <div class="rc-file"><b id="rc-f2-t"></b>
+        <div class="rc-hint" id="rc-f2-d"></div>
+        <div id="rc-f2-s" style="font-size:.76rem"></div>
+        <div id="rc-f2-st" style="font-size:.72rem;color:#7A5828;margin-top:2px"></div>
+        <div style="margin-top:6px"><button type="button" class="pbtn pbtn-primary" id="rc-dl2"></button></div>
+      </div>
+      <div class="rc-notif" id="rc-notif"></div>
+    </div>
+    <div class="rc-hint" id="rc-foot" style="margin-top:10px"></div>
+    <div class="rc-btns">
+      <button type="button" class="pbtn pbtn-cancel" id="rc-reset"></button>
+      <button type="button" class="pbtn pbtn-cancel" id="rc-close"></button>
+      <button type="button" class="pbtn pbtn-primary" id="rc-save"></button>
+    </div>
+  </div>
+</div>
+
 <div id="print-overlay">
   <div id="print-box">
     <h3 data-i="print_modal_title">🖨 Печать генеалогического дерева</h3>
