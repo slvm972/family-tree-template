@@ -311,7 +311,7 @@ body.rtl .rc-sub label{margin-right:0;margin-left:12px}
   <button class="btn" id="btn-contacts" style="background:rgba(237,216,144,.15);border-color:rgba(237,216,144,.4)" title="Скачать контакты" data-title="title_contacts">📇</button>
   <button class="btn" id="btn-calendar" style="background:rgba(237,216,144,.15);border-color:rgba(237,216,144,.4)" title="Скачать календарь дней рождения" data-title="title_calendar">📅</button>
   <button class="btn" id="btn-reminders" style="background:rgba(237,216,144,.15);border-color:rgba(237,216,144,.4)" data-title="tooltip_reminders">&#128276;</button>
-  <button class="btn" id="btn-hebrew-calendar" style="background:rgba(237,216,144,.15);border-color:rgba(237,216,144,.4)" data-title="title_hebrew_calendar">&#128334;</button>
+  <button class="btn" id="btn-hebrew-calendar" style="background:rgba(237,216,144,.15);border-color:rgba(237,216,144,.4)" data-title="tooltip_hebrew_calendar">&#128334;</button>
   <button class="btn" id="btn-login" style="background:rgba(237,216,144,.15);border-color:rgba(237,216,144,.4)" title="Войти" data-title="login_btn">🔑</button>
   <button class="btn" id="btn-backup" style="background:rgba(237,216,144,.15);border-color:rgba(237,216,144,.4)" title="Скачать резервную копию (JSON)" data-title="tooltip_backup">📦</button>
   <button class="btn" id="btn-admin-panel" style="display:none;background:rgba(237,216,144,.15);border-color:rgba(237,216,144,.4)" title="Управление" data-title="title_admin" data-i="ap_toolbar_btn">🛠 Управление</button>
@@ -3139,36 +3139,268 @@ document.getElementById('btn-contacts').addEventListener('click', () => {
 })
 
 // ── Calendar (ICS) export ────────────────────────────────────────────────
+// ---- Family reminders window (settings v2, kept only in this browser) ----
+let rcDraft = null, rcLevels = null, rcLevelsFor = '', rcTimer = null;
+const RC_FULLDATE = /^\d{1,2}\s+[A-Za-z]{3}\s+\d{4}$/;
+function rcEl(id){ return document.getElementById(id); }
+function rcLabel(id){
+  const n = IDX.nodes[id]; if(!n) return id;
+  const by = n.birth ? (n.birth.match(/\d{4}/)||[''])[0] : '';
+  return pname(id) + (by ? ' (' + by + ')' : '') + ' [' + id + ']';
+}
+function rcParseId(str){
+  const m = String(str || '').match(/\[(P\d+)\]\s*$/);
+  return (m && IDX.nodes[m[1]]) ? m[1] : '';
+}
+function rcLvlVal(elId){ const v = rcEl(elId).value; return v === 'all' ? 'all' : Number(v); }
+function rcFillLevel(elId, cur){
+  const sel = rcEl(elId);
+  sel.innerHTML = '';
+  ['0','1','2','3','4','5','6','7','all'].forEach(v => {
+    const o = document.createElement('option');
+    o.value = v;
+    o.textContent = v === 'all' ? t('rc2_lvl_all') : (Number(v) <= 4 ? t('rc2_lvl_' + v) : t('rc2_lvl_far').replace('{n}', v));
+    sel.appendChild(o);
+  });
+  sel.value = String(cur);
+}
+function rcExample(v){
+  if(v === 'all') return t('rc2_ex_all');
+  const n = Number(v);
+  return n <= 4 ? t('rc2_ex_' + n) : t('rc2_ex_far').replace('{n}', n);
+}
+function rcRow(left, right){
+  const row = document.createElement('div'); row.className = 'rc-row';
+  const a = document.createElement('span'); a.textContent = left; row.appendChild(a);
+  if(right){ if(typeof right === 'string'){ const b = document.createElement('span'); b.className = 'rc-m'; b.textContent = right; row.appendChild(b); } else row.appendChild(right); }
+  return row;
+}
+function rcSchedule(){ clearTimeout(rcTimer); rcTimer = setTimeout(rcRender, 150); }
+function rcRender(){
+  if(!rcDraft) return;
+  clearTimeout(rcTimer);
+  rcDraft.me = rcParseId(rcEl('rc-me').value);
+  rcDraft.near = rcLvlVal('rc-near');
+  rcDraft.far = rcLvlVal('rc-far');
+  if(rcDraft.near === 'all' && rcDraft.far !== 'all'){ rcDraft.far = 'all'; rcEl('rc-far').value = 'all'; }
+  if(rcDraft.near !== 'all' && rcDraft.far !== 'all' && rcDraft.far < rcDraft.near){ rcDraft.far = rcDraft.near; rcEl('rc-far').value = String(rcDraft.far); }
+  const ev = rcDraft.events;
+  ev.birthdays = rcEl('rc-ev-birth').checked;
+  const calEl = document.querySelector('input[name="rc-cal"]:checked');
+  if(calEl) ev.birthdayCal = calEl.value;
+  ev.deathHe = rcEl('rc-ev-deathhe').checked;
+  ev.deathGreg = rcEl('rc-ev-deathgreg').checked;
+  rcEl('rc-cal-greg').parentNode.parentNode.style.opacity = ev.birthdays ? '1' : '.5';
+
+  const P = Object.assign({}, rcDraft, { eventsExplicit: true });
+  const ids = Object.keys(IDX.nodes);
+  const warn = rcEl('rc-warn');
+  if(!rcDraft.me){ warn.className = 'rc-warn'; warn.textContent = t('rc2_warn_off'); }
+  else { warn.className = 'rc-warn ok'; warn.textContent = t('rc2_warn_on'); }
+  rcEl('rc-near-ex').textContent = t('rc2_inc') + rcExample(String(rcDraft.near));
+  rcEl('rc-far-ex').textContent = t('rc2_inc') + rcExample(String(rcDraft.far));
+  if(rcDraft.me && rcLevelsFor !== rcDraft.me){ rcLevels = TreeReminders.kinshipLevels(IDX, rcDraft.me); rcLevelsFor = rcDraft.me; }
+  const lv = rcDraft.me ? rcLevels : null;
+
+  // radius: who is inside
+  let full = 0, quiet = 0, skip = 0;
+  const rows = [];
+  ids.forEach(id => {
+    const m = TreeReminders.reminderMode(id, IDX, P, lv, 'greg');
+    if(m === 'full') full++; else if(m === 'quiet') quiet++; else skip++;
+    if(m !== 'skip') rows.push({ id: id, m: m, lv: (lv && lv[id] !== undefined) ? lv[id] : 99 });
+  });
+  rcEl('rc-count').textContent = rcDraft.me
+    ? t('rc2_count').replace('{a}', full).replace('{b}', quiet).replace('{c}', skip)
+    : t('rc2_count_off').replace('{n}', ids.length);
+  rcEl('rc-count').style.cssText = 'margin-top:10px;font-size:.84rem;font-weight:600;color:#1C1208;line-height:1.45';
+  const wl = rcEl('rc-who-list');
+  wl.innerHTML = '';
+  rows.sort((x, y) => (x.lv - y.lv) || pname(x.id).localeCompare(pname(y.id)));
+  rows.forEach(r => wl.appendChild(rcRow(pname(r.id), t(r.m === 'full' ? 'rc2_mode_full' : 'rc2_mode_quiet'))));
+
+  // individual people
+  const pl = rcEl('rc-people-list');
+  pl.innerHTML = '';
+  const pids = Object.keys(rcDraft.personal).filter(id => IDX.nodes[id]);
+  if(!pids.length){ pl.textContent = t('rc2_people_none'); }
+  pids.sort((x, y) => pname(x).localeCompare(pname(y))).forEach(id => {
+    const sel = document.createElement('select');
+    sel.style.cssText = 'width:auto;max-width:60%';
+    const base = TreeReminders.reminderMode(id, IDX, Object.assign({}, P, { personal: {} }), lv, 'greg');
+    const now = t(base === 'full' ? 'rc2_res_full' : (base === 'quiet' ? 'rc2_res_quiet' : 'rc2_res_skip'));
+    [['', t('rc2_ps_radius') + t('rc2_ps_now').replace('{x}', now)], ['always', t('rc2_ps_always')], ['quiet', t('rc2_ps_quiet')], ['never', t('rc2_ps_never')]].forEach(o => {
+      const op = document.createElement('option'); op.value = o[0]; op.textContent = o[1]; sel.appendChild(op);
+    });
+    sel.value = rcDraft.personal[id] || '';
+    sel.addEventListener('change', () => { if(sel.value) rcDraft.personal[id] = sel.value; else delete rcDraft.personal[id]; rcRender(); });
+    pl.appendChild(rcRow(pname(id), sel));
+  });
+
+  // missing data
+  const miss = [];
+  ids.forEach(id => {
+    const n = IDX.nodes[id];
+    if(TreeReminders.reminderMode(id, IDX, P, lv, 'greg') === 'skip') return;
+    const dead = !!((n.death && String(n.death).trim()) || (n.death_he && String(n.death_he).trim()));
+    if(!dead){
+      if(ev.birthdays && (ev.birthdayCal === 'greg' || ev.birthdayCal === 'both') && n.birth && String(n.birth).trim() && !RC_FULLDATE.test(String(n.birth).trim())) miss.push([id, 'rc2_miss_birth']);
+    } else {
+      if(ev.deathHe && !(n.death_he && String(n.death_he).trim())) miss.push([id, 'rc2_miss_he']);
+      if(ev.deathGreg && !(n.death && RC_FULLDATE.test(String(n.death).trim()))) miss.push([id, 'rc2_miss_greg']);
+    }
+  });
+  const missIds = {}; miss.forEach(m => { missIds[m[0]] = true; });
+  const nMiss = Object.keys(missIds).length;
+  rcEl('rc-miss').style.display = nMiss ? '' : 'none';
+  rcEl('rc-miss-d').style.display = nMiss ? '' : 'none';
+  rcEl('rc-miss').textContent = t('rc2_miss_count').replace('{n}', nMiss);
+  const ml = rcEl('rc-miss-list'); ml.innerHTML = '';
+  miss.forEach(m => ml.appendChild(rcRow(pname(m[0]), t(m[1]))));
+
+  // the two files, counted by the same code that builds them
+  const yr = new Date().getFullYear();
+  const g = TreeReminders.buildGregorianEvents({ idx: IDX, prefs: P, nowYear: yr, maxAge: 100, nameOf: pname, ageText: n => n, relOf: () => '', labels: {} });
+  const gTotal = g.count + g.deathCount;
+  rcEl('rc-f1-s').textContent = gTotal ? t('rc2_stat').replace('{b}', g.count).replace('{d}', g.deathCount).replace('{q}', g.quietCount) : t('rc2_empty');
+  rcEl('rc-dl1').disabled = !gTotal;
+  let hTotal = 0;
+  if(window.TreeHebrew && TreeHebrew.isSupported()){
+    try {
+      const plan = TreeReminders.planHebrew(IDX, P, []);
+      const h = TreeHebrew.buildHebrewIcs({ nodes: IDX.nodes, yahrzeitIds: plan.yzIds, yahrzeitMode: plan.yahrzeitMode, birthdayMode: plan.birthdayMode, nowYear: yr, years: 1, nameOf: pname, labels: {} });
+      hTotal = h.birthdayEvents + h.yahrzeitEvents;
+      rcEl('rc-f2-s').textContent = hTotal ? t('rc2_stat').replace('{b}', h.birthdayEvents).replace('{d}', h.yahrzeitEvents).replace('{q}', h.quietEvents) : t('rc2_empty');
+    } catch(e){ rcEl('rc-f2-s').textContent = String(e.message || e); }
+  } else {
+    rcEl('rc-f2-s').textContent = t('toast_hebrew_unsupported');
+  }
+  rcEl('rc-dl2').disabled = !hTotal;
+  const st = getHebrewCalStatus();
+  rcEl('rc-f2-st').textContent = st.state === 'none' ? t('hebcal_win_none') : t('hebcal_win_last').replace('{from}', st.from).replace('{to}', st.to).replace('{created}', st.created);
+}
+function rcSave(){
+  rcRender();
+  if(!rcDraft.me && rcEl('rc-me').value.trim()){ showToast(t('rc2_pick'), true); return false; }
+  rcDraft.eventsExplicit = true;
+  return TreeReminders.saveReminderPrefs(rcDraft);
+}
+function openRemindersWindow(){
+  if(!_sessionPassword){
+    document.getElementById('btn-login').click();
+    showToast(t('rc_login'), true);
+    return;
+  }
+  if(!window.TreeReminders){ showToast('tree-reminders.js is not loaded', true); return; }
+  const saved = TreeReminders.loadReminderPrefs(IDX);
+  rcDraft = saved || TreeReminders.defaultPrefs();
+  rcDraft.events = Object.assign({}, rcDraft.events);
+  rcDraft.personal = Object.assign({}, rcDraft.personal);
+  let legacyN = 0;
+  if(!rcDraft.eventsExplicit){
+    const lg = TreeReminders.legacyYahrzeitIds(IDX);
+    lg.forEach(id => { if(!rcDraft.personal[id]) rcDraft.personal[id] = 'always'; });
+    legacyN = lg.length;
+  }
+  rcLevels = null; rcLevelsFor = '';
+  [['rc-title','rc2_title'],['rc-intro','rc2_intro'],['rc-b1','rc2_b1'],['rc-me-lbl','rc2_me_lbl'],['rc-me-hint','rc2_me_hint'],
+   ['rc-radius-h','rc2_radius'],['rc-p1a','rc2_p1a'],['rc-p1b','rc2_p1b'],['rc-p2a','rc2_p2a'],['rc-p2b','rc2_p2b'],['rc-p3','rc2_p3'],
+   ['rc-who-sum','rc2_show_who'],['rc-people-h','rc2_people_h'],['rc-people-p','rc2_people_p'],['rc-people-note','rc2_people_note'],
+   ['rc-add-btn','rc2_people_add'],['rc-b2','rc2_b2'],['rc-b2-p','rc2_b2_p'],['rc-ev-birth-t','rc2_ev_birth'],['rc-cal-lbl','rc2_cal_lbl'],
+   ['rc-cal-greg','rc2_cal_greg'],['rc-cal-he','rc2_cal_he'],['rc-cal-both','rc2_cal_both'],['rc-cal-hint','rc2_cal_hint'],
+   ['rc-ev-deathhe-t','rc2_ev_deathhe'],['rc-ev-deathhe-h','rc2_ev_deathhe_h'],['rc-ev-deathgreg-t','rc2_ev_deathgreg'],['rc-ev-deathgreg-h','rc2_ev_deathgreg_h'],
+   ['rc-miss-sum','rc2_miss_sum'],['rc-b3','rc2_b3'],['rc-f1-t','rc2_f1_t'],['rc-f1-d','rc2_f1_d'],['rc-f2-t','rc2_f2_t'],['rc-f2-d','rc2_f2_d'],
+   ['rc-dl1','rc2_dl'],['rc-dl2','rc2_dl'],['rc-notif','rc2_notif'],['rc-foot','rc2_foot'],['rc-save','rc2_save'],['rc-reset','rc2_reset'],['rc-close','rc2_close'],['rc-help','rc2_help']
+  ].forEach(p => { rcEl(p[0]).textContent = t(p[1]); });
+  const lgEl = rcEl('rc-legacy');
+  lgEl.style.display = legacyN ? '' : 'none';
+  lgEl.textContent = legacyN ? t('rc2_legacy').replace('{n}', legacyN) : '';
+  const meEl = rcEl('rc-me');
+  meEl.placeholder = t('ph_search');
+  meEl.value = rcDraft.me ? rcLabel(rcDraft.me) : '';
+  rcEl('rc-add-in').placeholder = t('ph_search');
+  rcEl('rc-add-in').value = '';
+  rcFillLevel('rc-near', rcDraft.near);
+  rcFillLevel('rc-far', rcDraft.far);
+  rcEl('rc-ev-birth').checked = !!rcDraft.events.birthdays;
+  document.querySelectorAll('input[name="rc-cal"]').forEach(r => { r.checked = (r.value === rcDraft.events.birthdayCal); });
+  rcEl('rc-ev-deathhe').checked = !!rcDraft.events.deathHe;
+  rcEl('rc-ev-deathgreg').checked = !!rcDraft.events.deathGreg;
+  rcEl('rc-overlay').classList.add('open');
+  rcRender();
+}
+function closeRemindersWindow(){ const o = rcEl('rc-overlay'); if(o) o.classList.remove('open'); }
+rcEl('btn-reminders').addEventListener('click', openRemindersWindow);
+rcEl('rc-help').addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); openRemindersHelp(); });
+rcEl('rc-close').addEventListener('click', closeRemindersWindow);
+rcEl('rc-overlay').addEventListener('click', e => { if(e.target.id === 'rc-overlay') closeRemindersWindow(); });
+rcEl('rc-me').addEventListener('input', rcSchedule);
+rcEl('rc-me').addEventListener('change', rcRender);
+['rc-near','rc-far','rc-ev-birth','rc-ev-deathhe','rc-ev-deathgreg'].forEach(id => rcEl(id).addEventListener('change', rcRender));
+document.querySelectorAll('input[name="rc-cal"]').forEach(r => r.addEventListener('change', rcRender));
+rcEl('rc-add-btn').addEventListener('click', () => {
+  if(!rcDraft) return;
+  const id = rcParseId(rcEl('rc-add-in').value);
+  if(!id){ showToast(t('rc2_pick'), true); return; }
+  if(!rcDraft.personal[id]) rcDraft.personal[id] = 'always';
+  rcEl('rc-add-in').value = '';
+  rcRender();
+});
+rcEl('rc-save').addEventListener('click', () => { if(rcSave()){ closeRemindersWindow(); showToast(t('rc2_saved'), false); } });
+rcEl('rc-reset').addEventListener('click', () => {
+  TreeReminders.clearReminderPrefs();
+  closeRemindersWindow();
+  showToast(t('rc2_reset_done'), false);
+});
+rcEl('rc-dl1').addEventListener('click', () => { if(rcSave()){ downloadRegularCalendar(); rcRender(); } });
+rcEl('rc-dl2').addEventListener('click', () => { if(rcSave()){ downloadHebrewCalendar(); rcRender(); } });
+
 // ---- Hebrew-date reminders (.ics, 5 years): birthdays by Hebrew date + yahrzeits chosen on this device ----
-document.getElementById('btn-hebrew-calendar').title = t('title_hebrew_calendar');
+document.getElementById('btn-hebrew-calendar').title = t('tooltip_hebrew_calendar');
 document.getElementById('btn-hebrew-calendar').addEventListener('click', () => {
   if(!_sessionPassword){
     document.getElementById('btn-login').click();
     showToast(t('toast_hebrew_login'), true);
     return;
   }
+  openRemindersWindow();
+});
+function downloadHebrewCalendar(){
   if(!window.TreeHebrew || !TreeHebrew.isSupported()){
     showToast(t('toast_hebrew_unsupported'), true);
     return;
   }
   const sel = getYahrzeitSel();
+  const plan = window.TreeReminders
+    ? TreeReminders.planHebrew(IDX, TreeReminders.loadReminderPrefs(IDX), sel)
+    : { yzIds: sel, yahrzeitMode: null, birthdayMode: null, suffix: false };  const hebFrom = new Date().getFullYear();
+  const dNow = new Date();
+  const hebCreated = String(dNow.getDate()).padStart(2,'0') + '.' + String(dNow.getMonth()+1).padStart(2,'0') + '.' + dNow.getFullYear();
   let res;
   try {
     res = TreeHebrew.buildHebrewIcs({
       nodes: IDX.nodes,
-      yahrzeitIds: sel,
-      nowYear: new Date().getFullYear(),
+      yahrzeitIds: plan.yzIds,
+      birthdayMode: plan.birthdayMode,
+      yahrzeitMode: plan.yahrzeitMode,
+      nowYear: hebFrom,
       years: 5,
+      createdStr: hebCreated,
+      treeUrl: location.origin + location.pathname,
       uidDomain: TREE_CONFIG.calendarUidDomain,
-      prodId: TREE_CONFIG.familyNameEn,
+      prodId: TREE_CONFIG.familyNameEn + ' Family Tree',
       nameOf: pname,
       labels: {
-        calName: t('hebcal_name') + ' ' + (currentLang==='he' ? TREE_CONFIG.familyNameHe : currentLang==='en' ? TREE_CONFIG.familyNameEn : TREE_CONFIG.familyNameRu),
+        calName: t('hebcal_name'),
         yahrzeit: t('hebcal_yahrzeit'),
         alarmBirth: t('hebcal_alarm_birth'),
         alarmYahrzeit: t('hebcal_alarm_yahrzeit'),
         descBirth: t('hebcal_desc_birth'),
-        descDeath: t('hebcal_desc_death')
+        descDeath: t('hebcal_desc_death'),
+        createdLine: t('hebcal_created'),
+        birthdaySuffix: plan.suffix ? t('ev_suffix_he_cal') : '',
+        updateSummary: t('hebcal_update_summary'),
+        updateDesc: t('hebcal_update_desc')
       }
     });
   } catch(e){
@@ -3183,16 +3415,19 @@ document.getElementById('btn-hebrew-calendar').addEventListener('click', () => {
   const encoded = btoa(unescape(encodeURIComponent(res.ics)));
   const a = document.createElement('a');
   a.href = 'data:text/calendar;base64,' + encoded;
-  a.download = TREE_CONFIG.fileSlug + '-hebrew-reminders.ics';
+  a.download = TREE_CONFIG.fileSlug + '-hebrew-reminders-' + res.from + '-' + res.to + '.ics';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
+  saveHebrewCalStatus({from: res.from, to: res.to, created: hebCreated});
+  refreshHebcalHints(false);
   let msg = t('toast_hebrew_added').replace('{n}', res.events) + skippedNote;
-  if(sel.length === 0) msg += t('toast_hebrew_no_yahrzeit');
+  if(res.quietEvents) msg += ' (' + ({ ru: '\u0438\u0437 \u043d\u0438\u0445 \u0431\u0435\u0437 \u0441\u0438\u0433\u043d\u0430\u043b\u0430', he: '\u05de\u05d4\u05dd \u05dc\u05dc\u05d0 \u05d4\u05ea\u05e8\u05d0\u05d4' }[currentLang] || 'of them without alert') + ': ' + res.quietEvents + ')';
+  if(plan.yzIds.length === 0) msg += t('toast_hebrew_no_yahrzeit');
   showToast(msg, res.skipped > 0);
-});
+}
 
-document.getElementById('btn-calendar').addEventListener('click', () => {
+function downloadRegularCalendar(){
   if(!_sessionPassword){
     document.getElementById('btn-login').click();
     showToast(currentLang==='he'?'🔒 התחבר כדי להוריד את לוח השנה':currentLang==='en'?'🔒 Login to download birthday calendar':'🔒 Войдите чтобы скачать календарь', true);
@@ -3223,44 +3458,21 @@ document.getElementById('btn-calendar').addEventListener('click', () => {
     return null;
   }
 
-  const lines = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//' + TREE_CONFIG.familyNameEn + ' Family Tree//RU','CALSCALE:GREGORIAN','X-WR-CALNAME:' + calName + ' ' + (currentLang==='he' ? TREE_CONFIG.familyNameHe : currentLang==='en' ? TREE_CONFIG.familyNameEn : TREE_CONFIG.familyNameRu),'X-WR-TIMEZONE:Asia/Jerusalem'];
+  const lines = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//' + TREE_CONFIG.familyNameEn + ' Family Tree//RU','CALSCALE:GREGORIAN','X-WR-CALNAME:' + calName,'X-WR-TIMEZONE:Asia/Jerusalem'];
 
-  let count = 0;
-  Object.values(IDX.nodes).forEach(p => {
-    if(p.death) return;
-    const d = parseDate(p.birth);
-    if(!d) return;
-    if(NOW_YEAR - d.year > MAX_AGE) return; // исключаем >100 лет без даты смерти
-
-    const mm = pad(d.month), dd = pad(d.day);
-    // Первое будущее событие — в этом или следующем году
-    const age = NOW_YEAR - d.year;
-    const uid = `birthday-${p.id}@${TREE_CONFIG.calendarUidDomain}`;
-    const summary = `🎂 ${pname(p.id)} (${calAge(age)})`;
-    const dtstart = `${NOW_YEAR}${mm}${dd}`;
-    lines.push('BEGIN:VEVENT');
-    lines.push(`UID:${uid}`);
-    lines.push(`DTSTART;VALUE=DATE:${dtstart}`);
-    const dtEndDate = new Date(NOW_YEAR, d.month-1, d.day+1);
-    const dtend_str = `${dtEndDate.getFullYear()}${pad(dtEndDate.getMonth()+1)}${pad(dtEndDate.getDate())}`;
-    lines.push(`DTEND;VALUE=DATE:${dtend_str}`);
-    lines.push(`RRULE:FREQ=YEARLY`);
-    lines.push(`SUMMARY:${summary}`);
-    if(p.rel) lines.push(`DESCRIPTION:${relText(p)}`);
-    lines.push(`TRANSP:TRANSPARENT`);
-    lines.push(`BEGIN:VALARM`);
-    lines.push(`TRIGGER:-P1D`);
-    lines.push(`ACTION:DISPLAY`);
-    lines.push(`DESCRIPTION:${calAlarm}${pname(p.id)}`);
-    lines.push(`END:VALARM`);
-    lines.push('END:VEVENT');
-    count++;
+  // family reminders (settings v2): radius + personal decisions + event types (logic in tree-reminders.js)
+  if(!window.TreeReminders){ showToast('tree-reminders.js is not loaded', true); return; }
+  const gres = TreeReminders.buildGregorianEvents({
+    idx: IDX, prefs: TreeReminders.loadReminderPrefs(IDX), nowYear: NOW_YEAR, maxAge: MAX_AGE,
+    nameOf: pname, ageText: calAge, relOf: p => (p.rel ? relText(p) : ''), uidDomain: TREE_CONFIG.calendarUidDomain,
+    labels: { alarmBirth: calAlarm, deathTitle: t('ev_death_greg'), deathDesc: t('ev_death_greg_desc'), alarmDeath: t('ev_alarm_death_greg') }
   });
-
+  gres.lines.forEach(l => lines.push(l));
+  const count = gres.count, deathCount = gres.deathCount, quietCount = gres.quietCount, skippedYear = gres.skippedYear;
   lines.push('END:VCALENDAR');
 
-  if(count === 0){
-    showToast('⚠ Нет дат рождения для экспорта', true);
+  if(count === 0 && deathCount === 0){
+    showToast(t('calendar_no_dates'), true);
     return;
   }
 
@@ -3276,8 +3488,9 @@ document.getElementById('btn-calendar').addEventListener('click', () => {
   const msg = currentLang==='he' ? `✓ הורד ${count} ימי הולדת`
             : currentLang==='en' ? `✓ Downloaded ${count} birthdays`
             : `✓ Скачано ${count} дней рождения`;
-  showToast(msg);
-});
+  showToast(msg + (deathCount ? t('toast_cal_deaths').replace('{k}', deathCount) : '') + (skippedYear ? t('toast_cal_skip_year').replace('{m}', skippedYear) : '') + (quietCount ? ' (' + ({ ru: '\u0438\u0437 \u043d\u0438\u0445 \u0431\u0435\u0437 \u0441\u0438\u0433\u043d\u0430\u043b\u0430', he: '\u05de\u05d4\u05dd \u05dc\u05dc\u05d0 \u05d4\u05ea\u05e8\u05d0\u05d4' }[currentLang] || 'of them without alert') + ': ' + quietCount + ')' : ''));
+}
+document.getElementById('btn-calendar').addEventListener('click', openRemindersWindow);
 ;
 
 // ── final init: load tree from API ────────────────────────
