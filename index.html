@@ -4031,6 +4031,7 @@ function initTree(data, pwd) {
 
   if(currentLang !== 'ru' && window.applyLang) window.applyLang(currentLang);
   hideLoader();
+  refreshHebcalHints(true);
   // Show "Add/Correct" button only when logged in (guest or admin) —
   // anonymous viewers can browse the tree but not propose edits.
   const editBtn = document.getElementById('btn-edit');
