@@ -1026,11 +1026,6 @@ function rawYahrzeitSel(){
 }
 function getYahrzeitSel(){ return rawYahrzeitSel().filter(x => IDX && IDX.nodes && IDX.nodes[x]); }
 function setYahrzeitSel(ids){ try { localStorage.setItem(yzKey(), JSON.stringify(ids)); } catch(e){} }
-function toggleYahrzeit(id, on){
-  const cur = rawYahrzeitSel().filter(x => x !== id);
-  if(on) cur.push(id);
-  setYahrzeitSel(cur);
-}
 function dropYahrzeit(id){ setYahrzeitSel(rawYahrzeitSel().filter(x => x !== id)); }
 
 // ---- Hebrew calendar file status: remembered only in this browser (localStorage) ----
@@ -1179,11 +1174,25 @@ function showPanel(id){
   if(!b&&!d&&!n.bp&&!n.dp) col1 += `<em style="color:#7A5828;font-size:.72rem">${t('no_dates')}</em>`;
   col1 += `</div>`;
   if(n.missing&&n.missing.length) col1 += `<p class="p-warn">${t('missing')} ${n.missing.join(', ')}</p>`;
-  // Yahrzeit reminder: personal choice (any logged-in role), kept only in this browser
+  // Hebrew calendar file validity: shown for persons with a Hebrew death date
   if(_sessionPassword && n.death_he && String(n.death_he).trim()){
-    const yzOn = getYahrzeitSel().indexOf(id) >= 0;
-    col1 += `<label style="display:block;margin-top:8px;font-size:.72rem;color:#5A3C10;cursor:pointer">
-      <input type="checkbox" ${yzOn ? 'checked' : ''} onchange="toggleYahrzeit('${id}', this.checked)"> ${t('yahrzeit_remind')}</label>`;
+    { const hs = getHebrewCalStatus(); if(hs.state !== 'none') col1 += `<div style="margin-top:3px;font-size:.66rem;color:#7A5828">${t('hebcal_valid_until').replace('{to}', hs.to)}</div>`; }
+  }
+  // Family reminders: one decision per person (any logged-in role), kept only in this browser
+  if(_sessionPassword && window.TreeReminders){
+    const rp = rcPrefsNow();
+    const rcSt = TreeReminders.personState(rp, id) || '';
+    const rcIsMe = rp.me === id;
+    const rcOpt = (v, key) => `<option value="${v}" ${rcSt === v ? 'selected' : ''}>${t(key)}</option>`;
+    col1 += `<div class="p-sec" style="margin-top:8px">
+      <h3>${t('rc2_card_h')}</h3>
+      <select onchange="rcSetPerson('${id}', this.value)" style="width:100%;padding:3px 5px;font-size:.7rem;font-family:inherit;border:1px solid rgba(184,144,48,.35);border-radius:3px;background:#FFFDF7;color:#28180A">
+        ${rcOpt('', 'rc2_ps_radius')}${rcOpt('always', 'rc2_ps_always')}${rcOpt('quiet', 'rc2_ps_quiet')}${rcOpt('never', 'rc2_ps_never')}
+      </select>
+      <div style="margin-top:3px;font-size:.64rem;color:#7A5828;line-height:1.4">${t('rc2_people_note')}</div>
+      <button type="button" ${rcIsMe ? 'disabled' : ''} onclick="rcSetMe('${id}')"
+        style="margin-top:6px;padding:3px 9px;font-size:.68rem;background:rgba(184,144,48,.15);border:1px solid rgba(184,144,48,.3);border-radius:3px;cursor:pointer;color:#5A3C10;font-family:inherit">\uD83D\uDE4B ${rcIsMe ? t('rc_is_me') : t('rc_btn_me')}</button>
+    </div>`;
   }
   // Contacts: only shown to authenticated users (guest or admin)
   const isAuth = !!(_sessionPassword);
@@ -3670,6 +3679,7 @@ async function confirmDeletePerson(id){
         delete IDX.child_of[id];
         delete IDX.parent_in[id];
         dropYahrzeit(id);
+        if(window.TreeReminders) TreeReminders.dropReminderPerson(id);
         for(const [, r2] of Object.entries(IDX.relatives)){
           r2.siblings = (r2.siblings||[]).filter(s=>s!==id);
           r2.spouses  = (r2.spouses ||[]).filter(s=>s!==id);
