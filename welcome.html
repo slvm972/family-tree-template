@@ -398,6 +398,16 @@
         <span class="txt" data-i="feat9"><b>Фото и истории</b> — у каждого человека можно
         сохранить фотографию и рассказ о его жизни.</span>
       </div>
+
+      <div class="leaf">
+        <span class="icon">🔔</span>
+        <span class="txt" data-i="feat10"><b>Напоминания по еврейскому календарю</b> — дни рождения и годовщины смерти по еврейской дате: выберите круг родственников, скачайте файл и добавьте его в свой календарь. Напоминания придут уже из вашего календарного приложения.</span>
+      </div>
+
+      <div class="leaf">
+        <span class="icon">🕎</span>
+        <span class="txt" data-i="feat11"><b>Еврейская дата рядом с обычной</b> — выбирайте еврейскую дату списками (день, месяц, год) или вычисляйте её по обычной дате с учётом захода солнца.</span>
+      </div>
     </div>
   </div>
 </section>
@@ -488,6 +498,8 @@ const UI = {
     'feat7': '<b>Дерево можно распечатать</b> — как постер для дома.',
     'feat8': '<b>Поиск по имени</b> — быстро находит нужного человека среди всех родственников.',
     'feat9': '<b>Фото и истории</b> — у каждого человека можно сохранить фотографию и рассказ о его жизни.',
+    'feat10': '<b>Напоминания по еврейскому календарю</b> — дни рождения и годовщины смерти по еврейской дате: выберите круг родственников, скачайте файл и добавьте его в свой календарь. Напоминания придут уже из вашего календарного приложения.',
+    'feat11': '<b>Еврейская дата рядом с обычной</b> — выбирайте еврейскую дату списками (день, месяц, год) или вычисляйте её по обычной дате с учётом захода солнца.',
     'steps-h2': 'С чего начать',
     'steps-lede': 'Четыре шага — и дерево готово принимать вашу семью.',
     'step1-num': 'Шаг I',
@@ -523,6 +535,8 @@ const UI = {
     'feat7': '<b>The tree can be printed</b> — as a poster for your home.',
     'feat8': '<b>Search by name</b> — quickly finds the right person among all relatives.',
     'feat9': '<b>Photos and stories</b> — every person can have a photo and a short story about their life.',
+    'feat10': '<b>Reminders by the Hebrew calendar</b> — birthdays and yahrzeits by Hebrew date: choose how close the relatives are, download one file and add it to your calendar. The reminders come from your own calendar app.',
+    'feat11': '<b>Hebrew date next to the regular one</b> — pick a Hebrew date from drop-down lists or calculate it from the regular date, with sunset taken into account.',
     'steps-h2': 'Where to start',
     'steps-lede': 'Four steps — and the tree is ready to welcome your family.',
     'step1-num': 'Step I',
@@ -558,6 +572,8 @@ const UI = {
     'feat7': '<b>\u05d0\u05e4\u05e9\u05e8 \u05dc\u05d4\u05d3\u05e4\u05d9\u05e1 \u05d0\u05ea \u05d4\u05e2\u05e5</b> — \u05db\u05e4\u05d5\u05e1\u05d8\u05e8 \u05dc\u05d1\u05d9\u05ea.',
     'feat8': '<b>\u05d7\u05d9\u05e4\u05d5\u05e9 \u05dc\u05e4\u05d9 \u05e9\u05dd</b> — \u05de\u05d5\u05e6\u05d0 \u05d1\u05de\u05d4\u05d9\u05e8\u05d5\u05ea \u05d0\u05ea \u05d4\u05d0\u05d3\u05dd \u05d4\u05de\u05d1\u05d5\u05e7\u05e9 \u05d1\u05d9\u05df \u05db\u05dc \u05d1\u05e0\u05d9 \u05d4\u05de\u05e9\u05e4\u05d7\u05d4.',
     'feat9': '<b>\u05ea\u05de\u05d5\u05e0\u05d5\u05ea \u05d5\u05e1\u05d9\u05e4\u05d5\u05e8\u05d9\u05dd</b> — \u05dc\u05db\u05dc \u05d0\u05d3\u05dd \u05e0\u05d9\u05ea\u05df \u05dc\u05e9\u05de\u05d5\u05e8 \u05ea\u05de\u05d5\u05e0\u05d4 \u05d5\u05e1\u05d9\u05e4\u05d5\u05e8 \u05e2\u05dc \u05d7\u05d9\u05d9\u05d5.',
+    'feat10': '<b>\u05EA\u05D6\u05DB\u05D5\u05E8\u05D5\u05EA \u05DC\u05E4\u05D9 \u05D4\u05DC\u05D5\u05D7 \u05D4\u05E2\u05D1\u05E8\u05D9</b> — \u05D9\u05DE\u05D9 \u05D4\u05D5\u05DC\u05D3\u05EA \u05D5\u05D9\u05D0\u05E8\u05E6\u05D9\u05D9\u05D8 \u05DC\u05E4\u05D9 \u05D4\u05EA\u05D0\u05E8\u05D9\u05DA \u05D4\u05E2\u05D1\u05E8\u05D9: \u05D1\u05D5\u05D7\u05E8\u05D9\u05DD \u05DB\u05DE\u05D4 \u05E7\u05E8\u05D5\u05D1\u05D9 \u05DE\u05E9\u05E4\u05D7\u05D4 \u05DC\u05DB\u05DC\u05D5\u05DC, \u05DE\u05D5\u05E8\u05D9\u05D3\u05D9\u05DD \u05E7\u05D5\u05D1\u05E5 \u05D5\u05DE\u05D5\u05E1\u05D9\u05E4\u05D9\u05DD \u05DC\u05D9\u05D5\u05DE\u05DF. \u05D4\u05EA\u05D6\u05DB\u05D5\u05E8\u05D5\u05EA \u05DE\u05D2\u05D9\u05E2\u05D5\u05EA \u05DE\u05D0\u05E4\u05DC\u05D9\u05E7\u05E6\u05D9\u05D9\u05EA \u05D4\u05D9\u05D5\u05DE\u05DF \u05E9\u05DC\u05DB\u05DD.',
+    'feat11': '<b>\u05D4\u05EA\u05D0\u05E8\u05D9\u05DA \u05D4\u05E2\u05D1\u05E8\u05D9 \u05DC\u05E6\u05D3 \u05D4\u05DC\u05D5\u05E2\u05D6\u05D9</b> — \u05D1\u05D5\u05D7\u05E8\u05D9\u05DD \u05EA\u05D0\u05E8\u05D9\u05DA \u05E2\u05D1\u05E8\u05D9 \u05DE\u05E8\u05E9\u05D9\u05DE\u05D5\u05EA \u05D0\u05D5 \u05DE\u05D7\u05E9\u05D1\u05D9\u05DD \u05D0\u05D5\u05EA\u05D5 \u05DC\u05E4\u05D9 \u05D4\u05EA\u05D0\u05E8\u05D9\u05DA \u05D4\u05DC\u05D5\u05E2\u05D6\u05D9, \u05DB\u05D5\u05DC\u05DC \u05D4\u05EA\u05D7\u05E9\u05D1\u05D5\u05EA \u05D1\u05E9\u05E7\u05D9\u05E2\u05D4.',
     'steps-h2': '\u05de\u05d0\u05d9\u05e4\u05d4 \u05de\u05ea\u05d7\u05d9\u05dc\u05d9\u05dd',
     'steps-lede': '\u05d0\u05e8\u05d1\u05e2\u05d4 \u05e9\u05dc\u05d1\u05d9\u05dd — \u05d5\u05d4\u05e2\u05e5 \u05de\u05d5\u05db\u05df \u05dc\u05e7\u05d1\u05dc \u05d0\u05ea \u05d4\u05de\u05e9\u05e4\u05d7\u05d4 \u05e9\u05dc\u05db\u05dd.',
     'step1-num': '\u05e9\u05dc\u05d1 I',
