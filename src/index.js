@@ -179,7 +179,7 @@ export default {
     // Public, reduced snapshot used for the initial tree render without
     // a password. Contact details, biographies, social links and photo
     // URLs stay private — mirrors the same endpoint already deployed in
-    // the mostovoy-tree production Worker.
+    // the original production Worker.
     if(path === '/api/tree/public' && method === 'GET') {
       const rawData = await env.TREE_KV.get('tree_data');
       if(!rawData) return err('Данные дерева не найдены. Загрузите начальный файл.', 404);
@@ -381,7 +381,7 @@ export default {
     // Requires auth (guest or admin): returns ICS calendar with
     // birthdays. Was public — fixed to prevent unauthenticated
     // leakage of full names + exact birth dates (mirrors the fix
-    // already applied in the mostovoy-tree production Worker).
+    // already applied in the original production Worker).
     if(path === '/calendar.ics' && method === 'GET') {
       const auth = await getRole(request, env);
       if(!auth) return err('Требуется авторизация', 401);
@@ -482,7 +482,7 @@ export default {
     // Requires auth (guest or admin): returns VCF with all living
     // persons who have contact data. Was public — fixed to prevent
     // unauthenticated leakage of phone/email/social data (mirrors
-    // the fix already applied in the mostovoy-tree production Worker).
+    // the fix already applied in the original production Worker).
     if(path === '/contacts.vcf' && method === 'GET') {
       const auth = await getRole(request, env);
       if(!auth) return err('Требуется авторизация', 401);
@@ -964,7 +964,7 @@ export default {
     // IDs that no longer exist in nodes) before rebuilding, and reports
     // how many such references were dropped. Person/family records
     // themselves are never modified — only the derived link caches.
-    // Mirrors the same endpoint already deployed in the mostovoy-tree
+    // Mirrors the same endpoint already deployed in the original
     // production Worker.
     if(path === '/api/rebuild-cache' && method === 'POST') {
       const auth = await getRole(request, env);
