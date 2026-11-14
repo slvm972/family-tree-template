@@ -728,6 +728,8 @@ const TREE_CONFIG = {
   // render. As the tree grows, the owner can add key figures here.
   bookmarks: [],
   // владелец дерева задаёт отправную точку, у каждого смотрящего она меняется
+  // near and far are kinship LEVELS, not time periods: relatives up to level "near" go into the calendar with a reminder the day before,
+  // relatives from there up to level "far" go in without a reminder (the levels are explained in the reminders window).
   reminderDefaults: {near: 2, far: 4},
 };
 
