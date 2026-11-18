@@ -360,8 +360,7 @@
       </div>
       <div class="leaf">
         <span class="icon">✉️</span>
-        <span class="txt" data-i="feat2"><b>Родные предлагают дополнения</b> — заявка
-        приходит вам на почту, вы решаете, применять ли её.</span>
+        <span class="txt" data-i="feat2"><b>Родные предлагают дополнения</b> — заявка приходит вам на почту и появляется в списке «Предложения»; вы решаете, вносить ли её.</span>
       </div>
       <div class="leaf">
         <span class="icon">♾️</span>
@@ -375,8 +374,7 @@
       </div>
       <div class="leaf">
         <span class="icon">🔒</span>
-        <span class="txt" data-i="feat5"><b>Конфиденциальность личных данных</b> — телефон
-        и соцсети видны только тем, кто вошёл по паролю.</span>
+        <span class="txt" data-i="feat5"><b>Конфиденциальность личных данных</b> — телефон, почта и соцсети видны только тем, кто вошёл по паролю; на карточках живых людей значки 📞 ✉️ 🔗 показывают, какие контакты указаны.</span>
       </div>
       <div class="leaf">
         <span class="icon">🔔</span>
@@ -401,6 +399,18 @@
       <div class="leaf">
         <span class="icon">🕎</span>
         <span class="txt" data-i="feat11"><b>Еврейская дата рядом с обычной</b> — выбирайте еврейскую дату списками (день, месяц, год) или вычисляйте её по обычной дате с учётом захода солнца.</span>
+      </div>
+      <div class="leaf">
+        <span class="icon">🧭</span>
+        <span class="txt" data-i="feat12"><b>Кем приходится</b> — в карточке человека выберите другого родственника, и дерево назовёт степень родства между ними.</span>
+      </div>
+      <div class="leaf">
+        <span class="icon">📦</span>
+        <span class="txt" data-i="feat13"><b>Ваши данные не привязаны к сервису</b> — экспорт и импорт GEDCOM (MyHeritage, Ancestry, Gramps) и автоматические резервные копии.</span>
+      </div>
+      <div class="leaf">
+        <span class="icon">🛠</span>
+        <span class="txt" data-i="feat14"><b>Управление прямо в дереве</b> — администратор добавляет людей и фотографии, исправляет данные и семейные связи (несколько браков, неполные семьи).</span>
       </div>
     </div>
   </div>
@@ -484,15 +494,18 @@ const UI = {
     'feat-h2': 'Чем это отличается от подобных сервисов',
     'feat-lede': 'Коротко — о том, чего нет у большинства.',
     'feat1': '<b>Мультиязычность</b> — каждый родственник может читать дерево на удобном ему языке.',
-    'feat2': '<b>Родные предлагают дополнения</b> — заявка приходит вам на почту, вы решаете, применять ли её.',
+    'feat2': '<b>Родные предлагают дополнения</b> — заявка приходит вам на почту и появляется в списке «Предложения»; вы решаете, вносить ли её.',
     'feat3': '<b>Без ограничений по числу людей</b> — дерево растёт вместе с семьёй, сколько бы ни было поколений.',
     'feat4': '<b>Контакты — одним файлом</b> — скачайте и добавьте в телефонную книгу вручную, в пару касаний.',
-    'feat5': '<b>Конфиденциальность личных данных</b> — телефон и соцсети видны только тем, кто вошёл по паролю.',
+    'feat5': '<b>Конфиденциальность личных данных</b> — телефон, почта и соцсети видны только тем, кто вошёл по паролю; на карточках живых людей значки 📞 ✉️ 🔗 показывают, какие контакты указаны.',
     'feat6': '<b>Семейные напоминания</b> — одно окно для дней рождения и годовщин смерти по обычному и еврейскому календарю: выберите, о ком напоминать (по близости родства), скачайте файл и добавьте его в свой календарь. Напоминания придут уже из вашего календарного приложения.',
     'feat7': '<b>Дерево можно распечатать</b> — как постер для дома.',
     'feat8': '<b>Поиск по имени</b> — быстро находит нужного человека среди всех родственников.',
     'feat9': '<b>Фото и истории</b> — у каждого человека можно сохранить фотографию и рассказ о его жизни.',
     'feat11': '<b>Еврейская дата рядом с обычной</b> — выбирайте еврейскую дату списками (день, месяц, год) или вычисляйте её по обычной дате с учётом захода солнца.',
+    'feat12': '<b>Кем приходится</b> — в карточке человека выберите другого родственника, и дерево назовёт степень родства между ними.',
+    'feat13': '<b>Ваши данные не привязаны к сервису</b> — экспорт и импорт GEDCOM (MyHeritage, Ancestry, Gramps) и автоматические резервные копии.',
+    'feat14': '<b>Управление прямо в дереве</b> — администратор добавляет людей и фотографии, исправляет данные и семейные связи (несколько браков, неполные семьи).',
     'steps-h2': 'С чего начать',
     'steps-lede': 'Четыре шага — и дерево готово принимать вашу семью.',
     'step1-num': 'Шаг I',
@@ -520,15 +533,18 @@ const UI = {
     'feat-h2': 'How this differs from similar services',
     'feat-lede': 'Briefly — what most others don\u2019t have.',
     'feat1': '<b>Multilingual</b> — every relative can read the tree in the language that suits them.',
-    'feat2': '<b>Relatives suggest additions</b> — the request reaches you by email, and you decide whether to apply it.',
+    'feat2': '<b>Relatives suggest additions</b> — the request reaches you by email and appears in the “Suggestions” list; you decide whether to apply it.',
     'feat3': '<b>No limit on the number of people</b> — the tree grows with the family, however many generations there are.',
     'feat4': '<b>Contacts as one file</b> — download it and add it to your phone book manually, in a couple of taps.',
-    'feat5': '<b>Privacy of personal data</b> — phone numbers and social media are visible only to those who logged in with a password.',
+    'feat5': '<b>Privacy of personal data</b> — phone numbers, e-mail and social media are visible only to those who logged in with a password; icons 📞 ✉️ 🔗 on the cards of living people show which contacts are on file.',
     'feat6': '<b>Family reminders</b> — one window for birthdays and death anniversaries by the regular and the Hebrew calendar: choose whom to be reminded about (by closeness of kinship), download the file and add it to your calendar. The reminders come from your own calendar app.',
     'feat7': '<b>The tree can be printed</b> — as a poster for your home.',
     'feat8': '<b>Search by name</b> — quickly finds the right person among all relatives.',
     'feat9': '<b>Photos and stories</b> — every person can have a photo and a short story about their life.',
     'feat11': '<b>Hebrew date next to the regular one</b> — pick a Hebrew date from drop-down lists or calculate it from the regular date, with sunset taken into account.',
+    'feat12': '<b>How are they related</b> — on a person’s panel, pick another relative and the tree names the kinship between them.',
+    'feat13': '<b>Your data is not locked in</b> — GEDCOM export and import (MyHeritage, Ancestry, Gramps) and automatic backups.',
+    'feat14': '<b>Managed right in the tree</b> — the administrator adds people and photos and fixes data and family links (several marriages, incomplete families).',
     'steps-h2': 'Where to start',
     'steps-lede': 'Four steps — and the tree is ready to welcome your family.',
     'step1-num': 'Step I',
@@ -556,15 +572,18 @@ const UI = {
     'feat-h2': '\u05d1\u05de\u05d4 \u05d6\u05d4 \u05e9\u05d5\u05e0\u05d4 \u05de\u05e9\u05d9\u05e8\u05d5\u05ea\u05d9\u05dd \u05d3\u05d5\u05de\u05d9\u05dd',
     'feat-lede': '\u05d1\u05e7\u05e6\u05e8\u05d4 — \u05de\u05d4 \u05e9\u05d0\u05d9\u05df \u05dc\u05e8\u05d5\u05d1.',
     'feat1': '<b>\u05e8\u05d1-\u05dc\u05e9\u05d5\u05e0\u05d9\u05d5\u05ea</b> — \u05db\u05dc \u05e7\u05e8\u05d5\u05d1 \u05de\u05e9\u05e4\u05d7\u05d4 \u05d9\u05db\u05d5\u05dc \u05dc\u05e7\u05e8\u05d5\u05d0 \u05d0\u05ea \u05d4\u05e2\u05e5 \u05d1\u05e9\u05e4\u05d4 \u05d4\u05e0\u05d5\u05d7 \u05dc\u05d5.',
-    'feat2': '<b>\u05d1\u05e0\u05d9 \u05d4\u05de\u05e9\u05e4\u05d7\u05d4 \u05de\u05e6\u05d9\u05e2\u05d9\u05dd \u05ea\u05d5\u05e1\u05e4\u05d5\u05ea</b> — \u05d4\u05d1\u05e7\u05e9\u05d4 \u05de\u05d2\u05d9\u05e2\u05d4 \u05d0\u05dc\u05d9\u05db\u05dd \u05d1\u05d0\u05d9\u05de\u05d9\u05d9\u05dc, \u05d5\u05d0\u05ea\u05dd \u05de\u05d7\u05dc\u05d9\u05d8\u05d9\u05dd \u05d0\u05dd \u05dc\u05d0\u05e9\u05e8 \u05dc\u05d4.',
+    'feat2': '<b>בני המשפחה מציעים תוספות</b> — הבקשה מגיעה אליכם באימייל ומופיעה ברשימת «הצעות»; אתם מחליטים אם להחיל אותה.',
     'feat3': '<b>\u05dc\u05dc\u05d0 \u05d4\u05d2\u05d1\u05dc\u05d4 \u05d1\u05de\u05e1\u05e4\u05e8 \u05d4\u05d0\u05e0\u05e9\u05d9\u05dd</b> — \u05d4\u05e2\u05e5 \u05d2\u05d3\u05dc \u05d9\u05d7\u05d3 \u05e2\u05dd \u05d4\u05de\u05e9\u05e4\u05d7\u05d4, \u05dc\u05d0 \u05de\u05e9\u05e0\u05d4 \u05db\u05de\u05d4 \u05d3\u05d5\u05e8\u05d5\u05ea.',
     'feat4': '<b>\u05d0\u05e0\u05e9\u05d9 \u05e7\u05e9\u05e8 \u05d1\u05e7\u05d5\u05d1\u05e5 \u05d0\u05d7\u05d3</b> — \u05d4\u05d5\u05e8\u05d9\u05d3\u05d5 \u05d5\u05d4\u05d5\u05e1\u05d9\u05e4\u05d5 \u05dc\u05e4\u05e0\u05e7\u05e1 \u05d4\u05d8\u05dc\u05e4\u05d5\u05df \u05d1\u05d9\u05d3\u05e0\u05d9\u05ea.',
-    'feat5': '<b>\u05e4\u05e8\u05d8\u05d9\u05d5\u05ea \u05e2\u05dc \u05de\u05d9\u05d3\u05e2 \u05d0\u05d9\u05e9\u05d9</b> — \u05de\u05e1\u05e4\u05e8\u05d9 \u05d8\u05dc\u05e4\u05d5\u05df \u05d5\u05e8\u05e9\u05ea\u05d5\u05ea \u05d7\u05d1\u05e8\u05ea\u05d9\u05d5\u05ea \u05d2\u05dc\u05d5\u05d9\u05d9\u05dd \u05e8\u05e7 \u05dc\u05de\u05d9 \u05e9\u05d4\u05ea\u05d7\u05d1\u05e8 \u05e2\u05dd \u05e1\u05d9\u05e1\u05de\u05d4.',
+    'feat5': '<b>פרטיות על מידע אישי</b> — טלפון, אימייל ורשתות חברתיות גלויים רק למי שהתחבר עם סיסמה; סמלים 📞 ✉️ 🔗 על כרטיסי אנשים חיים מראים אילו פרטי קשר מצוינים.',
     'feat6': '<b>תזכורות משפחתיות</b> — חלון אחד לימי הולדת וימי פטירה לפי הלוח הרגיל והעברי: בוחרים על מי לקבל תזכורות (לפי קרבת המשפחה), מורידים קובץ ומוסיפים אותו ליומן. התזכורות מגיעות מאפליקציית היומן שלכם.',
     'feat7': '<b>\u05d0\u05e4\u05e9\u05e8 \u05dc\u05d4\u05d3\u05e4\u05d9\u05e1 \u05d0\u05ea \u05d4\u05e2\u05e5</b> — \u05db\u05e4\u05d5\u05e1\u05d8\u05e8 \u05dc\u05d1\u05d9\u05ea.',
     'feat8': '<b>\u05d7\u05d9\u05e4\u05d5\u05e9 \u05dc\u05e4\u05d9 \u05e9\u05dd</b> — \u05de\u05d5\u05e6\u05d0 \u05d1\u05de\u05d4\u05d9\u05e8\u05d5\u05ea \u05d0\u05ea \u05d4\u05d0\u05d3\u05dd \u05d4\u05de\u05d1\u05d5\u05e7\u05e9 \u05d1\u05d9\u05df \u05db\u05dc \u05d1\u05e0\u05d9 \u05d4\u05de\u05e9\u05e4\u05d7\u05d4.',
     'feat9': '<b>\u05ea\u05de\u05d5\u05e0\u05d5\u05ea \u05d5\u05e1\u05d9\u05e4\u05d5\u05e8\u05d9\u05dd</b> — \u05dc\u05db\u05dc \u05d0\u05d3\u05dd \u05e0\u05d9\u05ea\u05df \u05dc\u05e9\u05de\u05d5\u05e8 \u05ea\u05de\u05d5\u05e0\u05d4 \u05d5\u05e1\u05d9\u05e4\u05d5\u05e8 \u05e2\u05dc \u05d7\u05d9\u05d9\u05d5.',
     'feat11': '<b>\u05D4\u05EA\u05D0\u05E8\u05D9\u05DA \u05D4\u05E2\u05D1\u05E8\u05D9 \u05DC\u05E6\u05D3 \u05D4\u05DC\u05D5\u05E2\u05D6\u05D9</b> — \u05D1\u05D5\u05D7\u05E8\u05D9\u05DD \u05EA\u05D0\u05E8\u05D9\u05DA \u05E2\u05D1\u05E8\u05D9 \u05DE\u05E8\u05E9\u05D9\u05DE\u05D5\u05EA \u05D0\u05D5 \u05DE\u05D7\u05E9\u05D1\u05D9\u05DD \u05D0\u05D5\u05EA\u05D5 \u05DC\u05E4\u05D9 \u05D4\u05EA\u05D0\u05E8\u05D9\u05DA \u05D4\u05DC\u05D5\u05E2\u05D6\u05D9, \u05DB\u05D5\u05DC\u05DC \u05D4\u05EA\u05D7\u05E9\u05D1\u05D5\u05EA \u05D1\u05E9\u05E7\u05D9\u05E2\u05D4.',
+    'feat12': '<b>מה הקרבה</b> — בפאנל של אדם בוחרים קרוב אחר, והעץ מציין מהי הקרבה ביניהם.',
+    'feat13': '<b>הנתונים לא כלואים בשירות</b> — ייצוא וייבוא GEDCOM (MyHeritage, Ancestry, Gramps) וגיבויים אוטומטיים.',
+    'feat14': '<b>ניהול ישירות בעץ</b> — המנהל מוסיף אנשים ותמונות ומתקן נתונים וקשרי משפחה (כמה נישואים, משפחות חלקיות).',
     'steps-h2': '\u05de\u05d0\u05d9\u05e4\u05d4 \u05de\u05ea\u05d7\u05d9\u05dc\u05d9\u05dd',
     'steps-lede': '\u05d0\u05e8\u05d1\u05e2\u05d4 \u05e9\u05dc\u05d1\u05d9\u05dd — \u05d5\u05d4\u05e2\u05e5 \u05de\u05d5\u05db\u05df \u05dc\u05e7\u05d1\u05dc \u05d0\u05ea \u05d4\u05de\u05e9\u05e4\u05d7\u05d4 \u05e9\u05dc\u05db\u05dd.',
     'step1-num': '\u05e9\u05dc\u05d1 I',
