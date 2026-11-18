@@ -147,7 +147,7 @@ const UI = {
         '<strong>⚙</strong> — диагностика данных (битые связи, даты). <strong>?</strong> — эта справка.'
       ]},
       {h:'Личные данные и соцсети',items:[
-        'Телефон, email и ссылка на страницу в соцсетях хранятся в карточке человека. Значок 🔗 на карточке означает, что страница в соцсетях указана.',
+        'Телефон, email и ссылка на страницу в соцсетях хранятся в карточке человека. Значки на карточке показывают, какие контакты указаны: 📞 телефон, ✉️ email, 🔗 страница в соцсетях. Их видят только вошедшие по паролю, и только у живых людей; сами номера и адреса открываются в панели человека.',
         'Правки <strong>частичные</strong>: в «Исправить» форма заполнена текущими значениями, и отправляются только изменённые поля. А загрузка файла .json или GEDCOM заменяет <strong>всё дерево целиком</strong> (с предпросмотром и копией); слияния нет.'
       ]},
       {h:'Как добавить человека и исправить данные',items:[
@@ -183,6 +183,8 @@ const UI = {
     legend_siblings:'есть братья/сёстры, не показанные на экране',
     legend_children:'есть дети (для супруга — от других браков), не показанные на экране',
     legend_social:'указана страница в соцсетях (видно после входа)',
+    legend_phone:'указан телефон (видно после входа)',
+    legend_email:'указан email (видно после входа)',
     legend_tip:'Нажмите на карточку, чтобы раскрыть эту ветку',
     modal_title:'✏️ Дополнить дерево',
     type_person:'👤 Новый человек',type_photo:'📷 Фото',type_bio:'📝 Биография',type_date:'📅 Дата / место',
@@ -599,7 +601,7 @@ const UI = {
         '<strong>⚙</strong> — data diagnostics (broken links, dates). <strong>?</strong> — this guide.'
       ]},
       {h:'Personal data and social media',items:[
-        'Phone, email and a social media link are stored on a person’s card. The 🔗 icon on a card means a social media page is on file.',
+        'Phone, email and a social media link are stored on a person’s card. Icons on a card show which contacts are on file: 📞 phone, ✉️ email, 🔗 social media page. Only people who have logged in see them, and only for living people; the numbers and addresses themselves open in the person’s panel.',
         'Edits are <strong>partial</strong>: in “Correct” the form is filled with current values and only the changed fields are sent. Uploading a .json or GEDCOM file, however, replaces the <strong>whole tree</strong> (with a preview and a backup); there is no merging.'
       ]},
       {h:'How to add a person and correct data',items:[
@@ -635,6 +637,8 @@ const UI = {
     legend_siblings:'has siblings not shown on screen',
     legend_children:'has children (for a spouse, from other marriages) not shown on screen',
     legend_social:'social media page on file (visible after login)',
+    legend_phone:'phone number on file (visible after login)',
+    legend_email:'e-mail on file (visible after login)',
     legend_tip:'Click the card to reveal that branch',
     modal_title:'✏️ Add to tree',
     type_person:'👤 New person',type_photo:'📷 Photo',type_bio:'📝 Biography',type_date:'📅 Date / place',
@@ -1051,7 +1055,7 @@ const UI = {
         '<strong>⚙</strong> — אבחון נתונים (קשרים שבורים, תאריכים). <strong>?</strong> — המדריך הזה.'
       ]},
       {h:'פרטים אישיים ורשתות חברתיות',items:[
-        'טלפון, אימייל וקישור לעמוד ברשת חברתית נשמרים בכרטיס האדם. הסמל 🔗 על הכרטיס אומר שעמוד ברשת חברתית מצוין.',
+        'טלפון, אימייל וקישור לעמוד ברשת חברתית נשמרים בכרטיס האדם. הסמלים על הכרטיס מראים אילו פרטי קשר מצוינים: 📞 טלפון, ✉️ אימייל, 🔗 עמוד ברשת חברתית. רק מי שנכנס עם סיסמה רואה אותם, ורק אצל אנשים חיים; המספרים והכתובות עצמם נפתחים בפאנל של האדם.',
         'התיקונים <strong>חלקיים</strong>: ב«תיקון» הטופס מלא בערכים הנוכחיים, ונשלחים רק השדות ששונו. לעומת זאת, העלאת קובץ json או GEDCOM מחליפה את <strong>כל העץ</strong> (עם תצוגה מקדימה וגיבוי); אין מיזוג.'
       ]},
       {h:'איך מוסיפים אדם ומתקנים נתונים',items:[
@@ -1087,6 +1091,8 @@ const UI = {
     legend_siblings:'יש אחים/אחיות שלא מוצגים על המסך',
     legend_children:'יש ילדים (אצל בן/בת זוג, מנישואים אחרים) שלא מוצגים על המסך',
     legend_social:'יש עמוד ברשת חברתית (מוצג לאחר כניסה)',
+    legend_phone:'יש מספר טלפון (מוצג לאחר כניסה)',
+    legend_email:'יש כתובת אימייל (מוצג לאחר כניסה)',
     legend_tip:'לחצו על הכרטיס כדי לחשוף את הענף',
     modal_title:'✏️ הוספה לעץ',
     type_person:'👤 אדם חדש',type_photo:'📷 תמונה',type_bio:'📝 ביוגרפיה',type_date:'📅 תאריך / מקום',

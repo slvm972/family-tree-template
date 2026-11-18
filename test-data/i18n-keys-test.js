@@ -30,7 +30,7 @@ const ADDED = [
   'hm_tamuz', 'hm_av', 'hm_elul', 'hw_day', 'hw_month', 'hw_year_num', 'hw_year_let', 'hw_fill_greg',
   'hw_sunset_note', 'hw_need_greg', 'hw_warn_mismatch', 'hw_legacy_hint', 'hw_legacy_redo', 'hw_clear',
   'hw_err_incomplete', 'hw_err_day', 'hw_extra_mark', 'tooltip_reminders',
-  'rc_login', 'rc_me_saved', 'calendar_no_dates'
+  'rc_login', 'rc_me_saved', 'calendar_no_dates', 'legend_phone', 'legend_email'
 ];
 
 function skipWs(t, p) {
