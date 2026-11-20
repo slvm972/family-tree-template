@@ -30,11 +30,15 @@ function runCapture(cmd) {
   console.log('сервер и подключит к нему ваш файл дерева.\n');
 
   // ── Step 1: passwords ────────────────────────────────
-  const guest = await ask('1) Пароль для родственников (простой, чтобы легко запомнить): ');
-  const admin = await ask('2) Пароль администратора (только для вас, сложнее): ');
+  const guest = await ask('1) Пароль для родственников (не короче 8 знаков, лучше фраза из нескольких слов): ');
+  const admin = await ask('2) Пароль администратора (только для вас, не короче 10 знаков): ');
 
   if(!guest || !admin) { console.log('❌ Пароли не могут быть пустыми'); process.exit(1); }
   if(guest === admin)  { console.log('❌ Пароли должны отличаться'); process.exit(1); }
+  if(guest.length < 8)  { console.log('❌ Пароль для родственников должен быть не короче 8 знаков'); process.exit(1); }
+  if(admin.length < 10) { console.log('❌ Пароль администратора должен быть не короче 10 знаков'); process.exit(1); }
+  const WEAK_PASSWORDS = ['12345678', '123456789', '1234567890', 'password', 'qwertyui', '11111111'];
+  if(WEAK_PASSWORDS.includes(guest.toLowerCase()) || WEAK_PASSWORDS.includes(admin.toLowerCase())) { console.log('❌ Слишком простой пароль, придумайте другой'); process.exit(1); }
 
   const gHash = sha256(guest);
   const aHash = sha256(admin);
